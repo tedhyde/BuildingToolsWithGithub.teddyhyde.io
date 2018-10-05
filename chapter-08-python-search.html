@@ -1,0 +1,1817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 1.5.2">
+<title>Python and the Search API</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400">
+<style>
+/* Asciidoctor default stylesheet | MIT License | http://asciidoctor.org */
+/* Remove the comments around the @import statement below when using this as a custom stylesheet */
+/*@import "https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400";*/
+article,aside,details,figcaption,figure,footer,header,hgroup,main,nav,section,summary{display:block}
+audio,canvas,video{display:inline-block}
+audio:not([controls]){display:none;height:0}
+[hidden],template{display:none}
+script{display:none!important}
+html{font-family:sans-serif;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%}
+body{margin:0}
+a{background:transparent}
+a:focus{outline:thin dotted}
+a:active,a:hover{outline:0}
+h1{font-size:2em;margin:.67em 0}
+abbr[title]{border-bottom:1px dotted}
+b,strong{font-weight:bold}
+dfn{font-style:italic}
+hr{-moz-box-sizing:content-box;box-sizing:content-box;height:0}
+mark{background:#ff0;color:#000}
+code,kbd,pre,samp{font-family:monospace;font-size:1em}
+pre{white-space:pre-wrap}
+q{quotes:"\201C" "\201D" "\2018" "\2019"}
+small{font-size:80%}
+sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}
+sup{top:-.5em}
+sub{bottom:-.25em}
+img{border:0}
+svg:not(:root){overflow:hidden}
+figure{margin:0}
+fieldset{border:1px solid silver;margin:0 2px;padding:.35em .625em .75em}
+legend{border:0;padding:0}
+button,input,select,textarea{font-family:inherit;font-size:100%;margin:0}
+button,input{line-height:normal}
+button,select{text-transform:none}
+button,html input[type="button"],input[type="reset"],input[type="submit"]{-webkit-appearance:button;cursor:pointer}
+button[disabled],html input[disabled]{cursor:default}
+input[type="checkbox"],input[type="radio"]{box-sizing:border-box;padding:0}
+input[type="search"]{-webkit-appearance:textfield;-moz-box-sizing:content-box;-webkit-box-sizing:content-box;box-sizing:content-box}
+input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit-search-decoration{-webkit-appearance:none}
+button::-moz-focus-inner,input::-moz-focus-inner{border:0;padding:0}
+textarea{overflow:auto;vertical-align:top}
+table{border-collapse:collapse;border-spacing:0}
+*,*:before,*:after{-moz-box-sizing:border-box;-webkit-box-sizing:border-box;box-sizing:border-box}
+html,body{font-size:100%}
+body{background:#fff;color:rgba(0,0,0,.8);padding:0;margin:0;font-family:"Noto Serif","DejaVu Serif",serif;font-weight:400;font-style:normal;line-height:1;position:relative;cursor:auto}
+a:hover{cursor:pointer}
+img,object,embed{max-width:100%;height:auto}
+object,embed{height:100%}
+img{-ms-interpolation-mode:bicubic}
+#map_canvas img,#map_canvas embed,#map_canvas object,.map_canvas img,.map_canvas embed,.map_canvas object{max-width:none!important}
+.left{float:left!important}
+.right{float:right!important}
+.text-left{text-align:left!important}
+.text-right{text-align:right!important}
+.text-center{text-align:center!important}
+.text-justify{text-align:justify!important}
+.hide{display:none}
+.antialiased,body{-webkit-font-smoothing:antialiased}
+img{display:inline-block;vertical-align:middle}
+textarea{height:auto;min-height:50px}
+select{width:100%}
+p.lead,.paragraph.lead>p,#preamble>.sectionbody>.paragraph:first-of-type p{font-size:1.21875em;line-height:1.6}
+.subheader,.admonitionblock td.content>.title,.audioblock>.title,.exampleblock>.title,.imageblock>.title,.listingblock>.title,.literalblock>.title,.stemblock>.title,.openblock>.title,.paragraph>.title,.quoteblock>.title,table.tableblock>.title,.verseblock>.title,.videoblock>.title,.dlist>.title,.olist>.title,.ulist>.title,.qlist>.title,.hdlist>.title{line-height:1.45;color:#7a2518;font-weight:400;margin-top:0;margin-bottom:.25em}
+div,dl,dt,dd,ul,ol,li,h1,h2,h3,#toctitle,.sidebarblock>.content>.title,h4,h5,h6,pre,form,p,blockquote,th,td{margin:0;padding:0;direction:ltr}
+a{color:#2156a5;text-decoration:underline;line-height:inherit}
+a:hover,a:focus{color:#1d4b8f}
+a img{border:none}
+p{font-family:inherit;font-weight:400;font-size:1em;line-height:1.6;margin-bottom:1.25em;text-rendering:optimizeLegibility}
+p aside{font-size:.875em;line-height:1.35;font-style:italic}
+h1,h2,h3,#toctitle,.sidebarblock>.content>.title,h4,h5,h6{font-family:"Open Sans","DejaVu Sans",sans-serif;font-weight:300;font-style:normal;color:#ba3925;text-rendering:optimizeLegibility;margin-top:1em;margin-bottom:.5em;line-height:1.0125em}
+h1 small,h2 small,h3 small,#toctitle small,.sidebarblock>.content>.title small,h4 small,h5 small,h6 small{font-size:60%;color:#e99b8f;line-height:0}
+h1{font-size:2.125em}
+h2{font-size:1.6875em}
+h3,#toctitle,.sidebarblock>.content>.title{font-size:1.375em}
+h4,h5{font-size:1.125em}
+h6{font-size:1em}
+hr{border:solid #ddddd8;border-width:1px 0 0;clear:both;margin:1.25em 0 1.1875em;height:0}
+em,i{font-style:italic;line-height:inherit}
+strong,b{font-weight:bold;line-height:inherit}
+small{font-size:60%;line-height:inherit}
+code{font-family:"Droid Sans Mono","DejaVu Sans Mono",monospace;font-weight:400;color:rgba(0,0,0,.9)}
+ul,ol,dl{font-size:1em;line-height:1.6;margin-bottom:1.25em;list-style-position:outside;font-family:inherit}
+ul,ol,ul.no-bullet,ol.no-bullet{margin-left:1.5em}
+ul li ul,ul li ol{margin-left:1.25em;margin-bottom:0;font-size:1em}
+ul.square li ul,ul.circle li ul,ul.disc li ul{list-style:inherit}
+ul.square{list-style-type:square}
+ul.circle{list-style-type:circle}
+ul.disc{list-style-type:disc}
+ul.no-bullet{list-style:none}
+ol li ul,ol li ol{margin-left:1.25em;margin-bottom:0}
+dl dt{margin-bottom:.3125em;font-weight:bold}
+dl dd{margin-bottom:1.25em}
+abbr,acronym{text-transform:uppercase;font-size:90%;color:rgba(0,0,0,.8);border-bottom:1px dotted #ddd;cursor:help}
+abbr{text-transform:none}
+blockquote{margin:0 0 1.25em;padding:.5625em 1.25em 0 1.1875em;border-left:1px solid #ddd}
+blockquote cite{display:block;font-size:.9375em;color:rgba(0,0,0,.6)}
+blockquote cite:before{content:"\2014 \0020"}
+blockquote cite a,blockquote cite a:visited{color:rgba(0,0,0,.6)}
+blockquote,blockquote p{line-height:1.6;color:rgba(0,0,0,.85)}
+@media only screen and (min-width:768px){h1,h2,h3,#toctitle,.sidebarblock>.content>.title,h4,h5,h6{line-height:1.2}
+h1{font-size:2.75em}
+h2{font-size:2.3125em}
+h3,#toctitle,.sidebarblock>.content>.title{font-size:1.6875em}
+h4{font-size:1.4375em}}table{background:#fff;margin-bottom:1.25em;border:solid 1px #dedede}
+table thead,table tfoot{background:#f7f8f7;font-weight:bold}
+table thead tr th,table thead tr td,table tfoot tr th,table tfoot tr td{padding:.5em .625em .625em;font-size:inherit;color:rgba(0,0,0,.8);text-align:left}
+table tr th,table tr td{padding:.5625em .625em;font-size:inherit;color:rgba(0,0,0,.8)}
+table tr.even,table tr.alt,table tr:nth-of-type(even){background:#f8f8f7}
+table thead tr th,table tfoot tr th,table tbody tr td,table tr td,table tfoot tr td{display:table-cell;line-height:1.6}
+h1,h2,h3,#toctitle,.sidebarblock>.content>.title,h4,h5,h6{line-height:1.2;word-spacing:-.05em}
+h1 strong,h2 strong,h3 strong,#toctitle strong,.sidebarblock>.content>.title strong,h4 strong,h5 strong,h6 strong{font-weight:400}
+.clearfix:before,.clearfix:after,.float-group:before,.float-group:after{content:" ";display:table}
+.clearfix:after,.float-group:after{clear:both}
+*:not(pre)>code{font-size:.9375em;font-style:normal!important;letter-spacing:0;padding:.1em .5ex;word-spacing:-.15em;background-color:#f7f7f8;-webkit-border-radius:4px;border-radius:4px;line-height:1.45;text-rendering:optimizeSpeed}
+pre,pre>code{line-height:1.45;color:rgba(0,0,0,.9);font-family:"Droid Sans Mono","DejaVu Sans Mono",monospace;font-weight:400;text-rendering:optimizeSpeed}
+.keyseq{color:rgba(51,51,51,.8)}
+kbd{display:inline-block;color:rgba(0,0,0,.8);font-size:.75em;line-height:1.4;background-color:#f7f7f7;border:1px solid #ccc;-webkit-border-radius:3px;border-radius:3px;-webkit-box-shadow:0 1px 0 rgba(0,0,0,.2),0 0 0 .1em white inset;box-shadow:0 1px 0 rgba(0,0,0,.2),0 0 0 .1em #fff inset;margin:-.15em .15em 0 .15em;padding:.2em .6em .2em .5em;vertical-align:middle;white-space:nowrap}
+.keyseq kbd:first-child{margin-left:0}
+.keyseq kbd:last-child{margin-right:0}
+.menuseq,.menu{color:rgba(0,0,0,.8)}
+b.button:before,b.button:after{position:relative;top:-1px;font-weight:400}
+b.button:before{content:"[";padding:0 3px 0 2px}
+b.button:after{content:"]";padding:0 2px 0 3px}
+p a>code:hover{color:rgba(0,0,0,.9)}
+#header,#content,#footnotes,#footer{width:100%;margin-left:auto;margin-right:auto;margin-top:0;margin-bottom:0;max-width:62.5em;*zoom:1;position:relative;padding-left:.9375em;padding-right:.9375em}
+#header:before,#header:after,#content:before,#content:after,#footnotes:before,#footnotes:after,#footer:before,#footer:after{content:" ";display:table}
+#header:after,#content:after,#footnotes:after,#footer:after{clear:both}
+#content{margin-top:1.25em}
+#content:before{content:none}
+#header>h1:first-child{color:rgba(0,0,0,.85);margin-top:2.25rem;margin-bottom:0}
+#header>h1:first-child+#toc{margin-top:8px;border-top:1px solid #ddddd8}
+#header>h1:only-child,body.toc2 #header>h1:nth-last-child(2){border-bottom:1px solid #ddddd8;padding-bottom:8px}
+#header .details{border-bottom:1px solid #ddddd8;line-height:1.45;padding-top:.25em;padding-bottom:.25em;padding-left:.25em;color:rgba(0,0,0,.6);display:-ms-flexbox;display:-webkit-flex;display:flex;-ms-flex-flow:row wrap;-webkit-flex-flow:row wrap;flex-flow:row wrap}
+#header .details span:first-child{margin-left:-.125em}
+#header .details span.email a{color:rgba(0,0,0,.85)}
+#header .details br{display:none}
+#header .details br+span:before{content:"\00a0\2013\00a0"}
+#header .details br+span.author:before{content:"\00a0\22c5\00a0";color:rgba(0,0,0,.85)}
+#header .details br+span#revremark:before{content:"\00a0|\00a0"}
+#header #revnumber{text-transform:capitalize}
+#header #revnumber:after{content:"\00a0"}
+#content>h1:first-child:not([class]){color:rgba(0,0,0,.85);border-bottom:1px solid #ddddd8;padding-bottom:8px;margin-top:0;padding-top:1rem;margin-bottom:1.25rem}
+#toc{border-bottom:1px solid #efefed;padding-bottom:.5em}
+#toc>ul{margin-left:.125em}
+#toc ul.sectlevel0>li>a{font-style:italic}
+#toc ul.sectlevel0 ul.sectlevel1{margin:.5em 0}
+#toc ul{font-family:"Open Sans","DejaVu Sans",sans-serif;list-style-type:none}
+#toc a{text-decoration:none}
+#toc a:active{text-decoration:underline}
+#toctitle{color:#7a2518;font-size:1.2em}
+@media only screen and (min-width:768px){#toctitle{font-size:1.375em}
+body.toc2{padding-left:15em;padding-right:0}
+#toc.toc2{margin-top:0!important;background-color:#f8f8f7;position:fixed;width:15em;left:0;top:0;border-right:1px solid #efefed;border-top-width:0!important;border-bottom-width:0!important;z-index:1000;padding:1.25em 1em;height:100%;overflow:auto}
+#toc.toc2 #toctitle{margin-top:0;font-size:1.2em}
+#toc.toc2>ul{font-size:.9em;margin-bottom:0}
+#toc.toc2 ul ul{margin-left:0;padding-left:1em}
+#toc.toc2 ul.sectlevel0 ul.sectlevel1{padding-left:0;margin-top:.5em;margin-bottom:.5em}
+body.toc2.toc-right{padding-left:0;padding-right:15em}
+body.toc2.toc-right #toc.toc2{border-right-width:0;border-left:1px solid #efefed;left:auto;right:0}}@media only screen and (min-width:1280px){body.toc2{padding-left:20em;padding-right:0}
+#toc.toc2{width:20em}
+#toc.toc2 #toctitle{font-size:1.375em}
+#toc.toc2>ul{font-size:.95em}
+#toc.toc2 ul ul{padding-left:1.25em}
+body.toc2.toc-right{padding-left:0;padding-right:20em}}#content #toc{border-style:solid;border-width:1px;border-color:#e0e0dc;margin-bottom:1.25em;padding:1.25em;background:#f8f8f7;-webkit-border-radius:4px;border-radius:4px}
+#content #toc>:first-child{margin-top:0}
+#content #toc>:last-child{margin-bottom:0}
+#footer{max-width:100%;background-color:rgba(0,0,0,.8);padding:1.25em}
+#footer-text{color:rgba(255,255,255,.8);line-height:1.44}
+.sect1{padding-bottom:.625em}
+@media only screen and (min-width:768px){.sect1{padding-bottom:1.25em}}.sect1+.sect1{border-top:1px solid #efefed}
+#content h1>a.anchor,h2>a.anchor,h3>a.anchor,#toctitle>a.anchor,.sidebarblock>.content>.title>a.anchor,h4>a.anchor,h5>a.anchor,h6>a.anchor{position:absolute;z-index:1001;width:1.5ex;margin-left:-1.5ex;display:block;text-decoration:none!important;visibility:hidden;text-align:center;font-weight:400}
+#content h1>a.anchor:before,h2>a.anchor:before,h3>a.anchor:before,#toctitle>a.anchor:before,.sidebarblock>.content>.title>a.anchor:before,h4>a.anchor:before,h5>a.anchor:before,h6>a.anchor:before{content:"\00A7";font-size:.85em;display:block;padding-top:.1em}
+#content h1:hover>a.anchor,#content h1>a.anchor:hover,h2:hover>a.anchor,h2>a.anchor:hover,h3:hover>a.anchor,#toctitle:hover>a.anchor,.sidebarblock>.content>.title:hover>a.anchor,h3>a.anchor:hover,#toctitle>a.anchor:hover,.sidebarblock>.content>.title>a.anchor:hover,h4:hover>a.anchor,h4>a.anchor:hover,h5:hover>a.anchor,h5>a.anchor:hover,h6:hover>a.anchor,h6>a.anchor:hover{visibility:visible}
+#content h1>a.link,h2>a.link,h3>a.link,#toctitle>a.link,.sidebarblock>.content>.title>a.link,h4>a.link,h5>a.link,h6>a.link{color:#ba3925;text-decoration:none}
+#content h1>a.link:hover,h2>a.link:hover,h3>a.link:hover,#toctitle>a.link:hover,.sidebarblock>.content>.title>a.link:hover,h4>a.link:hover,h5>a.link:hover,h6>a.link:hover{color:#a53221}
+.audioblock,.imageblock,.literalblock,.listingblock,.stemblock,.videoblock{margin-bottom:1.25em}
+.admonitionblock td.content>.title,.audioblock>.title,.exampleblock>.title,.imageblock>.title,.listingblock>.title,.literalblock>.title,.stemblock>.title,.openblock>.title,.paragraph>.title,.quoteblock>.title,table.tableblock>.title,.verseblock>.title,.videoblock>.title,.dlist>.title,.olist>.title,.ulist>.title,.qlist>.title,.hdlist>.title{text-rendering:optimizeLegibility;text-align:left;font-family:"Noto Serif","DejaVu Serif",serif;font-size:1rem;font-style:italic}
+table.tableblock>caption.title{white-space:nowrap;overflow:visible;max-width:0}
+.paragraph.lead>p,#preamble>.sectionbody>.paragraph:first-of-type p{color:rgba(0,0,0,.85)}
+table.tableblock #preamble>.sectionbody>.paragraph:first-of-type p{font-size:inherit}
+.admonitionblock>table{border-collapse:separate;border:0;background:none;width:100%}
+.admonitionblock>table td.icon{text-align:center;width:80px}
+.admonitionblock>table td.icon img{max-width:none}
+.admonitionblock>table td.icon .title{font-weight:bold;font-family:"Open Sans","DejaVu Sans",sans-serif;text-transform:uppercase}
+.admonitionblock>table td.content{padding-left:1.125em;padding-right:1.25em;border-left:1px solid #ddddd8;color:rgba(0,0,0,.6)}
+.admonitionblock>table td.content>:last-child>:last-child{margin-bottom:0}
+.exampleblock>.content{border-style:solid;border-width:1px;border-color:#e6e6e6;margin-bottom:1.25em;padding:1.25em;background:#fff;-webkit-border-radius:4px;border-radius:4px}
+.exampleblock>.content>:first-child{margin-top:0}
+.exampleblock>.content>:last-child{margin-bottom:0}
+.sidebarblock{border-style:solid;border-width:1px;border-color:#e0e0dc;margin-bottom:1.25em;padding:1.25em;background:#f8f8f7;-webkit-border-radius:4px;border-radius:4px}
+.sidebarblock>:first-child{margin-top:0}
+.sidebarblock>:last-child{margin-bottom:0}
+.sidebarblock>.content>.title{color:#7a2518;margin-top:0;text-align:center}
+.exampleblock>.content>:last-child>:last-child,.exampleblock>.content .olist>ol>li:last-child>:last-child,.exampleblock>.content .ulist>ul>li:last-child>:last-child,.exampleblock>.content .qlist>ol>li:last-child>:last-child,.sidebarblock>.content>:last-child>:last-child,.sidebarblock>.content .olist>ol>li:last-child>:last-child,.sidebarblock>.content .ulist>ul>li:last-child>:last-child,.sidebarblock>.content .qlist>ol>li:last-child>:last-child{margin-bottom:0}
+.literalblock pre,.listingblock pre:not(.highlight),.listingblock pre[class="highlight"],.listingblock pre[class^="highlight "],.listingblock pre.CodeRay,.listingblock pre.prettyprint{background:#f7f7f8}
+.sidebarblock .literalblock pre,.sidebarblock .listingblock pre:not(.highlight),.sidebarblock .listingblock pre[class="highlight"],.sidebarblock .listingblock pre[class^="highlight "],.sidebarblock .listingblock pre.CodeRay,.sidebarblock .listingblock pre.prettyprint{background:#f2f1f1}
+.literalblock pre,.literalblock pre[class],.listingblock pre,.listingblock pre[class]{-webkit-border-radius:4px;border-radius:4px;word-wrap:break-word;padding:1em;font-size:.8125em}
+.literalblock pre.nowrap,.literalblock pre[class].nowrap,.listingblock pre.nowrap,.listingblock pre[class].nowrap{overflow-x:auto;white-space:pre;word-wrap:normal}
+@media only screen and (min-width:768px){.literalblock pre,.literalblock pre[class],.listingblock pre,.listingblock pre[class]{font-size:.90625em}}@media only screen and (min-width:1280px){.literalblock pre,.literalblock pre[class],.listingblock pre,.listingblock pre[class]{font-size:1em}}.literalblock.output pre{color:#f7f7f8;background-color:rgba(0,0,0,.9)}
+.listingblock pre.highlightjs{padding:0}
+.listingblock pre.highlightjs>code{padding:1em;-webkit-border-radius:4px;border-radius:4px}
+.listingblock pre.prettyprint{border-width:0}
+.listingblock>.content{position:relative}
+.listingblock code[data-lang]:before{display:none;content:attr(data-lang);position:absolute;font-size:.75em;top:.425rem;right:.5rem;line-height:1;text-transform:uppercase;color:#999}
+.listingblock:hover code[data-lang]:before{display:block}
+.listingblock.terminal pre .command:before{content:attr(data-prompt);padding-right:.5em;color:#999}
+.listingblock.terminal pre .command:not([data-prompt]):before{content:"$"}
+table.pyhltable{border-collapse:separate;border:0;margin-bottom:0;background:none}
+table.pyhltable td{vertical-align:top;padding-top:0;padding-bottom:0}
+table.pyhltable td.code{padding-left:.75em;padding-right:0}
+pre.pygments .lineno,table.pyhltable td:not(.code){color:#999;padding-left:0;padding-right:.5em;border-right:1px solid #ddddd8}
+pre.pygments .lineno{display:inline-block;margin-right:.25em}
+table.pyhltable .linenodiv{background:none!important;padding-right:0!important}
+.quoteblock{margin:0 1em 1.25em 1.5em;display:table}
+.quoteblock>.title{margin-left:-1.5em;margin-bottom:.75em}
+.quoteblock blockquote,.quoteblock blockquote p{color:rgba(0,0,0,.85);font-size:1.15rem;line-height:1.75;word-spacing:.1em;letter-spacing:0;font-style:italic;text-align:justify}
+.quoteblock blockquote{margin:0;padding:0;border:0}
+.quoteblock blockquote:before{content:"\201c";float:left;font-size:2.75em;font-weight:bold;line-height:.6em;margin-left:-.6em;color:#7a2518;text-shadow:0 1px 2px rgba(0,0,0,.1)}
+.quoteblock blockquote>.paragraph:last-child p{margin-bottom:0}
+.quoteblock .attribution{margin-top:.5em;margin-right:.5ex;text-align:right}
+.quoteblock .quoteblock{margin-left:0;margin-right:0;padding:.5em 0;border-left:3px solid rgba(0,0,0,.6)}
+.quoteblock .quoteblock blockquote{padding:0 0 0 .75em}
+.quoteblock .quoteblock blockquote:before{display:none}
+.verseblock{margin:0 1em 1.25em 1em}
+.verseblock pre{font-family:"Open Sans","DejaVu Sans",sans;font-size:1.15rem;color:rgba(0,0,0,.85);font-weight:300;text-rendering:optimizeLegibility}
+.verseblock pre strong{font-weight:400}
+.verseblock .attribution{margin-top:1.25rem;margin-left:.5ex}
+.quoteblock .attribution,.verseblock .attribution{font-size:.9375em;line-height:1.45;font-style:italic}
+.quoteblock .attribution br,.verseblock .attribution br{display:none}
+.quoteblock .attribution cite,.verseblock .attribution cite{display:block;letter-spacing:-.05em;color:rgba(0,0,0,.6)}
+.quoteblock.abstract{margin:0 0 1.25em 0;display:block}
+.quoteblock.abstract blockquote,.quoteblock.abstract blockquote p{text-align:left;word-spacing:0}
+.quoteblock.abstract blockquote:before,.quoteblock.abstract blockquote p:first-of-type:before{display:none}
+table.tableblock{max-width:100%;border-collapse:separate}
+table.tableblock td>.paragraph:last-child p>p:last-child,table.tableblock th>p:last-child,table.tableblock td>p:last-child{margin-bottom:0}
+table.spread{width:100%}
+table.tableblock,th.tableblock,td.tableblock{border:0 solid #dedede}
+table.grid-all th.tableblock,table.grid-all td.tableblock{border-width:0 1px 1px 0}
+table.grid-all tfoot>tr>th.tableblock,table.grid-all tfoot>tr>td.tableblock{border-width:1px 1px 0 0}
+table.grid-cols th.tableblock,table.grid-cols td.tableblock{border-width:0 1px 0 0}
+table.grid-all *>tr>.tableblock:last-child,table.grid-cols *>tr>.tableblock:last-child{border-right-width:0}
+table.grid-rows th.tableblock,table.grid-rows td.tableblock{border-width:0 0 1px 0}
+table.grid-all tbody>tr:last-child>th.tableblock,table.grid-all tbody>tr:last-child>td.tableblock,table.grid-all thead:last-child>tr>th.tableblock,table.grid-rows tbody>tr:last-child>th.tableblock,table.grid-rows tbody>tr:last-child>td.tableblock,table.grid-rows thead:last-child>tr>th.tableblock{border-bottom-width:0}
+table.grid-rows tfoot>tr>th.tableblock,table.grid-rows tfoot>tr>td.tableblock{border-width:1px 0 0 0}
+table.frame-all{border-width:1px}
+table.frame-sides{border-width:0 1px}
+table.frame-topbot{border-width:1px 0}
+th.halign-left,td.halign-left{text-align:left}
+th.halign-right,td.halign-right{text-align:right}
+th.halign-center,td.halign-center{text-align:center}
+th.valign-top,td.valign-top{vertical-align:top}
+th.valign-bottom,td.valign-bottom{vertical-align:bottom}
+th.valign-middle,td.valign-middle{vertical-align:middle}
+table thead th,table tfoot th{font-weight:bold}
+tbody tr th{display:table-cell;line-height:1.6;background:#f7f8f7}
+tbody tr th,tbody tr th p,tfoot tr th,tfoot tr th p{color:rgba(0,0,0,.8);font-weight:bold}
+p.tableblock>code:only-child{background:none;padding:0}
+p.tableblock{font-size:1em}
+td>div.verse{white-space:pre}
+ol{margin-left:1.75em}
+ul li ol{margin-left:1.5em}
+dl dd{margin-left:1.125em}
+dl dd:last-child,dl dd:last-child>:last-child{margin-bottom:0}
+ol>li p,ul>li p,ul dd,ol dd,.olist .olist,.ulist .ulist,.ulist .olist,.olist .ulist{margin-bottom:.625em}
+ul.unstyled,ol.unnumbered,ul.checklist,ul.none{list-style-type:none}
+ul.unstyled,ol.unnumbered,ul.checklist{margin-left:.625em}
+ul.checklist li>p:first-child>.fa-square-o:first-child,ul.checklist li>p:first-child>.fa-check-square-o:first-child{width:1em;font-size:.85em}
+ul.checklist li>p:first-child>input[type="checkbox"]:first-child{width:1em;position:relative;top:1px}
+ul.inline{margin:0 auto .625em auto;margin-left:-1.375em;margin-right:0;padding:0;list-style:none;overflow:hidden}
+ul.inline>li{list-style:none;float:left;margin-left:1.375em;display:block}
+ul.inline>li>*{display:block}
+.unstyled dl dt{font-weight:400;font-style:normal}
+ol.arabic{list-style-type:decimal}
+ol.decimal{list-style-type:decimal-leading-zero}
+ol.loweralpha{list-style-type:lower-alpha}
+ol.upperalpha{list-style-type:upper-alpha}
+ol.lowerroman{list-style-type:lower-roman}
+ol.upperroman{list-style-type:upper-roman}
+ol.lowergreek{list-style-type:lower-greek}
+.hdlist>table,.colist>table{border:0;background:none}
+.hdlist>table>tbody>tr,.colist>table>tbody>tr{background:none}
+td.hdlist1{padding-right:.75em;font-weight:bold}
+td.hdlist1,td.hdlist2{vertical-align:top}
+.literalblock+.colist,.listingblock+.colist{margin-top:-.5em}
+.colist>table tr>td:first-of-type{padding:0 .75em;line-height:1}
+.colist>table tr>td:last-of-type{padding:.25em 0}
+.thumb,.th{line-height:0;display:inline-block;border:solid 4px #fff;-webkit-box-shadow:0 0 0 1px #ddd;box-shadow:0 0 0 1px #ddd}
+.imageblock.left,.imageblock[style*="float: left"]{margin:.25em .625em 1.25em 0}
+.imageblock.right,.imageblock[style*="float: right"]{margin:.25em 0 1.25em .625em}
+.imageblock>.title{margin-bottom:0}
+.imageblock.thumb,.imageblock.th{border-width:6px}
+.imageblock.thumb>.title,.imageblock.th>.title{padding:0 .125em}
+.image.left,.image.right{margin-top:.25em;margin-bottom:.25em;display:inline-block;line-height:0}
+.image.left{margin-right:.625em}
+.image.right{margin-left:.625em}
+a.image{text-decoration:none}
+span.footnote,span.footnoteref{vertical-align:super;font-size:.875em}
+span.footnote a,span.footnoteref a{text-decoration:none}
+span.footnote a:active,span.footnoteref a:active{text-decoration:underline}
+#footnotes{padding-top:.75em;padding-bottom:.75em;margin-bottom:.625em}
+#footnotes hr{width:20%;min-width:6.25em;margin:-.25em 0 .75em 0;border-width:1px 0 0 0}
+#footnotes .footnote{padding:0 .375em;line-height:1.3;font-size:.875em;margin-left:1.2em;text-indent:-1.2em;margin-bottom:.2em}
+#footnotes .footnote a:first-of-type{font-weight:bold;text-decoration:none}
+#footnotes .footnote:last-of-type{margin-bottom:0}
+#content #footnotes{margin-top:-.625em;margin-bottom:0;padding:.75em 0}
+.gist .file-data>table{border:0;background:#fff;width:100%;margin-bottom:0}
+.gist .file-data>table td.line-data{width:99%}
+div.unbreakable{page-break-inside:avoid}
+.big{font-size:larger}
+.small{font-size:smaller}
+.underline{text-decoration:underline}
+.overline{text-decoration:overline}
+.line-through{text-decoration:line-through}
+.aqua{color:#00bfbf}
+.aqua-background{background-color:#00fafa}
+.black{color:#000}
+.black-background{background-color:#000}
+.blue{color:#0000bf}
+.blue-background{background-color:#0000fa}
+.fuchsia{color:#bf00bf}
+.fuchsia-background{background-color:#fa00fa}
+.gray{color:#606060}
+.gray-background{background-color:#7d7d7d}
+.green{color:#006000}
+.green-background{background-color:#007d00}
+.lime{color:#00bf00}
+.lime-background{background-color:#00fa00}
+.maroon{color:#600000}
+.maroon-background{background-color:#7d0000}
+.navy{color:#000060}
+.navy-background{background-color:#00007d}
+.olive{color:#606000}
+.olive-background{background-color:#7d7d00}
+.purple{color:#600060}
+.purple-background{background-color:#7d007d}
+.red{color:#bf0000}
+.red-background{background-color:#fa0000}
+.silver{color:#909090}
+.silver-background{background-color:#bcbcbc}
+.teal{color:#006060}
+.teal-background{background-color:#007d7d}
+.white{color:#bfbfbf}
+.white-background{background-color:#fafafa}
+.yellow{color:#bfbf00}
+.yellow-background{background-color:#fafa00}
+span.icon>.fa{cursor:default}
+.admonitionblock td.icon [class^="fa icon-"]{font-size:2.5em;text-shadow:1px 1px 2px rgba(0,0,0,.5);cursor:default}
+.admonitionblock td.icon .icon-note:before{content:"\f05a";color:#19407c}
+.admonitionblock td.icon .icon-tip:before{content:"\f0eb";text-shadow:1px 1px 2px rgba(155,155,0,.8);color:#111}
+.admonitionblock td.icon .icon-warning:before{content:"\f071";color:#bf6900}
+.admonitionblock td.icon .icon-caution:before{content:"\f06d";color:#bf3400}
+.admonitionblock td.icon .icon-important:before{content:"\f06a";color:#bf0000}
+.conum[data-value]{display:inline-block;color:#fff!important;background-color:rgba(0,0,0,.8);-webkit-border-radius:100px;border-radius:100px;text-align:center;font-size:.75em;width:1.67em;height:1.67em;line-height:1.67em;font-family:"Open Sans","DejaVu Sans",sans-serif;font-style:normal;font-weight:bold}
+.conum[data-value] *{color:#fff!important}
+.conum[data-value]+b{display:none}
+.conum[data-value]:after{content:attr(data-value)}
+pre .conum[data-value]{position:relative;top:-.125em}
+b.conum *{color:inherit!important}
+.conum:not([data-value]):empty{display:none}
+h1,h2{letter-spacing:-.01em}
+dt,th.tableblock,td.content{text-rendering:optimizeLegibility}
+p,td.content{letter-spacing:-.01em}
+p strong,td.content strong{letter-spacing:-.005em}
+p,blockquote,dt,td.content{font-size:1.0625rem}
+p{margin-bottom:1.25rem}
+.sidebarblock p,.sidebarblock dt,.sidebarblock td.content,p.tableblock{font-size:1em}
+.exampleblock>.content{background-color:#fffef7;border-color:#e0e0dc;-webkit-box-shadow:0 1px 4px #e0e0dc;box-shadow:0 1px 4px #e0e0dc}
+.print-only{display:none!important}
+@media print{@page{margin:1.25cm .75cm}
+*{-webkit-box-shadow:none!important;box-shadow:none!important;text-shadow:none!important}
+a{color:inherit!important;text-decoration:underline!important}
+a.bare,a[href^="#"],a[href^="mailto:"]{text-decoration:none!important}
+a[href^="http:"]:not(.bare):after,a[href^="https:"]:not(.bare):after{content:"(" attr(href) ")";display:inline-block;font-size:.875em;padding-left:.25em}
+abbr[title]:after{content:" (" attr(title) ")"}
+pre,blockquote,tr,img{page-break-inside:avoid}
+thead{display:table-header-group}
+img{max-width:100%!important}
+p,blockquote,dt,td.content{font-size:1em;orphans:3;widows:3}
+h2,h3,#toctitle,.sidebarblock>.content>.title{page-break-after:avoid}
+#toc,.sidebarblock,.exampleblock>.content{background:none!important}
+#toc{border-bottom:1px solid #ddddd8!important;padding-bottom:0!important}
+.sect1{padding-bottom:0!important}
+.sect1+.sect1{border:0!important}
+#header>h1:first-child{margin-top:1.25rem}
+body.book #header{text-align:center}
+body.book #header>h1:first-child{border:0!important;margin:2.5em 0 1em 0}
+body.book #header .details{border:0!important;display:block;padding:0!important}
+body.book #header .details span:first-child{margin-left:0!important}
+body.book #header .details br{display:block}
+body.book #header .details br+span:before{content:none!important}
+body.book #toc{border:0!important;text-align:left!important;padding:0!important;margin:0!important}
+body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-break-before:always}
+.listingblock code[data-lang]:before{display:block}
+#footer{background:none!important;padding:0 .9375em}
+#footer-text{color:rgba(0,0,0,.6)!important;font-size:.9em}
+.hide-on-print{display:none!important}
+.print-only{display:block!important}
+.hide-for-print{display:none!important}
+.show-for-print{display:inherit!important}}
+</style>
+</head>
+<body class="article">
+<div id="header">
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="python_search_api">Python and the Search API</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Once you have enough data, no amount of organization will make everything easy to find.
+As Google has taught us, the only system that works at this scale is a search box.
+When you use GitHub, you&#8217;re exposed to both sides of this phenomenon: the repositories you have direct access to&#x2014;which are relatively small in number&#x2014;are given a single level of hierarchy, so you can keep them straight in your head.
+For the rest, the uncountable millions of public repositories that belong to other people, there&#8217;s a search box, with powerful features to help you find what you&#8217;re looking for.</p>
+</div>
+<div class="paragraph">
+<p>Helpfully, GitHub also exposes this capability as an API you can consume from your own applications.
+GitHub&#8217;s Search API gives you access to the full power of the built-in search function.
+This includes  the use of logical and scoping operators, like <code>"or"</code> and <code>"user"</code>.
+By integrating this feature with your application, you can provide your users a very powerful way of finding what they&#8217;re looking for.</p>
+</div>
+<div class="paragraph">
+<p>In this chapter we&#8217;ll take a close look at this API, and try building a useful application with it.
+We&#8217;ll see how the Search API is structured, what kind of results come back, and how it can help us create a feature for someone on our team.</p>
+</div>
+<div class="sect2">
+<h3 id="_search_api_general_principles">Search API General Principles</h3>
+<div class="paragraph">
+<p>The Search API is split into four separate parts: repositories, code, issues, and users.
+These APIs all have different subject matter, and have different formats for their results, but they all behave the same in a few key ways.
+We&#8217;re covering these first, because they&#8217;ll help you understand the results coming back from the specific API calls that we cover later.
+There are four major areas of commonality.</p>
+</div>
+<div class="sect3">
+<h4 id="_authentication">Authentication</h4>
+<div class="paragraph">
+<p>Your identity as a user can determine the result set from a search query, so it&#8217;s important to know about authentication.
+We cover GitHub authentication fully in <a href="#authentication">[authentication]</a>, but this API is also available without logging in.
+However, there are a few limitations to this approach.</p>
+</div>
+<div class="paragraph">
+<p>First, you&#8217;ll only be able to search public repositories.
+This is probably fine if you&#8217;re primarily working with open source software, but users of your application will probably expect to have access to their private code, as well as that of any organizations they belong to.
+Also, since <em>all</em> Enterprise repositories are private, anonymous search is completely useless there.</p>
+</div>
+<div class="paragraph">
+<p>Secondly, authenticating opens up your rate limit. The limits on search are stricter than other APIs anyway, because search is computationally expensive, but anonymous searches are stricter still. As of this writing, and according to the documentation, anonymous searches are limited to 5 per minute, and you can do 20 authenticated queries per minute. Take a look at <a href="#developer-api-rates">[developer-api-rates]</a> for more on how to work with rate limits.</p>
+</div>
+<div class="paragraph">
+<p>Here&#8217;s that same information in tabular form:</p>
+</div>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top"></th>
+<th class="tableblock halign-left valign-top">Anonymous</th>
+<th class="tableblock halign-left valign-top">Authenticated</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Results include private repositories</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Use with Enterprise</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rate limit</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5/minute</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">20/minute</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_result_format">Result Format</h4>
+<div class="paragraph">
+<p>No matter what you&#8217;re searching for, the return value from the API follows a certain format.
+Here&#8217;s a sample result from a query, which has been heavily edited to focus only on the parts you&#8217;ll always see:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "total_count": 824,
+  "incomplete_results": false,
+  "items": [
+    {
+      …
+      "score": 3.357718
+    }
+  ]
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Starting from the top: the <code>total_count</code> field represents the total number of search results that turned up from this query.
+It&#8217;s not uncommon for a fairly specific search to turn up thousands of results&#x2014;remember, there are millions of repositories on GitHub.
+By default, only the first 30 are returned, but you can customize this with <code>page</code> and <code>per_page</code> query parameters in the URL.
+For example, a GET request to this URL will return 45 items, starting with the 46th result:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-text" data-lang="text">search/repositories?q=foobar&amp;page=2&amp;page_size=45</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Page sizes are generally limited to 100.</p>
+</div>
+<div class="paragraph">
+<p>The <code>incomplete_results</code> field refers to a computational limit placed on the Search API.
+If your search takes too long, the GitHub API will stop it partway through executing, return the results that did complete, and set this flag to <code>true</code>.
+For most queries this won&#8217;t be a problem, and the <code>total_count</code> will represent all the results from the search, but if your query is complicated, you might only get a partial result set.</p>
+</div>
+<div class="paragraph">
+<p>Search results are returned in the <code>items</code> array, and each item always has a <code>score</code> field.
+This field is numeric, but it&#8217;s only a relative measure of how well a result matches the query, and is used for the default sort order&#x2014;highest score first.
+If you do pay attention to it, remember it only has meaning when compared to other results from the same query; a result with a score of 50 isn&#8217;t necessarily ten times "better" than a result scored 5.</p>
+</div>
+<div class="paragraph">
+<p>Here&#8217;s a summary of the important fields:</p>
+</div>
+<table class="tableblock frame-all grid-all spread">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Field</th>
+<th class="tableblock halign-left valign-top">Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>total_count</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Total search result count</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>incomplete_results</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>true</code> if search was halted before finishing</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>items</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List of search results</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>(item).score</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Relevance of this item as a search result</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_search_operators_and_qualifiers">Search Operators and Qualifiers</h4>
+<div class="paragraph">
+<p>Of course, it&#8217;s always better if you can avoid pagination altogether, or at least get the best results in the first page.
+Qualifiers and operators can help narrow your search results to fewer pages, hopefully allowing the right result to float to the top.</p>
+</div>
+<div class="paragraph">
+<p>With the Search API, all searches are done through a search query, which is encoded and passed in the URL as the <code>q</code> parameter.
+Most of the query will be free text, but the API also supports some powerful syntax, such as these forms:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>x AND y</code>, as well as <code>OR</code> and <code>NOT</code></p>
+</li>
+<li>
+<p><code>user:<em>&#x3c;name&#x3e;</em></code>, where <em>name</em> is a user or organization</p>
+</li>
+<li>
+<p><code>repo:<em>&#x3c;name&#x3e;</em></code></p>
+</li>
+<li>
+<p><code>language:<em>&#x3c;name&#x3e;</em></code></p>
+</li>
+<li>
+<p><code>created:<em>&#x3c;date(s)&#x3e;</em></code></p>
+</li>
+<li>
+<p><code>extension:<em>&#x3c;pattern&#x3e;</em></code> matches file extensions (like <em>py</em> or <em>ini</em>)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Numerical values and dates can have ranges:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>2015-02-01</code> will match only the given date</p>
+</li>
+<li>
+<p><code>&lt;2015-02-01</code> will match any date previous to the one given</p>
+</li>
+<li>
+<p><code>2015-02-01..2015-03-01</code> will match dates within the given range, including the endpoints</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>For example, to find code written by the user tpope during July of 2012, you would write <code>"user:tpope created:2012-07-01..2015-07-31"</code> for the query parameter.
+That would be encoded in a URL like so:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-text" data-lang="text">search/repositories?q=user%3Atpope+created%3A2012-07-01..2015-07-31</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To constrain this search to only Python code, we could add ` language=python`,
+URL encoded as <code>+language%3Apython</code>, to the end of the URL.</p>
+</div>
+<div class="paragraph">
+<p>There are many other options.
+Check out <a href="https://github.com/search/advanced" class="bare">https://github.com/search/advanced</a> for a UI that can help you construct a query.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_sorting">Sorting</h4>
+<div class="paragraph">
+<p>If search query operators can&#8217;t narrow down a result set to just the most important items, perhaps sorting them can.
+Search results are returned in a definite order, never at random.
+The default order is "best match," which sorts your results based on their search score, best score first.
+If you want to override this, you can pass <code>stars</code>, <code>forks</code>, or <code>updated</code> in the <code>sort</code> query parameter, as in <code>search/repositories?q=foobar&amp;sort=stars</code>.</p>
+</div>
+<div class="paragraph">
+<p>You can also reverse the sort order using the <code>order</code> parameter, like <code>search/repositories?q=foobar&amp;sort=stars&amp;order=desc</code>.
+The default is <code>desc</code> ("descending"), but <code>asc</code> is also accepted, and will reverse the order.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_search_apis_in_detail">Search APIs in Detail</h3>
+<div class="paragraph">
+<p>Now that we&#8217;ve covered how all these APIs behave the same, let&#8217;s discuss their specifics.
+The Search API is compartmentalized into four categories: repositories, code, issues, and users.
+The basic mechanism is the same for all four: send a GET request to the endpoint, and provide a URL-encoded search term as the <code>q</code> parameter.
+We&#8217;ll show an abridged response from each of the four, along with some discussion of what to expect.</p>
+</div>
+<div class="sect3">
+<h4 id="_repository_search">Repository Search</h4>
+<div class="paragraph">
+<p>The <code>search/repositories</code> endpoint looks in the repository metadata to match your query.
+This includes the project&#8217;s name and description by default, though you can also search the read me file by specifying <code>in:readme</code> in the query.
+Other qualifiers are documented at <a href="https://developer.github.com/v3/search/#search-repositories" class="bare">https://developer.github.com/v3/search/#search-repositories</a>.</p>
+</div>
+<div class="paragraph">
+<p>A query such as <code>search/repositories?q=foobar</code> might result in a response that looks something like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "total_count": 824,
+  "incomplete_results": false,
+  "items": [
+    {
+      "id": 10869370,
+      "name": "foobar",
+      "full_name": "iwhitcomb/foobar",
+      "owner": {
+        "login": "iwhitcomb",
+        "id": 887528,
+        "avatar_url": "https://avatars.githubusercontent.com/u/887528?v=3",
+        …
+      },
+      "private": false,
+      "html_url": "https://github.com/iwhitcomb/foobar",
+      "description": "Drupal 8 Module Example",
+      "fork": false,
+      …
+      "score": 59.32314
+    },
+    …
+  ]
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Each item in <code>items</code> is the description of a repository.
+All sorts of useful information is included, such as a URL to the UI for this repository (<code>html_url</code>), the owner&#8217;s avatar (<code>owner.avatar_url</code>), and a URL suitable for cloning the repository using Git (<code>git_url</code>).</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_code_search">Code Search</h4>
+<div class="paragraph">
+<p>The <code>search/code</code> endpoint is for searching the contents of a repository.
+You can try matching the contents of the files themselves, or their paths (using <code>in:path</code>).
+(For complete documentation on the other available qualifiers, check out <a href="https://developer.github.com/v3/search/#search-code" class="bare">https://developer.github.com/v3/search/#search-code</a>.)</p>
+</div>
+<div class="paragraph">
+<p>This API is subject to several limits that don&#8217;t affect the other search endpoints, because of the sheer amount of data the server must sort through to find matches.
+First, it requires that you provide a general search term (a phrase to match); specifying a query with <em>only</em> operators (like <code>language:python</code>) is valid with other APIs, but not here.
+Second, any wildcard characters in the query will be ignored.
+Third, files above a certain size will not be searched.
+Fourth, it only searches the default branch of any given project, which is usually <code>master</code>.
+Fifth, and possibly most importantly, you <em>must</em> specify a repository owner using the <code>user:<em>&#x3c;name&#x3e;</em></code> qualifier; you cannot search all repositories with one query.</p>
+</div>
+<div class="paragraph">
+<p>The JSON returned looks something like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "total_count": 9246,
+  "incomplete_results": false,
+  "items": [
+    {
+      "name": "migrated_0000.js",
+      "path": "test/fixtures/ES6/class/migrated_0000.js",
+      "sha": "37bdd2221a71b58576da9d3c2dc0ef0998263652",
+      "url": "…",
+      "git_url": "…",
+      "html_url": "…",
+      "repository": {
+        "id": 2833537,
+        "name": "esprima",
+        "full_name": "jquery/esprima",
+        "owner": {
+          "login": "jquery",
+          "id": 70142,
+          "avatar_url": "https://avatars.githubusercontent.com/u/70142?v=3",
+          …
+        },
+        "private": false,
+        …
+      },
+      "score": 2.3529532
+    },
+    …
+  ]
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Each item has some data about the file that turned up, including its name and URLs for a couple of representations of it.
+Then there&#8217;s the blob of data about its repository, followed by a score, which is used for the default "best match" sorting.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_issue_search">Issue Search</h4>
+<div class="paragraph">
+<p>Repositories contain more than just code.
+The <code>search/issues</code> endpoint looks for matches in the issues and pull requests attached to a project.
+This endpoint responds to a wide variety of search qualifiers, such as:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1"><code>type</code></dt>
+<dd>
+<p>Either "pr" for pull requests, or "issue" for issues (the default is both).</p>
+</dd>
+<dt class="hdlist1"><code>team</code></dt>
+<dd>
+<p>Match issues whose discussions mention a specific team (only works for organizations you belong to).</p>
+</dd>
+<dt class="hdlist1"><code>no</code></dt>
+<dd>
+<p>Match issues that are missing a piece of data (as in "no:label").</p>
+</dd>
+</dl>
+</div>
+<div class="paragraph">
+<p>There are many more; see <a href="https://developer.github.com/v3/search/#search-issues" class="bare">https://developer.github.com/v3/search/#search-issues</a> for complete documentation.</p>
+</div>
+<div class="paragraph">
+<p>The result of a call to this endpoint looks like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "total_count": 1278397,
+  "incomplete_results": false,
+  "items": [
+    {
+      "url": "…",
+      "labels_url": "…",
+      "comments_url": "…",
+      "events_url": "…",
+      "html_url": "…",
+      "id": 69671218,
+      "number": 1,
+      "title": "Classes",
+      "user": {
+        "login": "reubeningber",
+        "id": 2552792,
+        "avatar_url": "…",
+        …
+      },
+      "labels": [
+        …
+      ],
+      "state": "open",
+      "locked": false,
+      "assignee": null,
+      "milestone": null,
+      "comments": 0,
+      "created_at": "2015-04-20T20:18:56Z",
+      "updated_at": "2015-04-20T20:18:56Z",
+      "closed_at": null,
+      "body": "There should be an option to add classes to the ul and li...",
+      "score": 22.575937
+    },
+  ]
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Again, each item in the list looks like the result of a call to the issued API.
+There are a lot of useful bits of data here, such as the issue&#8217;s title (<code>title</code>), labels (<code>labels</code>), and links to information about the pull-request data (<code>pull_request.url</code>), which won&#8217;t be present if the result isn&#8217;t a pull request.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_user_search">User Search</h4>
+<div class="paragraph">
+<p>All the other Search APIs are centered around repositories, but this endpoint searches a different namespace: GitHub users.
+By default, only a user&#8217;s login name and public email address are searched; the <code>in</code> qualifier can extend this to include the user&#8217;s full name as well, with <code>in:fullname,login,email</code>.
+There are several other useful qualifiers available; see <a href="https://developer.github.com/v3/search/#search-users" class="bare">https://developer.github.com/v3/search/#search-users</a> for complete documentation.</p>
+</div>
+<div class="paragraph">
+<p>Querying the <code>search/users</code> endpoint gives you this kind of response:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-json" data-lang="json">{
+  "total_count": 26873,
+  "incomplete_results": false,
+  "items": [
+    {
+      "login": "ben",
+      "id": 39902,
+      "avatar_url": "…",
+      "gravatar_id": "",
+      "url": "…",
+      "html_url": "…",
+      …
+      "score": 98.24275
+    },
+    {
+      "login": "bengottlieb",
+      "id": 53162,
+      "avatar_url": "…",
+      "gravatar_id": "",
+      "url": "…",
+      "html_url": "…",
+      …
+      "score": 35.834213
+    },
+  ]
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The list of items in this case look like the results from a query of the <code>users/<em>&#x3c;name&#x3e;</em></code> endpoint.
+Useful items here are the user&#8217;s avatar (<code>avatar_url</code>), several links to other API endpoints (<code>repos_url</code>, <code>url</code>), and the type of result (user or organization, in <code>type</code>).</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_our_example_application">Our Example Application</h3>
+<div class="paragraph">
+<p>Now that we know a bit about how this API behaves, let&#8217;s do something useful with it.</p>
+</div>
+<div class="paragraph">
+<p>Imagine that your development team uses GitHub to store their Git repositories, and that there are lots of little repositories for parts of the application that work together at runtime.
+This kind of situation ends up being fairly difficult to work with for your nontechnical colleagues; if they want to report an issue, they don&#8217;t know where to go, and they don&#8217;t know how to find issues that already exist.</p>
+</div>
+<div class="paragraph">
+<p>Search can make this possible, but doing a search across an entire organization&#8217;s repositories involves using the <code>user:<em>&#x3c;organization&#x3e;</em></code> operator, which is obtusely named, and kind of scary for nonprogrammers.
+Plus, the user would have to remember to add that option every single time they wanted to search for issues.</p>
+</div>
+<div class="paragraph">
+<p>The Search API can make this a bit easier.
+Let&#8217;s make a GUI application with just a single search box, which makes it dead simple for a nontechnical user to search all the issues in all the repositories in a single organization.
+It&#8217;ll end up looking a bit like Figures <a data-type="xref" data-xrefstyle="select:labelnumber" href="#github_search_app_windows">#github_search_app_windows</a>, <a data-type="xref" data-xrefstyle="select:labelnumber" href="#github_search_app_mac">#github_search_app_mac</a>, and <a data-type="xref" data-xrefstyle="select:labelnumber" href="#github_search_app_linux">#github_search_app_linux</a>.</p>
+</div>
+<div id="github_search_app_windows" class="imageblock smallerseventy">
+<div class="content">
+<img src="images/btwg_04in01.png" alt="btwg 04in01">
+</div>
+<div class="title">Figure 1. GitHub search application on Windows</div>
+</div>
+<div id="github_search_app_mac" class="imageblock smallerseventy">
+<div class="content">
+<img src="images/btwg_04in02.png" alt="btwg 04in02">
+</div>
+<div class="title">Figure 2. GitHub search application on Mac</div>
+</div>
+<div id="github_search_app_linux" class="imageblock smallerseventy">
+<div class="content">
+<img src="images/btwg_04in03.png" alt="btwg 04in03">
+</div>
+<div class="title">Figure 3. GitHub search application on Linux</div>
+</div>
+<div class="sect3">
+<h4 id="_user_flow">User Flow</h4>
+<div class="paragraph">
+<p>That&#8217;s the overall goal, but let&#8217;s dig in to more detail about how the user experiences the application.</p>
+</div>
+<div class="paragraph">
+<p>The first thing we&#8217;ll do is require the user to log in with GitHub credentials.
+Why?
+Partly because the Search API is throttled pretty aggressively, and the rate limits are higher with authenticated access.
+But also because our user is going to need the ability to search issues in private repositories.
+To make this easier, our program will try to get GitHub credentials from Git&#8217;s credential store, but it&#8217;ll fall back to a login form, which looks like <a href="#search_login_ui">Login UI</a>.</p>
+</div>
+<div id="search_login_ui" class="imageblock">
+<div class="content">
+<img src="images/btwg_0401.png" alt="btwg 0401">
+</div>
+<div class="title">Figure 4. Login UI</div>
+</div>
+<div class="paragraph">
+<p>Once the user logs in, they&#8217;ll be shown a search box.
+Typing in a search query and hitting Enter will result in a scrollable list of search results, with titles and the first line of the description.
+Clicking a search result opens the issue in the user&#8217;s browser.</p>
+</div>
+<div class="paragraph">
+<p>That&#8217;s about it.
+This application only has two main screens from the user&#8217;s point of view.
+It&#8217;s a simple, focused tool to solve a very tightly defined problem, so the code shouldn&#8217;t be too hard.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_python">Python</h3>
+<div class="paragraph">
+<p>Now that we know how the program should act, let&#8217;s decide how it should <em>work</em>.</p>
+</div>
+<div class="paragraph">
+<p>We&#8217;ll use Python for our implementation language, for several reasons.
+First, because we haven&#8217;t yet seen it in this book, and we like to expose you to a wide variety of languages.
+One of our goals is to help the reader explore technologies they might not have seen before.</p>
+</div>
+<div class="paragraph">
+<p>Secondly, there&#8217;s a Python library for building GUI applications that run without modification on Mac OS X, Linux, and Windows.
+Surprisingly, this is a fairly unique feature among modern high-level programming languages.
+If you want this capability elsewhere, you usually have to use a high-complexity framework, a lower-level language like C++, or both.</p>
+</div>
+<div class="paragraph">
+<p>Thirdly, this will help make it easy to distribute.
+There is a Python package that bundles an entire Python program and all of its dependencies into a single file (or <em>.app</em> bundle on OS X).
+So giving this program to a colleague is as easy as emailing her a ZIP file, which will help with our use case: a nontechnical user might not be totally comfortable clicking through an installer (or even have permissions to do so on their machine).</p>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s take a quick look at the libraries we&#8217;ll be using in our application&#8217;s code.
+We&#8217;ll see them in action later on, but a quick overview will help you understand what each one is trying to do.
+As is unfortunately typical with Python development, installation methods vary from package to package, so we&#8217;ll also tell you how to get each one onto your machine.</p>
+</div>
+<div class="sect3">
+<h4 id="_agithub">AGitHub</h4>
+<div class="paragraph">
+<p>The first thing we should mention is the library we&#8217;ll use to talk to the GitHub API, which is called <code>agithub</code>.
+<code>agithub</code> is a very thin layer that converts GitHub&#8217;s REST API into method calls on objects, resulting in delightfully readable code.</p>
+</div>
+<div class="paragraph">
+<p><code>agithub</code> can be found at <a href="https://github.com/jpaugh/agithub" class="bare">https://github.com/jpaugh/agithub</a>, and the "installation" is simply to download a copy of the <em>agithub.py</em> source file and place it alongside your project files.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_wxpython">WxPython</h4>
+<div class="paragraph">
+<p>WxPython is how we&#8217;ll create the graphical interface for our application.
+It&#8217;s an object-oriented Python layer over the top of a toolkit called WxWidgets, which is itself a common-code adapter for native UI toolkits.
+WxWidgets supports Linux, Mac, and Windows operating systems with native controls, so you can access all of those platforms with the same Python code.</p>
+</div>
+<div class="paragraph">
+<p>Information about the WxPython project can be found at <a href="http://www.wxpython.org" class="bare">http://www.wxpython.org</a>, and you&#8217;ll find a download link for your platform on the lefthand side of the page.
+The next version of WxPython (code-named "Phoenix") will be installable via PIP, but at the time of this writing Phoenix is still prerelease software, so it&#8217;s probably safer to use the stable version.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>A bit of background on Python: it&#8217;s undergoing a transition.
+Currently there are two actively used versions: Python 2.7 and Python 3 (3.5 at the time of this writing).
+Most of the details are unimportant, but in order to follow along with this example, you&#8217;ll have to be running Python 2.7, because WxPython doesn&#8217;t currently support Python 3.
+Support for Python 3 is planned for the upcoming Phoenix release, so most of the following code is written in a "polyglot" fashion, so you shouldn&#8217;t run into any trouble running it under Python 3 if Phoenix has arrived by the time you read this.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_pyinstaller">PyInstaller</h4>
+<div class="paragraph">
+<p>PyInstaller will be our distribution tool.
+Its main function is to read your Python code, analyze it to discover all its dependencies, then collect all these files (including the Python interpreter) and put them in one directory.
+It can even wrap all of that up in a single package that, when double-clicked, runs your program.
+It does all this without needing much input from you, and there are only a few configuration options.
+If you&#8217;ve written GUI applications before, you&#8217;ll know how hard each of these problems are.</p>
+</div>
+<div class="paragraph">
+<p>For information on this project, you can visit <a href="http://pythonhosted.org/PyInstaller" class="bare">http://pythonhosted.org/PyInstaller</a>.
+You can install it using Python&#8217;s package manager by running <code>pip install pyinstaller</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_the_code">The Code</h3>
+<div class="paragraph">
+<p>Alright, now you have an idea of which parts of the Python ecosystem will be helping us on our journey.
+Let&#8217;s get started looking at the code that brings them all together.
+We&#8217;ll start with this skeleton file:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-python" data-lang="python">#!/usr/bin/env python <b class="conum">(1)</b>
+
+import os, subprocess
+import wx
+from agithub import Github <b class="conum">(2)</b>
+
+class SearchFrame(wx.Frame): <b class="conum">(3)</b>
+    pass
+
+if __name__ == '__main__': <b class="conum">(4)</b>
+    app = wx.App() <b class="conum">(5)</b>
+    SearchFrame(None)
+    app.MainLoop()</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s take a look at a few key things:</p>
+</div>
+<div class="colist arabic">
+<ol>
+<li>
+<p>The "shebang" specifies that this is a Python 2.7 program.</p>
+</li>
+<li>
+<p>Here we import our handy libraries.
+We import WxPython (<code>wx</code>) whole cloth, but with <code>agithub</code> we only need the <code>Github</code> (note the capitalization) class.
+<code>os</code> and <code>subprocess</code> come from the Python standard library.</p>
+</li>
+<li>
+<p>This is the class for our main window.
+We&#8217;ll walk through the particulars later on when we discuss the real implementation.</p>
+</li>
+<li>
+<p>In Python, you create the main entry point of an application using this syntax.</p>
+</li>
+<li>
+<p>And this is how you write a "main" function in WxPython.
+We instantiate an <code>App</code> instance, create an instance of our top-level frame, and run the app&#8217;s main loop.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>If you run this program right now, your command line will appear to hang, but it&#8217;s actually waiting for GUI input.
+This is because the wx library won&#8217;t create a "frame" window that has no contents.
+Let&#8217;s correct that, but first a quick diversion into Git internals to make our experience a bit nicer.</p>
+</div>
+<div class="sect3">
+<h4 id="_git_credential_helper">Git Credential Helper</h4>
+<div class="paragraph">
+<p>That&#8217;s how most of the UI code is going to be structured, but before we go any further, we should define a function to help us get the user&#8217;s GitHub credentials.
+We&#8217;ll be cheating a bit, by asking Git if it has the user&#8217;s login and password.</p>
+</div>
+<div class="paragraph">
+<p>We&#8217;ll leverage the <code>git credential fill</code> command.
+This is used internally by Git to avoid having to ask the user for their GitHub password every time they interact with a GitHub remote.
+The way it works is by accepting all the known facts about a connection as text lines through <code>stdin</code>, in the format <code>&lt;key&gt;=&lt;value&gt;</code>.
+Once the caller has supplied all the facts it knows, it can close the stdin stream (or supply an empty line), and Git will respond with all the facts <em>it</em> knows about this connection.
+With any luck, this will include the user&#8217;s login and password.
+The whole interaction looks a bit like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">$ echo "host=github.com" | git credential fill <b class="conum">(1)</b>
+host=github.com
+username=ben <b class="conum">(2)</b>
+password=(redacted)</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<ol>
+<li>
+<p>This passes a single line to <code>git credential</code> and closes <code>stdin</code>, which Git will recognize as the end of input.</p>
+</li>
+<li>
+<p>Git responds with all the facts it knows about the connection.
+This includes the input values, as well as the username and password if Git knows them.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>One other thing you should know about <code>git-credential</code> is that by default, if it doesn&#8217;t know anything about the host, it&#8217;ll ask the user at the terminal.
+That&#8217;s bad for a GUI app, so we&#8217;re going to be disabling that feature through the use of the <code>GIT_ASKPASS</code> environment variable.</p>
+</div>
+<div class="paragraph">
+<p>Here&#8217;s what our helper looks like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-python" data-lang="python">GITHUB_HOST = 'github.com'
+def git_credentials():
+    os.environ['GIT_ASKPASS'] = 'true' <b class="conum">(1)</b>
+    p = subprocess.Popen(['git', 'credential', 'fill'],
+                         stdout=subprocess.PIPE,
+                         stdin=subprocess.PIPE) <b class="conum">(2)</b>
+    stdout,stderr = p.communicate('host={}\n\n'.format(GITHUB_HOST)) <b class="conum">(3)</b>
+
+    creds = {}
+    for line in stdout.split('\n')[:-1]: <b class="conum">(4)</b>
+        k,v = line.split('=')
+        creds[k] = v
+    return creds <b class="conum">(5)</b></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<ol>
+<li>
+<p>Here we set <code>GIT_ASKPASS</code> to the string <code>'true'</code>, which is a UNIX program that always succeeds, which will in turn cause <code>git-credential</code> to stop trying to get credentials when it gets to the "ask the user" stage.</p>
+</li>
+<li>
+<p><code>subprocess.Popen</code> is the way you use a program with stdin and stdout in Python.
+The first argument is a list of arguments for the new program, and we also specify that we want stdin and stdout to be captured.</p>
+</li>
+<li>
+<p><code>p.communicate</code> does the work of writing to stdin and returning the contents of stdout.
+It also returns the contents of stderr, which we ignore in this program.</p>
+</li>
+<li>
+<p>Here we process the stdout contents by splitting each line at the = character and slurping it into a dictionary.</p>
+</li>
+<li>
+<p>So the return value from this call should be a dictionary with <code>'username'</code> and <code>'password'</code> values.
+Handy!</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_windowing_and_interface">Windowing and Interface</h4>
+<div class="paragraph">
+<p>Okay, so now we have something that can help us skip a login screen, but we don&#8217;t have a way of showing that login screen to the user.
+Let&#8217;s get closer to that goal by filling in the main frame&#8217;s implementation:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-python" data-lang="python">class SearchFrame(wx.Frame):
+    def __init__(self, *args, **kwargs): <b class="conum">(1)</b>
+        kwargs.setdefault('size', (600,500))
+        wx.Frame.__init__(self, *args, **kwargs)
+
+        self.credentials = {}
+        self.orgs = []
+
+        self.create_controls()
+        self.do_layout()
+        self.SetTitle('GitHub Issue Search')
+
+        # Try to pre-load credentials from Git's cache
+        self.credentials = git_credentials()
+        if self.test_credentials():
+            self.switch_to_search_panel()
+
+        self.Show()</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<ol>
+<li>
+<p>There&#8217;s a bit of syntax here that might be confusing.
+The <code><strong>args</code> and <code></strong>*kwargs</code> entries here are ways of capturing multiple arguments into one parameter.
+For now, just know that we&#8217;re only capturing them here so we can pass them to the parent class constructor two lines down.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>The <code><em>init</em></code> method is the constructor, so this is where we start when the main function calls <code>SearchFrame()</code>.
+Here&#8217;s what&#8217;s happening at a high level&#x2014;we&#8217;ll dig into the details in a bit:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Set up some layout dimensions and pass to the parent class&#8217;s constructor</p>
+</li>
+<li>
+<p>Create the UI controls</p>
+</li>
+<li>
+<p>Retrieve the credentials from the user using the credential helper we described earlier</p>
+</li>
+<li>
+<p>Change the title and display the application to the user</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Before we get to <em>how</em> all those things are done, let&#8217;s step back a bit and talk about this class&#8217;s job.
+It&#8217;s responsible for maintaining the top-level <em>frame</em> (a window with a title bar, a menu, and so on), and deciding what&#8217;s displayed in that frame.
+In this case, we want to show a login UI first, and when we get valid credentials (either from Git or the user), we&#8217;ll switch to a searching UI.</p>
+</div>
+<div class="paragraph">
+<p>Alright, enough background.
+Let&#8217;s walk through the code for getting and checking credentials:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-python" data-lang="python">    def login_accepted(self, username, password):
+        self.credentials['username'] = username
+        self.credentials['password'] = password
+        if self.test_credentials():
+            self.switch_to_search_panel()
+
+    def test_credentials(self):
+        if any(k not in self.credentials for k in ['username', 'password']):
+            return False
+        g = Github(self.credentials['username'], self.credentials['password'])
+        status,data = g.user.orgs.get() <b class="conum">(1)</b>
+        if status != 200:
+            print('bad credentials in store')
+            return False
+        self.orgs = [o['login'] for o in data] <b class="conum">(2)</b>
+        return True
+
+    def switch_to_search_panel(self):
+        self.login_panel.Destroy()
+        self.search_panel = SearchPanel(self,
+                                        orgs=self.orgs,
+                                        credentials=self.credentials)
+        self.sizer.Add(self.search_panel, 1, flag=wx.EXPAND | wx.ALL, border=10)
+        self.sizer.Layout()</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<ol>
+<li>
+<p>The <code>agithub</code> library always returns two values from every function call.
+Python lets us bind these directly to variables with this <code>a,b = &lt;expr&gt;</code> syntax.</p>
+</li>
+<li>
+<p><code>agithub</code> decodes the JSON from the API call into a Python dictionary.
+Here we&#8217;re only really interested in the names of the organization, so we use a <em>list comprehension</em>, where we tell Python to only keep the value of the <code>"login"</code> field from each dictionary in the <code>data</code> list.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Each of these three methods comes in at a different point during our program&#8217;s execution.
+If our credentials are coming from Git, we proceed straight to <code>test_<span class="keep-together">credentials</span></code>; if they&#8217;re coming from the login panel (see <a href="#github_login_panel_section">GitHub Login</a>), they go through the <code>login_accepted</code> callback first, which then calls <code>test_credentials</code>.</p>
+</div>
+<div class="paragraph">
+<p>Either way, what we do is try to fetch a list of the user&#8217;s organizations, to see if they work.
+Here you can see the usage pattern for <code>agithub</code>&#x2014;the URL path is mapped to object-property notation on an instance of the <code>Github</code> class, and the HTTP verb is mapped to a method call.
+The return values are a status code and the data, which has been decoded into a dictionary object.
+If it fails&#x2014;meaning the returned status is <span class="keep-together">not <code>200</code></span>&#x2014;we send the user to the login panel.
+If it succeeds, we call <code>switch_to_search_panel</code>.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>We&#8217;re doing a synchronous network call on the UI thread.
+This is usually a bad idea, because the UI will become unresponsive until the network call completes.
+Ideally we&#8217;d move this out onto another thread, and get the return value with a message.
+However, this would add length and complexity to a chapter already rife with both, so we&#8217;ve decided not to include this advanced topic here.
+We hope you&#8217;ll forgive us this small simplification; for this use case, the synchronous code will be just fine.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The last method handles the UI switch.
+The login panel is referenced by two things: the <code>SearchFrame</code> instance (the parent window), and the sizer that&#8217;s controlling its layout.
+Fortunately, calling the <code>Destroy()</code> method cleans both of those up, so we can then create the <code>SearchPanel</code> instance and add it to our sizer.
+Doing this requires a specific call to the sizer&#8217;s <code>Layout()</code> method; otherwise, the sizer won&#8217;t know that it needs to adjust the position and size of the new panel:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-python" data-lang="python">    def create_controls(self):
+        # Set up a menu. This is mainly for "Cmd-Q" behavior on OSX
+        filemenu = wx.Menu()
+        filemenu.Append(wx.ID_EXIT, '&amp;Exit')
+        menuBar = wx.MenuBar()
+        menuBar.Append(filemenu, '&amp;File')
+        self.SetMenuBar(menuBar)
+
+        # Start with a login UI
+        self.login_panel = LoginPanel(self, onlogin=self.login_accepted)
+
+    def do_layout(self):
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
+        self.sizer.Add(self.login_panel, 1, flag=wx.EXPAND | wx.ALL, border=10)
+        self.SetSizer(self.sizer)</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>create_controls</code> is fairly straightforward.
+It instantiates a menu that only contains File&#8594;Exit, and a login panel, whose implementation we&#8217;ll cover a bit later on.
+Note that when we create a visible control, we pass <code>self</code> as the first parameter to the constructor.
+That&#8217;s because the <code>SearchFrame</code> instance we&#8217;re constructing is the parent window of that control.</p>
+</div>
+<div class="paragraph">
+<p><code>do_layout</code> uses a WxWidgets feature called <em>sizers</em> to do some automated layout.
+Sizers are a complex topic, but here&#8217;s all you need to know about this snippet:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A <code>BoxSizer</code> stacks widgets in a single direction, in this case vertically.</p>
+</li>
+<li>
+<p>The second parameter to <code>sizer.Add</code> is a scaling factor.
+If it&#8217;s zero, the widget you&#8217;re adding will always stay the same size if the parent window resizes; if it&#8217;s anything else, all the things the sizer is controlling will adjust to fill their container.
+There&#8217;s only one control in this sizer, but we still want it to take up the full area of the window, so we pass <code>1</code>.</p>
+</li>
+<li>
+<p>The <code>border</code> parameter tells the sizer how much area to leave around the widget as padding.</p>
+</li>
+<li>
+<p>The <code>wx.EXPAND</code> flag tells the sizer that we want the widget to expand in the direction the sizer isn&#8217;t stacking.
+In this case, we&#8217;re stacking vertically, but we also want this widget to expand horizontally.</p>
+</li>
+<li>
+<p>The <code>wx.ALL</code> flag specifies which edges of the widget should have the border area.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s make sure we&#8217;re following good practices, and write some tests.
+There isn&#8217;t a lot here we can verify automatedly, but what there is should be covered:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-python" data-lang="python">from nose.tools import eq_, ok_, raises <b class="conum">(1)</b>
+
+class TestApp:
+    def setUp(self): <b class="conum">(2)</b>
+        self.f = None
+        self.app = wx.App()
+
+    def tearDown(self):
+        if self.f:
+           self.f.Destroy()
+        self.app.Destroy()
+
+    def test_switching_panels(self): <b class="conum">(3)</b>
+        self.f = SearchFrame(None, id=-1)
+        # Sub-panels should exist, and be of the right type
+        ok_(isinstance(self.f.login_panel, LoginPanel))
+        ok_(isinstance(self.f.search_panel, SearchPanel))
+        # Already destroyed
+        raises(RuntimeError, lambda: self.f.login_panel.Destroy())
+        # Not already destroyed
+        ok_(self.f.search_panel.Destroy())</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<ol>
+<li>
+<p>Here we&#8217;re using a testing tool called Nose.
+Install it with <code>pip install nose</code>, and invoke it at the command line by typing <code>nosetests app.py</code>.
+It uses naming conventions to identify tests and fixtures, and is generally nice to work with.</p>
+</li>
+<li>
+<p>Nose will automatically find these <code>setUp</code> and <code>tearDown</code> methods, and call them before and after each test method is run.
+In this case, we&#8217;re just managing the frames we want to test, as well as an <code>App</code> instance for all of them to belong to.</p>
+</li>
+<li>
+<p>Here&#8217;s a test method that Nose will find and run.
+We ensure the subpanels are the right type, and that we&#8217;ve auto-transitioned to the SearchPanel by finding credentials in Git&#8217;s storage.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>That&#8217;s it!
+Aside from managing a couple of fields, most of this code is managing the UI, which is almost exactly what we&#8217;d want from a UI class.
+Let&#8217;s write the first of the two panels we swap in and out.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="github_login_panel_section">GitHub Login</h4>
+<div class="paragraph">
+<p>The <code>LoginPanel</code> class is similar in structure to the <code>SearchFrame</code> class, with a couple of key differences, which we&#8217;ll describe after the wall of code:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-python" data-lang="python">class LoginPanel(wx.Panel):
+    def __init__(self, *args, **kwargs):
+        self.callback = kwargs.pop('onlogin', None)
+        wx.Panel.__init__(self, *args, **kwargs)
+
+        self.create_controls()
+        self.do_layout()
+
+    def create_controls(self):
+        self.userLabel = wx.StaticText(self, label='Username:')
+        self.userBox = wx.TextCtrl(self, style=wx.TE_PROCESS_ENTER)
+        self.passLabel = wx.StaticText(self, label='Password (or token):')
+        self.passBox = wx.TextCtrl(self, style=wx.TE_PROCESS_ENTER)
+        self.login = wx.Button(self, label='Login')
+        self.error = wx.StaticText(self, label='')
+        self.error.SetForegroundColour((200,0,0))
+
+        # Bind events
+        self.login.Bind(wx.EVT_BUTTON, self.do_login)
+        self.userBox.Bind(wx.EVT_TEXT_ENTER, self.do_login)
+        self.passBox.Bind(wx.EVT_TEXT_ENTER, self.do_login)
+
+    def do_layout(self):
+        # Grid arrangement for controls
+        grid = wx.GridBagSizer(3,3)
+        grid.Add(self.userLabel, pos=(0,0),
+                 flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
+        grid.Add(self.userBox, pos=(0,1),
+                 flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=5)
+        grid.Add(self.passLabel, pos=(1,0),
+                 flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
+        grid.Add(self.passBox, pos=(1,1),
+                 flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=5)
+        grid.Add(self.login, pos=(2,0), span=(1,2),
+                 flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=5)
+        grid.Add(self.error, pos=(3,0), span=(1,2),
+                 flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=5)
+        grid.AddGrowableCol(1)
+
+        # Center the grid vertically
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add((0,0), 1)
+        vbox.Add(grid, 0, wx.EXPAND)
+        vbox.Add((0,0), 2)
+        self.SetSizer(vbox)
+
+    def do_login(self, _):
+        u = self.userBox.GetValue()
+        p = self.passBox.GetValue()
+        g = Github(u, p)
+        status,data = g.issues.get()
+        if status != 200:
+            self.error.SetLabel('ERROR: ' + data['message'])
+        elif callable(self.callback):
+            self.callback(u, p)</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>There&#8217;s some structure that&#8217;s similar to the preceding code.
+We&#8217;ll start with the constructor.</p>
+</div>
+<div class="paragraph">
+<p>Recall that this panel is created with a keyword argument in <code>SearchFrame&#8217;s <code><span class="keep-together">create</span>_controls</code> method, like `LoginPanel(self, onlogin=self.login_accepted)</code>.
+In the constructor definition, we pull that callback out and store it for later.
+Afterward, we just call the two other construction functions and return.</p>
+</div>
+<div class="paragraph">
+<p><code>create_controls</code> has more to it than <code>SearchFrame&#8217;s version, because this panel has more controls.
+Every static-text, text-input, and button control gets its own line of code.
+The `wx.TE_PROCESS_ENTER</code> style tells the library we want an event to be triggered if the user presses the Enter key while the cursor is inside that text box.</p>
+</div>
+<div class="paragraph">
+<p>The next block binds control events to method calls.
+Every event in WxPython will call the handler with a single argument, an object that contains information about the event.
+That means we can use the same function to handle any number of different kinds of events, so we do&#x2014;the <code>ENTER</code> handlers for both text boxes and the <code>BUTTON</code> handler for the button all go through <code>self.do_login</code>.</p>
+</div>
+<div class="paragraph">
+<p><code>do_layout</code> uses a different kind of sizer&#x2014;a <code>GridBagSizer</code>.
+Again, the topic of sizers is <em>way</em> outside the scope of this chapter, but just know that this kind arranges things in a grid, and you can allow some of the rows or columns to stretch to fill the container.
+Here we drop all of the controls into their positions with the <code>pos=(r,c)</code> notation (here "rows" come first, which isn&#8217;t like most coordinate systems), and cause one control to span two columns with the <code>span</code> parameter.
+The <code>flags</code> and <code>border</code> parameters mostly mean the same things as before, and the <code>AddGrowableCol</code> function tells the layout engine which parts of the grid should be allowed to stretch.</p>
+</div>
+<div class="paragraph">
+<p>Then we do something curious: we put the <code>GridBagSizer</code> <em>into another sizer</em>.
+Sizer nesting is a powerful feature, and allows almost any window layout to be possible&#x2014;although perhaps not easy or simple.
+The vertical box sizer also contains some bare tuples; this special form is called "adding a spacer."
+In this case, we sandwich the sizer with all the controls between two spacers with different weights, making it float about a third of the way down the window.
+The effect is like <a href="#search_resizing">Resizing behavior of login UI</a>.</p>
+</div>
+<div id="search_resizing" class="imageblock">
+<div class="content">
+<img src="images/btwg_0402.png" alt="btwg 0402">
+</div>
+<div class="title">Figure 5. Resizing behavior of login UI</div>
+</div>
+<div class="paragraph">
+<p>Then comes the <code>do_login</code> method, which tests out the given credentials, and if they work, passes them back through the callback set at construction time.
+If they don&#8217;t work, it sets the text of a label, whose foreground color has been set to a nice, alarming shade of red.</p>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s make sure this behavior is tested at least a little bit.
+Again, there&#8217;s not much that it&#8217;s doing other than setting up WxPython stuff, but we can validate that a login error is displayed by adding this method to the test class:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-python" data-lang="python">    def test_login_panel(self):
+        self.f = wx.Frame(None)
+        lp = LoginPanel(self.f)
+        eq_(lp.error.GetLabelText(), '')
+        lp.do_login(None)
+        ok_(lp.error.GetLabelText().startswith('ERROR'))</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_github_search">GitHub Search</h4>
+<div class="paragraph">
+<p>Once the user has successfully logged in, we destroy the <code>LoginPanel</code> instance and show the <code>SearchPanel</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-python" data-lang="python">class SearchPanel(wx.Panel):
+    def __init__(self, *args, **kwargs):
+        self.orgs = kwargs.pop('orgs', [])
+        self.credentials = kwargs.pop('credentials', {}) <b class="conum">(1)</b>
+        wx.Panel.__init__(self, *args, **kwargs)
+
+        self.create_controls()
+        self.do_layout()
+
+    def create_controls(self):
+        self.results_panel = None
+        self.orgChoice = wx.Choice(self, choices=self.orgs, style=wx.CB_SORT)
+        self.searchTerm = wx.TextCtrl(self, style=wx.TE_PROCESS_ENTER)
+        self.searchTerm.SetFocus()
+        self.searchButton = wx.Button(self, label="Search")
+
+        # Bind events <b class="conum">(2)</b>
+        self.searchButton.Bind(wx.EVT_BUTTON, self.do_search)
+        self.searchTerm.Bind(wx.EVT_TEXT_ENTER, self.do_search)
+
+    def do_layout(self):
+        # Arrange choice, query box, and button horizontally
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        hbox.Add(self.orgChoice, 0, wx.EXPAND)
+        hbox.Add(self.searchTerm, 1, wx.EXPAND | wx.LEFT, 5)
+        hbox.Add(self.searchButton, 0, wx.EXPAND | wx.LEFT, 5)
+
+        # Dock everything to the top, leaving room for the results
+        self.vbox = wx.BoxSizer(wx.VERTICAL)
+        self.vbox.Add(hbox, 0, wx.EXPAND) <b class="conum">(3)</b>
+        self.SetSizer(self.vbox)
+
+    def do_search(self, event):
+        term = self.searchTerm.GetValue()
+        org = self.orgChoice.GetString(self.orgChoice.GetCurrentSelection())
+        g = Github(self.credentials['username'], self.credentials['password'])
+        code,data = g.search.issues.get(q="user:{} {}".format(org, term)) <b class="conum">(4)</b>
+        if code != 200:
+            self.display_error(code, data)
+        else:
+            self.display_results(data['items'])
+
+    def display_results(self, results): <b class="conum">(5)</b>
+        if self.results_panel:
+            self.results_panel.Destroy()
+        self.results_panel = SearchResultsPanel(self, -1, results=results)
+        self.vbox.Add(self.results_panel, 1, wx.EXPAND | wx.TOP, 5)
+        self.vbox.Layout()
+
+    def display_error(self, code, data): <b class="conum">(6)</b>
+        if self.results_panel:
+            self.results_panel.Destroy()
+        if 'errors' in data:
+            str = ''.join('\n\n{}'.format(e['message']) for e in data['errors'])
+        else:
+            str = data['message']
+        self.results_panel = wx.StaticText(self, label=str)
+        self.results_panel.SetForegroundColour((200,0,0))
+        self.vbox.Add(self.results_panel, 1, wx.EXPAND | wx.TOP, 5)
+        self.vbox.Layout()
+        width = self.results_panel.GetSize().x
+        self.results_panel.Wrap(width)</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>There&#8217;s quite a bit here, but some of it is familiar.
+We&#8217;ll skip the usual walkthrough to point out a couple of interesting features:</p>
+</div>
+<div class="colist arabic">
+<ol>
+<li>
+<p>When creating the panel, we pass in the user&#8217;s credentials and list of organizations as keyword arguments, so they show up in the <code>kwargs</code> dictionary.
+Here we use <code>pop</code> to make sure the parent class&#8217;s constructor doesn&#8217;t get confused by them.</p>
+</li>
+<li>
+<p>Here we capture both the search button&#8217;s "click" event, as well as the text box&#8217;s "enter key" event.
+Both should cause the search to be performed.</p>
+</li>
+<li>
+<p>When we add the search bar to the sizer, we use <code>0</code> as a scale factor.
+This means it shouldn&#8217;t expand to fit the available size, but keep its own size instead, to leave room to add a results panel later on.</p>
+</li>
+<li>
+<p>Here&#8217;s where the actual search is being done.
+We get the search term and organization, and send them to the <code>agithub</code> instance, which returns our results and an HTTP result code.</p>
+</li>
+<li>
+<p>We pass the search results into another class, then add it to the main sizer with parameters to fill the remaining available space.</p>
+</li>
+<li>
+<p>If an error is returned from the search call instead, we display it here.
+There&#8217;s some code to adjust the wrap width of the text, based on the laid-out width of the control.
+This isn&#8217;t a great approach, but doing it better is left as an exercise for the reader.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Again, there&#8217;s a fair amount of code here, but most of it should look familiar.
+Here&#8217;s the test code that covers the previous code:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-python" data-lang="python">    def test_search_panel(self):
+        self.f = wx.Frame(None)
+        sp = SearchPanel(self.f, orgs=['a', 'b', 'c'])
+        eq_(0, sp.orgChoice.GetCurrentSelection())
+        eq_('a', sp.orgChoice.GetString(0))
+        sp.display_error(400, {'errors': [{'message': 'xyz'}]})
+        ok_(isinstance(sp.results_panel, wx.StaticText))
+        eq_('xyz', sp.results_panel.GetLabelText().strip())</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_displaying_results">Displaying Results</h4>
+<div class="paragraph">
+<p>So now we have our login panel, and a way for the user to enter a search query, but no way to display results.
+Let&#8217;s fix that.</p>
+</div>
+<div class="paragraph">
+<p>Whenever search results are retrieved, we create a new instance of <code>Search<span class="keep-together">Results</span><span class="keep-together">Panel</span></code>, which then creates a series of <code>SearchResult</code> instances.
+Let&#8217;s look at both of them together:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-python" data-lang="python">class SearchResultsPanel(wx.ScrolledWindow): <b class="conum">(1)</b>
+    def __init__(self, *args, **kwargs):
+        results = kwargs.pop('results', [])
+        wx.PyScrolledWindow.__init__(self, *args, **kwargs)
+
+        # Layout search result controls inside scrollable area
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        if not results:
+            vbox.Add(wx.StaticText(self, label="(no results)"), 0, wx.EXPAND)
+        for r in results:
+            vbox.Add(SearchResult(self, result=r),
+                     flag=wx.TOP | wx.BOTTOM, border=8)
+        self.SetSizer(vbox)
+        self.SetScrollbars(0, 4, 0, 0)
+
+class SearchResult(wx.Panel):
+    def __init__(self, *args, **kwargs):
+        self.result = kwargs.pop('result', {})
+        wx.Panel.__init__(self, *args, **kwargs)
+
+        self.create_controls()
+        self.do_layout()
+
+    def create_controls(self): <b class="conum">(2)</b>
+        titlestr = self.result['title']
+        if self.result['state'] != 'open':
+            titlestr += ' ({})'.format(self.result['state'])
+        textstr = self.first_line(self.result['body'])
+        self.title = wx.StaticText(self, label=titlestr)
+        self.text = wx.StaticText(self, label=textstr)
+
+        # Adjust the title font
+        titleFont = wx.Font(16, wx.FONTFAMILY_DEFAULT,
+                            wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+        self.title.SetFont(titleFont)
+
+        # Bind click and hover events on this whole control <b class="conum">(3)</b>
+        self.Bind(wx.EVT_LEFT_UP, self.on_click)
+        self.Bind(wx.EVT_ENTER_WINDOW, self.enter)
+        self.Bind(wx.EVT_LEAVE_WINDOW, self.leave)
+
+    def do_layout(self):
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(self.title, flag=wx.EXPAND | wx.BOTTOM, border=2)
+        vbox.Add(self.text, flag=wx.EXPAND)
+        self.SetSizer(vbox)
+
+    def enter(self, _):
+        self.title.SetForegroundColour(wx.BLUE)
+        self.text.SetForegroundColour(wx.BLUE)
+
+    def leave(self, _):
+        self.title.SetForegroundColour(wx.BLACK)
+        self.text.SetForegroundColour(wx.BLACK)
+
+    def on_click(self, event): <b class="conum">(4)</b>
+        import webbrowser
+        webbrowser.open(self.result['html_url'])
+
+    def first_line(self, body):
+        return body.split('\n')[0].strip() or '(no body)'</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<ol>
+<li>
+<p>The containing panel is simple enough that it only consists of a constructor.
+This class&#8217;s job is to contain the results and present them in a scroll window.</p>
+</li>
+<li>
+<p>A <code>SearchResult</code> is comprised of two static text controls, which contain the issue&#8217;s title and the first line of its body.</p>
+</li>
+<li>
+<p>We&#8217;re not only binding the click handler for this entire panel, but also the mouse-enter and mouse-leave events, so we can make it behave more like a link in a browser.</p>
+</li>
+<li>
+<p>Here&#8217;s how you open the default browser to a URL in Python.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>So now you&#8217;ve seen the code for a simple WxPython application.
+Using this library tends to produce code of a certain style, which is kind of verbose.
+The positive side of this is that nothing is hidden; all the layout for your app is done right in the code, with no "magic," and the fact that it can run without modification on just about anybody&#8217;s computer is a huge plus.
+WxPython may lack some facilities of newer frameworks, but there&#8217;s nothing better for getting a basic cross-platform UI out the door quickly.</p>
+</div>
+<div class="paragraph">
+<p>That&#8217;s all of the code!
+If you&#8217;ve been following along and typing all this code into a file, you can run that file and do issue searches.
+However, our use case has a nontechnical user running this; let&#8217;s see what can be done to make it easier for them to get started.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_packaging">Packaging</h3>
+<div class="paragraph">
+<p>What we&#8217;re not going to do is require anyone to install Python 2.7 and a bunch of packages.
+We&#8217;ll use PyInstaller to bundle our application into something that&#8217;s easy to distribute and run.</p>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s assume you wrote all the preceding code into a file called <em>search.py</em>, and <em><span class="keep-together">agithub.py</span></em> is sitting in the same directory.
+Here&#8217;s how to tell PyInstaller to generate a single application for you:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-console" data-lang="console">$ pyinstaller -w search.py</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>That&#8217;s it!
+The <code>-w</code> flag tells PyInstaller to create a "windowed" build of your application, rather than the default console build.
+On OS X, this generates a <em>search.app</em> application bundle, and on Windows this generates a <em>search.exe</em> file.
+You can take either of these to a computer with no Python installed, and they&#8217;ll run perfectly.</p>
+</div>
+<div class="paragraph">
+<p>That&#8217;s because PyInstaller has copied everything necessary for your program to run, from the Python interpreter on up, inside that file.
+The one I just generated is 67 MB, which seems large for such a simple program, but that number is more reasonable when you consider what&#8217;s inside the package.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_summary">Summary</h3>
+<div class="paragraph">
+<p>Whew!
+This chapter was quite a journey.
+Let&#8217;s take a breath, and look at what we&#8217;ve learned.</p>
+</div>
+<div class="paragraph">
+<p>The main bulk of the code in this chapter had to do with defining a graphical interface.
+Code for this task is always pretty verbose, because of the sheer complexity of the task.
+With WxPython in your tool belt, however, you can now write GUI applications using Python, with code that&#8217;s no harder to write than with other toolkits, and get the ability to run on every major platform for free.</p>
+</div>
+<div class="paragraph">
+<p>We saw how to ask Git for credentials to a Git server using <code>git credential</code>.
+This feature is quite capable, and includes the ability to write a custom credential storage backend, but we at least saw a peek into how it works.
+Using this knowledge, you can piggyback on your users' existing habits to avoid having to ask them for the same things over and over again.</p>
+</div>
+<div class="paragraph">
+<p>We also saw a rather nice HTTP API abstraction with <code>agithub</code>.
+We authenticated and queried the issue search API endpoint using what looked like object-method notation.
+<code>agithub</code> is a great example of how a library package can be both future-proof and idiomatic&#x2014;the library constructs a query URL by looking at the chain of properties and methods used in the call.
+This is a great jumping-off point for querying other REST APIs using the same pattern.</p>
+</div>
+<div class="paragraph">
+<p>Finally, the main thrust of this chapter was using the GitHub Search API.
+You&#8217;ve learned about its general behavior, the different categories of search, how to interpret and sort results, and ways of focusing a search to reduce the number of uninteresting results.
+Using this knowledge you should be able to find anything you&#8217;re looking for on GitHub or GitHub Enterprise.
+You also know that the search UI on GitHub is just a thin layer over the Search API, so the same tricks and techniques will serve you whether you&#8217;re writing code or using a browser.</p>
+</div>
+<div class="paragraph">
+<p>Time to switch gears a bit.
+The next chapter introduces the Commit Status API, which is a way of annotating individual commits in a Git repository with a "good" or "bad" flag.
+We&#8217;ll be using what only a few years ago would have been a polarizing choice: C# and the CLR.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2018-10-05 15:44:02 PDT
+</div>
+</div>
+</body>
+</html>
