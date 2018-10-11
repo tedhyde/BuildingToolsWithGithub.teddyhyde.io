@@ -597,36 +597,39 @@ for your Slack site. Typically this is the name of your organization.</p>
 <div class="sect4">
 <h5 id="_naming_the_channel">Naming the channel</h5>
 <div class="paragraph">
-<p>Once you have your slack site created, you need to create a channel.</p>
+<p>Once you have your slack site created, you need to create a channel as in <a href="#creating_a_channel_from_the_slack_sidebar">Creating a channel from the Slack sidebar</a>.</p>
 </div>
-<div class="imageblock">
+<div id="creating_a_channel_from_the_slack_sidebar" class="imageblock">
 <div class="content">
-<img src="images/hubot-create-channel.png" alt="Creating the #generic channel">
+<img src="images/btwg_08in01.png" alt="btwg 08in01">
 </div>
+<div class="title">Figure 1. Creating a channel from the Slack sidebar</div>
 </div>
 <div class="paragraph">
 <p>You can name the channel anything you want, but it is often a good
-mnemonic to use a name which suggests this is a channel where more
+mnemonic to use a name that suggests this is a channel where more
 serious work gets done. You could use a name like "PR Discussion" to
 indicate this is the channel where PRs are discussed. To keep things
-simple, we will use the name "#general". Once you click on
+simple, we will use the name "#general." Once you click
 the link to create a channel, you&#8217;ll see a popup asking for the name
 and an optional description. After you have created the channel,
-you will see a link to "Add a service integration."</p>
+you will see a link to "Add a service integration" as shown in <a href="#adding_service_integrations_to_slack">Adding service integrations to Slack</a>.</p>
 </div>
-<div class="imageblock">
+<div id="adding_service_integrations_to_slack" class="imageblock">
 <div class="content">
-<img src="images/hubot-add-service-integration.png" alt="Adding service integrations to Slack">
+<img src="images/btwg_08in02.png" alt="btwg 08in02">
 </div>
+<div class="title">Figure 2. Adding service integrations to Slack</div>
 </div>
 <div class="paragraph">
 <p>Slack supports many different service integrations, and one of them is
-Hubot.</p>
+Hubot as shown in <a href="#service_integration_options_for_slack">Service integration options for Slack</a>.</p>
 </div>
-<div class="imageblock">
+<div id="service_integration_options_for_slack" class="imageblock">
 <div class="content">
-<img src="images/hubot-choose-hubot-integration.png" alt="Choosing Hubot from the man Slack integration options">
+<img src="images/btwg_08in03.png" alt="btwg 08in03">
 </div>
+<div class="title">Figure 3. Service integration options for Slack</div>
 </div>
 <div class="paragraph">
 <p>Choosing Hubot takes you to a settings screen for your Hubot integration.</p>
@@ -641,12 +644,13 @@ revoke and reassign a token to your Hubot on this screen.</p>
 </div>
 <div class="paragraph">
 <p>You will also need to specify a name. Use "probot" and if you&#8217;d like,
-change the avatar associated with the Hubot.</p>
+change the avatar associated with the Hubot (these options are shown in <a href="#choose_hubots_name">Hubot configuration page for Slack</a>).</p>
 </div>
-<div class="imageblock">
+<div id="choose_hubots_name" class="imageblock">
 <div class="content">
-<img src="images/hubot-choose-username.png" alt="Choose Hubot's name">
+<img src="images/btwg_08in04.png" alt="btwg 08in04">
 </div>
+<div class="title">Figure 4. Hubot configuration page for Slack</div>
 </div>
 <div class="paragraph">
 <p>Make sure you save your integration before continuing.</p>
@@ -687,16 +691,17 @@ variable at the beginning of the line.</p>
 <div class="sect4">
 <h5 id="_a_first_conversation">A First Conversation</h5>
 <div class="paragraph">
-<p>Your bot should be setup and waiting in the #general room inside your
-Slack site. Go to the #general room. Then, you can test that hubot
+<p>Your bot should be set up and waiting in the #general room inside your
+Slack site. Go to the #general room. Then, you can test that Hubot
 is properly connectd by typing in the name of your Hubot
 and then a command like <code>the rules</code>. For example, if our Hubot is
-named <code>probot</code>, then we would type <code>probot the rules</code>.</p>
+named probot, then we would type <code>probot the rules</code>, which then displays the following conversation as shown in <a href="#hubots_built_in_repartee">Hubot&#8217;s built-in repartee</a>.</p>
 </div>
-<div class="imageblock">
+<div id="hubots_built_in_repartee" class="imageblock">
 <div class="content">
-<img src="images/hubot-verify.png" alt="Hubot telling us the rules">
+<img src="images/btwg_08in05.png" alt="btwg 08in05">
 </div>
+<div class="title">Figure 5. Hubot&#8217;s built-in repartee</div>
 </div>
 <div class="paragraph">
 <p>We see that our hubot printed out the rules it
@@ -707,12 +712,13 @@ short story in 1942).</p>
 <div class="sect4">
 <h5 id="_exploring_the_hubot_vocabulary">Exploring the Hubot Vocabulary</h5>
 <div class="paragraph">
-<p>Hubot out of the box supports many commands. To get a list, type "help".</p>
+<p>Hubot out-of-the-box supports many commands. To get a list, type help to see a list like that shown in <a href="#listing_the_hubot_vocabulary">Listing the Hubot vocabulary</a>.</p>
 </div>
-<div class="imageblock">
+<div id="listing_the_hubot_vocabulary" class="imageblock">
 <div class="content">
-<img src="images/hubot-help.png" alt="The built-in Hubot commands">
+<img src="images/btwg_08in06.png" alt="btwg 08in06">
 </div>
+<div class="title">Figure 6. Listing the Hubot vocabulary</div>
 </div>
 <div class="paragraph">
 <p>The <code>pug me</code> command is a favorite. Many people new to Hubot
@@ -1605,12 +1611,13 @@ link, we could merge the pull request from within the GitHub web UI.</p>
 we are looking at this pull request inside of GitHub, we can then navigate to the
 settings for our repository, follow the link to "Webhooks and
 Services" on the left navigation bar, and we will then find at the
-very bottom of the page a list of recent deliveries to our webhook.</p>
+very bottom of the page a list of recent deliveries to our webhook, as in <a href="#recent_failed_deliveries_from_our_webhook">Recent failed deliveries from our webhook</a>.</p>
 </div>
-<div class="imageblock">
+<div id="recent_failed_deliveries_from_our_webhook" class="imageblock">
 <div class="content">
-<img src="images/hubot-recent-deliveries.png" alt="A list of failed webhook deliveries">
+<img src="images/btwg_08in07.png" alt="btwg 08in07">
 </div>
+<div class="title">Figure 7. Recent failed deliveries from our webhook</div>
 </div>
 <div class="paragraph">
 <p>These requests all failed; our Hubot is not correctly configured
@@ -3023,7 +3030,7 @@ receiving (and faking data) coming from a GitHub webhook.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-10-11 15:37:40 PDT
+Last updated 2018-10-11 16:21:01 PDT
 </div>
 </div>
 </body>

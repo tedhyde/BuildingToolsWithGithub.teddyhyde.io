@@ -661,25 +661,25 @@ jekyll command, and whether to use <code>pygments</code> to do syntax highlighti
 </div>
 </div>
 <div class="paragraph">
-<p>This command builds the entirety of your jekyll directory, and then
+<p>This command builds the entirety of your Jekyll directory, and then
 starts a mini web server to serve the files up to you. If you then
-visit <code><a href="http://localhost:4000" class="bare">http://localhost:4000</a></code> in your web browser, you will see
-something the front page of your site and a single blog post listed in
-the index.</p>
+visit <em><a href="http://localhost:4000" class="bare">http://localhost:4000</a></em> in your web browser, you will see
+something on the front page of your site and a single blog post listed in
+the index, as shown in <a href="#bare-jekyll-site">A bare Jekyll site</a>.</p>
 </div>
 <div id="bare-jekyll-site" class="imageblock">
 <div class="content">
-<img src="images/jekyll-bare.png" alt="A bare Jekyll site">
+<img src="images/btwg_0601.png" alt="btwg 0601">
 </div>
 <div class="title">Figure 1. A bare Jekyll site</div>
 </div>
 <div class="paragraph">
 <p>Clicking into the link inside the "Blog Posts" section, you will then
-see your first post.</p>
+see your first post, as in <a href="#a-sample-post">A sample post</a>.</p>
 </div>
 <div id="a-sample-post" class="imageblock">
 <div class="content">
-<img src="images/jekyll-welcome.png" alt="A sample post co-authored by Tom Preston-Warner">
+<img src="images/btwg_0602.png" alt="btwg 0602">
 </div>
 <div class="title">Figure 2. A sample post</div>
 </div>
@@ -1060,12 +1060,11 @@ tied to an older version of the GitHub API, which means the documented
 functionality is often incorrect.</p>
 </div>
 <div class="paragraph">
-<p>If your blog is correctly setup, you will see something like Figure 3
-in the middle of your settings page.</p>
+<p>If your blog is correctly set up, you will see something like <a href="#settings-jekyll-blog">Settings for a Jekyll blog</a> in the middle of your settings page.</p>
 </div>
 <div id="settings-jekyll-blog" class="imageblock">
 <div class="content">
-<img src="images/jekyll-settings.png" alt="Settings for a Jekyll blog">
+<img src="images/btwg_0603.png" alt="btwg 0603">
 </div>
 <div class="title">Figure 3. Settings for a Jekyll blog</div>
 </div>
@@ -1303,29 +1302,29 @@ the data from the site using Archive.org?</p>
 <h4 id="_jekyll_scraping_tactics">Jekyll Scraping Tactics</h4>
 <div class="paragraph">
 <p>We can start by looking at the structure of the archive presented on
-Archive.org. Go to Archive.org, and enter "bytravelers.com" into the
-search box in the middle of the page,  and then click "BROWSE HISTORY"
-we will be presented with a calendar view which shows all the pages
-scraped by the Internet Archive for this site.</p>
+Archive.org. Go to Archive.org, enter "bytravelers.com" into the
+search box in the middle of the page, and then click "BROWSE HISTORY."
+You will see a calendar view that shows all the pages
+scraped by the Internet Archive for this site as shown in <a href="#calendar-view-archive">Calendar view of Archive.org</a>.</p>
 </div>
 <div id="calendar-view-archive" class="imageblock">
 <div class="content">
-<img src="images/jekyll-bytravelers-archive.png" alt="The calendar view for Archive.org">
+<img src="images/btwg_0604.png" alt="btwg 0604">
 </div>
 <div class="title">Figure 4. Calendar view of Archive.org</div>
 </div>
 <div class="paragraph">
 <p>In the middle of 2003 I took down the server, intending to
 upgrade it to another set of technologies, and never got around to
-completing this migration, and then lost the data. If we click on the
+completing this migration, and then lost the data. If we click the
 calendar item on June 6th, 2003, we will see a view of the data that
 was more or less complete at the height of the site&#8217;s functionality
 and data. There are a few broken links to images, but otherwise the
-site is functionally archived inside Archive.org</p>
+site is functionally archived inside Archive.org (<a href="#calendar-view-bytravelers">Archive of ByTravelers.com on Archive.org</a>).</p>
 </div>
 <div id="calendar-view-bytravelers" class="imageblock">
 <div class="content">
-<img src="images/jekyll-bytravelers-jun6.png" alt="Archive of Bytravelers.com on Archive.org">
+<img src="images/btwg_0605.png" alt="btwg 0605">
 </div>
 <div class="title">Figure 5. Archive of ByTravelers.com on Archive.org</div>
 </div>
@@ -2273,13 +2272,14 @@ we process the body with the <code>strip_html</code> filter and then truncate th
 text by 40 characters using the <code>truncatewords:40</code> filter.</p>
 </div>
 <div class="paragraph">
-<p>If we open <code><a href="http://localhost:4000" class="bare">http://localhost:4000</a></code> in our browser, we will see a
-simple index page with the titles of our posts.</p>
+<p>If we open <em><a href="http://localhost:4000" class="bare">http://localhost:4000</a></em> in our browser, we will see a
+simple index page with the titles of our posts, like <a href="#austere_but_a_step_in_the_right_direction">The Index Page, for a naked Jekyll blog</a>.</p>
 </div>
-<div class="imageblock">
+<div id="austere_but_a_step_in_the_right_direction" class="imageblock">
 <div class="content">
-<img src="images/jekyll-unformatted-index.png" alt="Austere but a step in the right direction">
+<img src="images/btwg_06in01.png" alt="btwg 06in01">
 </div>
+<div class="title">Figure 6. The Index Page, for a naked Jekyll blog</div>
 </div>
 <div class="paragraph">
 <p>This index page lists every post: let&#8217;s make it display only the last
@@ -2564,13 +2564,13 @@ your imagination.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>If we reload, we will see a much prettier version of the site.</p>
+<p>If we reload, we will see a much prettier version of the site (<a href="#jekyll-now-livelier">Restoring the original colors and images</a>).</p>
 </div>
 <div id="jekyll-now-livelier" class="imageblock">
 <div class="content">
-<img src="images/jekyll-now-livelier.png" alt="Restoring the original images and colors">
+<img src="images/btwg_0606.png" alt="btwg 0606">
 </div>
-<div class="title">Figure 6. Restoring the original colors and images</div>
+<div class="title">Figure 7. Restoring the original colors and images</div>
 </div>
 <div class="paragraph">
 <p>We&#8217;ve now entirely scraped an old site and built a new Jekyll blog, so
@@ -2675,7 +2675,7 @@ you to create Jekyll blog posts with the Git Data API.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-10-11 15:37:40 PDT
+Last updated 2018-10-11 16:21:02 PDT
 </div>
 </div>
 </body>

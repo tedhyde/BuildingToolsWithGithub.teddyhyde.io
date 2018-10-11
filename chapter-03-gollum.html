@@ -469,26 +469,27 @@ which we will talk about later).</p>
 <div class="paragraph">
 <p>Any repository on GitHub, public or private, can have an associated Gollum wiki.
 To create a wiki linked to your repository, visit the repository
-page and then look in the rightmost colum. You&#8217;ll see an icon which
-looks like a book, next to which will be the word "Wiki."</p>
+page and then look in the rightmost colum. You&#8217;ll see an icon that
+looks like a book, next to which will be the word "Wiki," as in <a href="#integrated_gollum_wiki_in_the_sidebar">Accessing the associated wiki from the sidebar</a>.</p>
 </div>
-<div class="imageblock">
+<div id="integrated_gollum_wiki_in_the_sidebar" class="imageblock">
 <div class="content">
-<img src="images/gollum-wiki.png" alt="Integrated Gollum Wiki in the Sidebar">
+<img src="images/btwg_03in01.png" alt="btwg 03in01">
 </div>
+<div class="title">Figure 1. Accessing the associated wiki from the sidebar</div>
 </div>
 <div class="paragraph">
-<p>Clicking on this link will bring you to a page where you are asked to
+<p>Clicking this link will bring you to a page where you are asked to
 create a wiki for the first time. GitHub will ask you to create the
-"Home" page, which is the starting point in a Gollum wiki. GitHub will
+"Home" page, which is the starting point in a Gollum wiki (<a href="#starting_a_gollum_wiki">Genesis of a new wiki, creating the home page</a>). GitHub will
 automatically create a page template with the project name; you can
-customize this information to suit your own needs. Clicking on the
-"Save Page" will save your first page and create the wiki for you.</p>
+customize this information to suit your own needs. Clicking "Save Page" will save your first page and create the wiki for you.</p>
 </div>
-<div class="imageblock">
+<div id="starting_a_gollum_wiki" class="imageblock">
 <div class="content">
-<img src="images/gollum-wiki-create.png" alt="Starting a Gollum Wiki">
+<img src="images/btwg_03in02.png" alt="btwg 03in02">
 </div>
+<div class="title">Figure 2. Genesis of a new wiki, creating the home page</div>
 </div>
 <div class="paragraph">
 <p>Your wiki is now as public as your repository is public. Public
@@ -653,14 +654,15 @@ Gollum repository for more details about the breadth of the image
 options.</p>
 </div>
 <div class="paragraph">
-<p>You can also add images using the editor on GitHub. But, you&#8217;ll notice
+<p>You can also add images using the editor on GitHub. But you&#8217;ll notice
 that either way you are adding a link to an image and that there is no
-way to upload images into GitHub from the editor.</p>
+way to upload images into GitHub from the editor (<a href="#no_image_upload_only_image_urls">No image upload, only image URLs</a>).</p>
 </div>
-<div class="imageblock">
+<div id="no_image_upload_only_image_urls" class="imageblock">
 <div class="content">
-<img src="images/gollum-image-url.png" alt="No image upload" width="only image URLs">
+<img src="images/btwg_03in03.png" alt="btwg 03in03">
 </div>
+<div class="title">Figure 3. No image upload, only image URLs</div>
 </div>
 <div class="paragraph">
 <p>For non-technical users, this makes Gollum Wikis on GitHub almost
@@ -710,14 +712,15 @@ $ git commit -m "Initial commit"</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>We&#8217;ve just created a wiki compatible with gollum. Let&#8217;s see what it
-looks like inside gollum. run the <code>gollum</code> command then open
-<code><a href="http://localhost:4567/" class="bare">http://localhost:4567/</a></code> in your browser.</p>
+<p>We&#8217;ve just created a wiki compatible with Gollum. Let&#8217;s see what it
+looks like inside Gollum. Run the <code>gollum</code> command then open
+<em><a href="http://localhost:4567/" class="bare">http://localhost:4567/</a></em> in your browser, as shown in <a href="#gollum_running_locally">Viewing the wiki home page running on our laptop</a>.</p>
 </div>
-<div class="imageblock">
+<div id="gollum_running_locally" class="imageblock">
 <div class="content">
-<img src="images/gollum-first-view.png" alt="Gollum running locally">
+<img src="images/btwg_03in04.png" alt="btwg 03in04">
 </div>
+<div class="title">Figure 4. Viewing the wiki home page running on our laptop</div>
 </div>
 <div class="paragraph">
 <p>As you can see, this tiny set of commands was enough to create the
@@ -1239,15 +1242,16 @@ without overloading the repository.</p>
 <h3 id="_reviewing_on_github">Reviewing on GitHub</h3>
 <div class="paragraph">
 <p>The raison d&#8217;etre for this wiki is to annotate a development project.
-If you follow the instructions above and create a new wiki for a
+If you follow the instructions and create a new wiki for a
 repository, you&#8217;ll then be able to push up the changes we&#8217;ve made
-using our <code>image.rb</code> script. Once you have created a new wiki, look
-for a box on the right which says "Clone this wiki locally".</p>
+using our image.rb script. Once you have created a new wiki, look
+for a box on the right that says "Clone this wiki locally," as seen in <a href="#gollum_git_clone_url">Getting the clone URL for our wiki</a>.</p>
 </div>
-<div class="imageblock">
+<div id="gollum_git_clone_url" class="imageblock">
 <div class="content">
-<img src="images/gollum-local-clone-url.png" alt="Gollum git clone URL">
+<img src="images/btwg_03in05.png" alt="btwg 03in05">
 </div>
+<div class="title">Figure 5. Getting the clone URL for our wiki</div>
 </div>
 <div class="paragraph">
 <p>Copy that link, and then enter a terminal window where we can then add a remote
@@ -1270,33 +1274,35 @@ $ git push</code></pre>
 </div>
 <div class="paragraph">
 <p>When we pull, we will be asked to merge our changes since GitHub
-created a <code>Home.md</code> file which did not exist in our local repository.
-We can just accept the merge as-is. The <code>git push</code> publishes our
+created a <em>Home.md</em> file that did not exist in our local repository.
+We can just accept the merge as is. The <code>git push</code> publishes our
 changes. If we then visit the wiki, we&#8217;ll see an additional file
-listed under the pages sidebar to the right. Clicking on the review
-page, we can see the images we&#8217;ve added most recently.</p>
+listed under the pages sidebar to the right. Clicking the Review
+page, as in <a href="#images_displayed_within_a_gollum_wiki">An image review page</a>, we can see the images we&#8217;ve added most recently.</p>
 </div>
-<div class="imageblock">
+<div id="images_displayed_within_a_gollum_wiki" class="imageblock">
 <div class="content">
-<img src="images/gollum-android-project1-review.png" alt="Images displayed within a Gollum wiki">
+<img src="images/btwg_03in06.png" alt="btwg 03in06">
 </div>
+<div class="title">Figure 6. An image review page</div>
 </div>
 <div class="paragraph">
 <p>Not sure why our designer is providing us with an image of a couch,
 but I am sure he has his reasons.</p>
 </div>
 <div class="paragraph">
-<p>Once you have published the file, we can click on the "Review" link in the
-sidebar to see the most current version of the "Review" page. We also
-can review the revisions of this file by clicking on the "3 Commits"
-(or whatever number of commits have occurred with this file).
+<p>Once we have published the file, we can click the Review link in the
+sidebar to see the most current version of the Review page. We also
+can review the revisions of this file by clicking the "3 Commits"
+(or whatever number of commits have occurred with this file)
 link right underneath the page title. Jumping onto that page shows us
-the full history of this file.</p>
+the full history of this file, as shown in <a href="#a_view_on_the_revisions_from_within_github">Wiki history review via the Commit Log</a>.</p>
 </div>
-<div class="imageblock">
+<div id="a_view_on_the_revisions_from_within_github" class="imageblock">
 <div class="content">
-<img src="images/gollum-android-project1-revisions.png" alt="A view on the revisions from within GitHub">
+<img src="images/btwg_03in07.png" alt="btwg 03in07">
 </div>
+<div class="title">Figure 7. Wiki history review via the Commit Log</div>
 </div>
 <div class="paragraph">
 <p>Clicking on any of the SHA hashes will display the page at that
@@ -1445,7 +1451,7 @@ application for searching GitHub issues. And we&#8217;ll do it in Python.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-10-11 15:37:41 PDT
+Last updated 2018-10-11 16:21:02 PDT
 </div>
 </div>
 </body>

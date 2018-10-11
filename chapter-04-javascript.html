@@ -755,13 +755,13 @@ references.</p>
 </ol>
 </div>
 <div class="paragraph">
-<p>If you load this up in your browser, you will see something like this:</p>
+<p>If you load this up in your browser, you will see something like <a href="#the_whole_messy_json">The whole messy JSON</a>.</p>
 </div>
-<div class="imageblock">
+<div id="the_whole_messy_json" class="imageblock">
 <div class="content">
-<img src="images/javascript-gollum.png" alt="The Whole Messy JSON">
+<img src="images/btwg_09in01.png" alt="btwg 09in01">
 </div>
-<div class="title">Figure 1. The Whole Messy JSON</div>
+<div class="title">Figure 1. The whole messy JSON</div>
 </div>
 <div class="paragraph">
 <p>That is a lot of data. AngularJS&#8217;s JSON filter pretty printed
@@ -793,13 +793,13 @@ src="angular.js"&gt;&lt;/script&gt;
 <p>We can filter this information by modifying the HTML to show just a
 few vital pieces of information from the repository JSON. Let&#8217;s
 display the <code>subscriber_count</code> and the <code>network_count</code>. Now we see
-something more palatable.</p>
+something more palatable (<a href="#pulling_out_what_we_want">Pulling out what we want</a>).</p>
 </div>
-<div class="imageblock">
+<div id="pulling_out_what_we_want" class="imageblock">
 <div class="content">
-<img src="images/javascript-gollum-precise.png" alt="Pulling Out What We Want">
+<img src="images/btwg_09in02.png" alt="btwg 09in02">
 </div>
-<div class="title">Figure 2. Pulling Out What We Want</div>
+<div class="title">Figure 2. Pulling out what we want</div>
 </div>
 <div class="paragraph">
 <p>We&#8217;ve just extracted the subscriber and network count from the gollum
@@ -1590,13 +1590,13 @@ console:</p>
 </div>
 </div>
 <div class="paragraph">
-<p>If you click on the link to the right for github.js, you&#8217;ll see this.</p>
+<p>If you click the link to the right for GitHub.js, you&#8217;ll see something like <a href="#an_unexpected_error">An unexpected error</a>.</p>
 </div>
-<div class="imageblock">
+<div id="an_unexpected_error" class="imageblock">
 <div class="content">
-<img src="images/javascript-underscore-missing.png" alt="An Unexpected Error">
+<img src="images/btwg_09in03.png" alt="btwg 09in03">
 </div>
-<div class="title">Figure 3. An Unexpected Error</div>
+<div class="title">Figure 3. An unexpected error</div>
 </div>
 <div class="paragraph">
 <p>You see at the point of error that we are calling <code>select</code> on the tree.
@@ -1749,15 +1749,15 @@ we show the extra information.</p>
 </ol>
 </div>
 <div class="paragraph">
-<p>Now if we type in the word <code>gluten</code> in our search box, we filter out
-anything except shops which match that, and we see the information
-pieces formatted as labels underneath the shop name.</p>
+<p>Now if we type the word &#x201c;gluten&#x201d; in our search box, we filter out
+anything except shops that match that, and we see the information
+pieces formatted as labels underneath the shop name (<a href="#filtering_coffeeshops_using_the_term_gluten">Filtering coffee shops using the term gluten</a>).</p>
 </div>
-<div class="imageblock">
+<div id="filtering_coffeeshops_using_the_term_gluten" class="imageblock">
 <div class="content">
-<img src="images/javascript-search-box.png" alt="Filtering coffeeshops using the term gluten">
+<img src="images/btwg_09in04.png" alt="btwg 09in04">
 </div>
-<div class="title">Figure 4. Filtering coffeeshops using the term gluten</div>
+<div class="title">Figure 4. Filtering coffee shops using the term gluten</div>
 </div>
 <div class="sect3">
 <h4 id="_user_contributed_data">User Contributed Data</h4>
@@ -2252,23 +2252,22 @@ HTML.</p>
 <div class="sect2">
 <h3 id="_accepting_pull_requests">Accepting Pull Requests</h3>
 <div class="paragraph">
-<p>When someone makes an annotation to a shop, the owner of the original repository
-gets a pull request notification on GitHub.</p>
+<p>When someone makes an annotation to a shop, the owner of the original repository gets a pull request notification on GitHub (<a href="#adding_information_through_a_pull_request">Adding information through a pull request</a>).</p>
 </div>
-<div class="imageblock">
+<div id="adding_information_through_a_pull_request" class="imageblock">
 <div class="content">
-<img src="images/javascript-pull-request.png" alt="Adding information through a pull request">
+<img src="images/btwg_09in05.png" alt="btwg 09in05">
 </div>
 <div class="title">Figure 5. Adding information through a pull request</div>
 </div>
 <div class="paragraph">
-<p>Now we can review changes through GitHub&#8217;s integrated online diff tool.</p>
+<p>Now we can review changes through GitHub&#8217;s integrated online diff tool (<a href="#reviewing_annotation_pull_request_diffs_from_within_github">Reviewing annotation pull request diffs from within GitHub</a>).</p>
 </div>
-<div class="imageblock">
+<div id="reviewing_annotation_pull_request_diffs_from_within_github" class="imageblock">
 <div class="content">
-<img src="images/javascript-pull-request-diff.png" alt="Reviewing annotation pull request diff's from within GitHub">
+<img src="images/btwg_09in06.png" alt="btwg 09in06">
 </div>
-<div class="title">Figure 6. Reviewing annotation pull request diff&#8217;s from within GitHub</div>
+<div class="title">Figure 6. Reviewing annotation pull request diffs from within GitHub</div>
 </div>
 <div class="paragraph">
 <p>Here we  see a clear "diff" of the changes our contributor
@@ -2382,31 +2381,33 @@ and GitHub OAuth scope to Firebase, and then our application offloads
 user management to Firebase.</p>
 </div>
 <div class="paragraph">
-<p>First, we need to create a new GitHub application. In the top right
+<p>First, we need to create a new GitHub application. In the top-right
 corner on GitHub.com, click on the "Account settings" link, and then
-navigate to the "Applications" link towards the bottom. Click on the
-"Developer Applications" tab in the right center column and then click on the
+navigate to the "Applications" link toward the bottom. Click the
+"Developer Applications" tab in the right center column and then click the
 "Register new application" button. Make sure "Authorization callback URL" is set to
-<code><a href="https://auth.firebase.com/auth/github/callback" class="bare">https://auth.firebase.com/auth/github/callback</a></code>. Then save the
-application by clicking on the "Register application" button.</p>
+<em><a href="https://auth.firebase.com/auth/github/callback" class="bare">https://auth.firebase.com/auth/github/callback</a></em>. Then save the
+application by clicking the "Register application" button as shown in <a href="#a_new_github_application_for_oauth">A new GitHub application for OAuth</a>.</p>
 </div>
-<div class="paragraph">
-<div class="title">A new GitHub application for OAuth</div>
-<p>image::images/javascript-new-application.png[A new GitHub application for OAuth</p>
+<div id="a_new_github_application_for_oauth" class="imageblock">
+<div class="content">
+<img src="images/btwg_09in07.png" alt="btwg 09in07">
+</div>
+<div class="title">Figure 7. A new GitHub application for OAuth</div>
 </div>
 <div class="paragraph">
 <p>Now, create an account on Firebase. Once you have done this, create
 a new app called "CoffeeTech" inside Firebase. The APP URL needs be unique, so use
 "coffeetech-&lt;USERNAME&gt;", replacing USERNAME with your GitHub username.
-Once you have created the app, click on "View Firebase" button. You&#8217;ll
-then see a settings screen, and click on "Simple Login" and then
-"GitHub."</p>
+Once you have created the app, click the "View Firebase" button. You&#8217;ll
+then see a settings screen, and click "Simple Login" and then
+"GitHub" as shown in <a href="#creating_the_firebase_hosted_login">Creating the Firebase hosted login</a>.</p>
 </div>
-<div class="imageblock">
+<div id="creating_the_firebase_hosted_login" class="imageblock">
 <div class="content">
-<img src="images/javascript-view-firebase.png" alt="Creating the Firebase Hosted Login">
+<img src="images/btwg_09in08.png" alt="btwg 09in08">
 </div>
-<div class="title">Figure 7. Creating the Firebase Hosted Login</div>
+<div class="title">Figure 8. Creating the Firebase hosted login</div>
 </div>
 <div class="paragraph">
 <p>Then, copy your GitHub client ID and secret to the sections inside the
@@ -2626,14 +2627,14 @@ the token.</p>
 </div>
 <div class="paragraph">
 <p>After we make these changes, we can click the "Add factoid" button and
-we&#8217;ll get a dialog like this one indicating we are logging into GitHub
+we&#8217;ll get a dialog like <a href="#the_final_step_in_the_permission_flow">The final step in the permission flow for GitHub access using Firebase</a> indicating we are logging in to GitHub
 (via the Firebase SimpleLogin).</p>
 </div>
-<div class="imageblock">
+<div id="the_final_step_in_the_permission_flow" class="imageblock">
 <div class="content">
-<img src="images/javascript-firebase-simplelogin.png" alt="The final step in the permission flow for GitHub access using Firebase">
+<img src="images/btwg_09in09.png" alt="btwg 09in09">
 </div>
-<div class="title">Figure 8. The final step in the permission flow for GitHub access using Firebase</div>
+<div class="title">Figure 9. The final step in the permission flow for GitHub access using Firebase</div>
 </div>
 <div class="paragraph">
 <p>After you authorize the application, the execution flow is identical to the
@@ -2673,7 +2674,7 @@ using the Activities API.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-10-11 15:37:40 PDT
+Last updated 2018-10-11 16:21:02 PDT
 </div>
 </div>
 </body>

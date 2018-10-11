@@ -435,17 +435,18 @@ gist that uses the Gist API.</p>
 <div class="sect2">
 <h3 id="_easy_code_sharing">Easy Code Sharing</h3>
 <div class="paragraph">
-<p>Gists are straighforward to create. You copy a snippet
+<p>Gists are straightforward to create. You copy a snippet
 of code into the large text box in the center, optionally enter in a
 description or filename, and then choose between a public or private
 gist. Once your gist has been created you are presented with a URL to
 share. Gists autodetect the language in most cases and syntax
-highlight according to the language when displayed.</p>
+highlight according to the language when displayed as in <a href="#documenting_json_using_a_gist">Documenting JSON using a gist</a>.</p>
 </div>
-<div class="imageblock">
+<div id="documenting_json_using_a_gist" class="imageblock">
 <div class="content">
-<img src="images/gists-easy-sharing.png" alt="Creating a gist on GitHub">
+<img src="images/btwg_02in01.png" alt="btwg 02in01">
 </div>
+<div class="title">Figure 1. Documenting JSON using a gist</div>
 </div>
 <div class="paragraph">
 <p>There are other services that do this: pastebin was the first, and
@@ -775,15 +776,16 @@ index.erb</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Restart Sinatra by running ctrl-c, and then <code>ruby hi.rb</code>. If you visit <code><a href="http://localhost:4567/xrd" class="bare">http://localhost:4567/xrd</a></code> in
-your browser, you will see the count of public gists for user <code>xrd</code>;
-modify the username in the URL to any specify any GitHub username and you will see
+<p>Restart Sinatra by running Ctrl-C and then <code>ruby hi.rb</code>. If you visit <em><a href="http://localhost:4567/xrd" class="bare">http://localhost:4567/xrd</a></em> in
+your browser, you will see the count of public gists for user <code>xrd</code> (<a href="#displaying_the_gist_count">Displaying the gist count</a>);
+modify the username in the URL to specify any GitHub username and you will see
 their last five gists displayed.</p>
 </div>
-<div class="imageblock">
+<div id="displaying_the_gist_count" class="imageblock">
 <div class="content">
-<img src="images/gists-gist-count.png" alt="Displaying the gist count">
+<img src="images/btwg_02in02.png" alt="btwg 02in02">
 </div>
+<div class="title">Figure 2. Displaying the gist count</div>
 </div>
 <div class="sect3">
 <h4 id="_going_deeper_into_the_gist_api">Going deeper into the Gist API</h4>
@@ -941,12 +943,13 @@ attribute. Retrieve the <code>raw</code> content using the Octokit method <code>
 </div>
 </div>
 <div class="paragraph">
-<p>Now we see the gists and the contents.</p>
+<p>Now we see the gists and the contents, as in <a href="#last_five_gists_with_details">Last five gists, with details</a>.</p>
 </div>
-<div class="imageblock">
+<div id="last_five_gists_with_details" class="imageblock">
 <div class="content">
-<img src="images/gists-last-five.png" alt="Last five gists" width="with details">
+<img src="images/btwg_02in03.png" alt="btwg 02in03">
 </div>
+<div class="title">Figure 3. Last five gists, with details</div>
 </div>
 </div>
 </div>
@@ -977,7 +980,7 @@ repositories and the Ruby library for accessing GitHub.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-10-11 15:37:40 PDT
+Last updated 2018-10-11 16:21:02 PDT
 </div>
 </div>
 </body>
