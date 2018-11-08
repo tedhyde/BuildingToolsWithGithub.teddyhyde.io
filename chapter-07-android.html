@@ -1,0 +1,1963 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Begin Jekyll SEO tag v2.5.0 -->
+<title>Building Tools with Github | Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.</title>
+<meta name="generator" content="Jekyll v3.8.5" />
+<meta property="og:title" content="Building Tools with Github" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description." />
+<meta property="og:description" content="Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description." />
+<link rel="canonical" href="http://localhost:4000/chapter-07-android.html" />
+<meta property="og:url" content="http://localhost:4000/chapter-07-android.html" />
+<meta property="og:site_name" content="Building Tools with Github" />
+<script type="application/ld+json">
+{"description":"Write an awesome description for your new site here. You can edit this line in _config.yml. It will appear in your document head meta (for Google search results) and in your feed.xml site description.","@type":"WebPage","url":"http://localhost:4000/chapter-07-android.html","headline":"Building Tools with Github","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="/assets/css/style.css?v=6334e875a92be132128507759bc0ed839410be48">
+  </head>
+  <body>
+    <div class="container-lg px-3 my-5 markdown-body">
+      
+      <h1><a href="http://localhost:4000/">Building Tools with Github</a></h1>
+      
+
+      <div class="sect1">
+<h2 id="android_and_git_data_api">Android and the Git Data API</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>You might not use your phone right now as a developer tool, but the
+odds are that you will soon. At the moment, phones and tablets can be
+great for reading code, but the editors we developers use on our
+laptops have not yet been reimagined for mobile devices. We are
+getting close though: the GitHub API is accessible through the well-written EGit client library for Java, and this library supports both reading
+data stored on GitHub and writing data back into it. These are a
+perfect set of building blocks to develop applications for the Android
+platform, currently the world&#8217;s most popular mobile OS.</p>
+</div>
+<div class="paragraph">
+<p>In this chapter, we&#8217;ll use the Java EGit libraries to develop a small
+Android application that posts to our blog hosted on GitHub. Our
+blogging application will allow us to log in to GitHub, and then ask us
+for a quick note describing how we are feeling. The application will
+then compose a Jekyll blog post for us and push the post into our blog
+on GitHub.</p>
+</div>
+<div class="sect2">
+<h3 id="setting-up">Setting Up</h3>
+<div class="paragraph">
+<p>To build this application, we need to create a Jekyll blog and then
+install the necessary Android build tools.</p>
+</div>
+<div class="sect3">
+<h4 id="creating-a-jekyll-blog">Creating a Jekyll Blog</h4>
+<div class="paragraph">
+<p>We are writing an application that adds Jekyll blog entries, and we
+are writing tests to verify our application works as advertisted, so
+we need a sandbox blog against which we can run commands. There are
+various ways to create a new Jekyll blog. The simplest is to run a
+series of Ruby commands documented here; if you want to know more
+about Jekyll, it is covered in more depth in <a href="#Jekyll">[Jekyll]</a>.
+There are a few items of note when establishing a Jekyll blog that
+have some complexity, things like mapping a hostname properly and using the
+correct branch inside Git. For our purposes here, however, we won&#8217;t need
+to make sure all that is established. All we need is to make sure
+we have a sandbox repository that has the structure of a Jekyll blog:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash">$ echo "source 'https://rubygems.org'" &gt;&gt; Gemfile
+$ echo "gem 'github-pages'" &gt;&gt; Gemfile
+$ echo "gem 'hub'" &gt;&gt; Gemfile
+$ export BLOG_NAME=mytestblog
+$ bundle
+$ jekyll new $BLOG_NAME
+$ cd $BLOG_NAME
+$ hub create
+$ git push -u origin master</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>These commands install the correct libraries for using Jekyll (and one
+for our tests as well), generate a new blog using the Jekyll command-line tool, and then create a blog on GitHub with those files. On the
+second line we specify the name of the blog; you are welcome to change
+this to any name you&#8217;d like, just make sure the tests match the name.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">
+When you have finished running these commands, you should close the
+terminal window. There are other commands later in this chapter that
+should occur in a fresh directory and as such it is best not to run
+those commands from within the same directory where you created your
+Jekyll blog. You&#8217;ve pushed all those files into GitHub, so you could
+safely delete the local repository in this directory.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="android-development-tools">Android Development Tools</h4>
+<div class="paragraph">
+<p>If you don&#8217;t have a physical Android device, don&#8217;t fret. You can follow
+along with this chapter without having an actual Android device by doing
+development and testing on a virtual device.</p>
+</div>
+<div class="sect4">
+<h5 id="installing-the-java-sdk">Installing the Java SDK</h5>
+<div class="paragraph">
+<p>Unfortunately there is no simple shell command to install Java in the
+same way as there is for Ruby and NodeJS using RVM or NVM.
+Oracle controls the Java language and distribution of official SDKs,
+and it restricts access to downloads other than from <a class="orm:hideurl" href="http://java.oracle.com"><em>java.oracle.com</em></a>.
+Java is freely available, but you need to visit <a class="orm:hideurl" href="http://java.oracle.com"><em>java.oracle.com</em></a> and
+find the correct download for your needs. Android works with the 1.7
+versions of Java or better.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="installing-android-studio">Installing Android Studio</h5>
+<div class="paragraph">
+<p>We will use Android Studio, the Google IDE for developing Android
+applications. To install it, go to
+<a href="https://developer.android.com/sdk/index.html" class="bare">https://developer.android.com/sdk/index.html</a> and you will see a
+download button for your platform (OS X, Linux, and Windows
+supported). Android Studio bundles all the important tools for
+building Android applications.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="creating-a-new-project">Creating a New Project</h3>
+<div class="paragraph">
+<p>Let&#8217;s now create our Android project. When you first open Android
+Studio, you will see an option in the right pane inviting you to
+create a new project. Click the "Start a new Android Studio
+project" option. In the next step, you will see a screen for
+configuring your new project. Enter GhRU ("GitHub R U?") into the
+Application Name and use <em>example.com</em> as the Company Domain (or use
+your own domain, but be aware that this will make the directory structure
+presented in this chapter different than yours). Android Studio should
+automatically generate the "package name" for you as
+<code>com.example.ghru</code>.</p>
+</div>
+<div class="paragraph">
+<p>You will then need to choose a target SDK. The higher the target,
+the better access to newer Android APIs, but the fewer number of
+devices that can run the application. The code in this chapter will
+work with older SDKs, so let&#8217;s make a balanced choice and use Android
+4.4 (KitKat), which runs on phones and tablets. At the moment this means,
+according to Android Studio, that our application will run on 49.5% of
+Android devices in the world as shown in <a href="#choose-android-sdk">Choose an Android SDK</a>.</p>
+</div>
+<div id="choose-android-sdk" class="imageblock">
+<div class="content">
+<img src="images/btwg_07in01.png" alt="btwg 07in01">
+</div>
+<div class="title">Figure 1. Choose an Android SDK</div>
+</div>
+<div class="paragraph">
+<p>You will then be presented with a choice of activities. Choose "Blank
+Activity." You will be taken to a screen that allows you to customize
+the activity. Accept the defaults of "MainActivity" as the Activity
+Name and the associated files for the layout, title, and menu resource
+name. Then click the "Finish" button to generate the project.</p>
+</div>
+<div class="paragraph">
+<p>After completing these steps, Android Studio will create Gradle
+configuration files and generate the structure of your
+application. Once this has completed, you can review the file tree of
+your project by clicking the lefthand vertical tab labeled
+"Project" as shown in <a href="#reviewing-android-project-structure">Reviewing the Android project structure for the first time</a>.</p>
+</div>
+<div id="reviewing-android-project-structure" class="imageblock">
+<div class="content">
+<img src="images/btwg_07in02.png" alt="btwg 07in02">
+</div>
+<div class="title">Figure 2. Reviewing the Android project structure for the first time</div>
+</div>
+<div class="paragraph">
+<p>If you have never seen an Android project before, this screen deserves
+some explanation. The <em>app</em> directory contains your application code and
+resources (layout files, images, and strings). Inside the <em>app</em>
+directory you will see several other directories: The <em>java</em> directory
+contains, quite obviously, any Java code for the project, which
+includes the application files, and also programs that do not reside
+in the app when it is published to the app store but perform testing
+on the app. The <em>res</em> directory contains the resources we
+mentioned. Android Studio lists all build files under the Gradle
+Scripts section, and groups them regardless of their directory
+placement. You can see two <em>build.gradle</em> files, the first of which
+you can generally ignore, though the second we will need to adjust.</p>
+</div>
+<div class="paragraph">
+<p>Now we are ready to start editing our project.</p>
+</div>
+<div class="sect3">
+<h4 id="editing-the-gradle-build-file">Editing the Gradle Build File</h4>
+<div class="paragraph">
+<p>First, we need to add to our Gradle build file and specify the
+dependent libraries. Gradle is a build system for Java and has become
+the offical build system for the Android platform. Open the <em>build.gradle</em> within the <code>app</code> module (the second of the two
+<em>build.gradle</em> files):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-groovy" data-lang="groovy">apply plugin: 'com.android.application' //  <b class="conum">(1)</b>
+
+android {
+    compileSdkVersion 23 //  <b class="conum">(2)</b>
+    buildToolsVersion "23.0.1"
+
+    defaultConfig {
+        applicationId "com.example.ghru"
+        minSdkVersion 21
+        targetSdkVersion 23
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner
+            "android.support.test.runner.AndroidJUnitRunner" //  <b class="conum">(3)</b>
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'),
+            'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar']) //  <b class="conum">(4)</b>
+    compile 'com.android.support:appcompat-v7:23.0.1'
+    compile 'org.eclipse.mylyn.github:org.eclipse.egit.github.core:2.1.5'
+    compile( 'commons-codec:commons-codec:1.9' )
+    testCompile 'junit:junit:4.12' //  <b class="conum">(5)</b>
+    testCompile 'com.squareup.okhttp:okhttp:2.5.0'
+    androidTestCompile 'com.android.support.test:runner:0.4' //  <b class="conum">(6)</b>
+    androidTestCompile 'com.android.support.test:rules:0.4'
+    androidTestCompile 'com.android.support.test.espresso:espresso-core:2.2.1'
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<ol>
+<li>
+<p>First, we load the Android gradle plug-in. This extends our project
+to allow an <code>android</code> block, which we specify next.</p>
+</li>
+<li>
+<p>Next, we configure our android block, with things like the target
+version (which we choose when setting up our project) and the actual
+SDK, which we are using to compile the application.</p>
+</li>
+<li>
+<p>In order to run UI tests, we need to specify a test runner
+called the <code>AndroidJ<span class="keep-together">Unit</span>Runner</code>.</p>
+</li>
+<li>
+<p>Android Studio automatically adds a configuration to our build
+file that loads any JARS (Java libraries) from the <em>lib</em>
+directory. We also install the support compatibility library for older
+Android devices, and most importantly, the EGit library that manages
+connections to GitHub for us. The commons CODEC library from the
+Apache Foundation provides tools that help to encode content into
+Base64, one of the options for storing data inside a GitHub repository
+using the API.</p>
+</li>
+<li>
+<p>Next, we install libraries that are only used when we run unit
+tests. <code>testCompile</code> libraries are compiled only when the code is run
+on the local development machine, and for this situation we need the
+JUnit library, and the OkHttp library from Square, which helps us
+validate that our request for a new commit has made it all the way
+into the GitHub API.</p>
+</li>
+<li>
+<p>Lastly, we install the Espresso libraries, the Google UI testing
+framework. The first line (of the three libraries) installs the test
+runner we configured earlier. We use <code>androidTestCompile</code>, which
+compiles against these libraries when the code runs on Android in test
+mode.</p>
+</li>
+</ol>
+</div>
+<div class="sect4">
+<h5 id="creating-avds-for-development">Creating AVDs for development</h5>
+<div class="paragraph">
+<p>Android Studio makes creating AVD (Android Virtual Devices) simple. To
+start, under the &#x201c;Tools&#x201d; menu, click &#x201c;Android&#x201d; and then select
+&#x201c;AVD Manager.&#x201d; To create a new AVD, click the &#x201c;Create Virtual
+Device&#x201d; button and follow the prompts. You are generally free to
+choose whatever settings you like. Google produces a real device
+called the Nexus 5. This is the Android reference device, and is a
+good option for a generic device with good support across all
+features. You can choose this one if you are confused about which to
+use as shown in <a href="#creating-new-avd">Creating a new AVD</a>.</p>
+</div>
+<div id="creating-new-avd" class="imageblock">
+<div class="content">
+<img src="images/btwg_07in03.png" alt="btwg 07in03">
+</div>
+<div class="title">Figure 3. Creating a new AVD</div>
+</div>
+<div class="paragraph">
+<p>Once you have created an AVD, start it up. It will take a few minutes
+to boot; AVDs emulate the chipset in software and
+booting up can take a few minutes, unfortunately. There are
+alternative tools that speed up AVD boot time (Genymotion is one of
+those), but there are complexities if you stray away from the stock
+Android tools, so we will stick with AVD.</p>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="default-android-main">Default Android Main</h4>
+<div class="paragraph">
+<p>When we use the preceding commands to create a new Android application, it
+creates a sample entry point that is the starting point of our
+Android application. All Android applications have a file called
+<em>AndroidManifest.xml</em>, which specifies this activity and also supplies
+a list of permissions to the apps. Open the <em>AndroidManifest.xml</em> file
+from within the <em>app/src/main</em> directory. We need to make one change: to
+add a line that specifies that this app will use the Internet
+permission (required if our app will be talking to the GitHub
+API). Note that when viewing this file inside Android Studio the IDE
+can interpolate strings from resources, so you might see the
+<code>android:label</code> attribute displayed as GhRU with a grey tinge, when
+in fact the XML file itself has the value displayed here (<code>@string/app_name</code>):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">&lt;manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  package="com.example.ghru"&gt;
+
+    &lt;uses-permission android:name="android.permission.INTERNET" /&gt;
+
+    &lt;application android:allowBackup="true" android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher" android:supportsRtl="true"
+        android:theme="@style/AppTheme"&gt;
+
+        &lt;activity android:name="MainActivity"
+            android:label="@string/app_name"&gt;
+            &lt;intent-filter&gt;
+                &lt;action android:name="android.intent.action.MAIN" /&gt;
+                &lt;category android:name="android.intent.category.LAUNCHER" /&gt;
+            &lt;/intent-filter&gt;
+        &lt;/activity&gt;
+
+    &lt;/application&gt;
+
+&lt;/manifest&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When the application is launched, the Android OS will launch this
+activity and then call the <code>onCreate</code> function for us. Inside this
+function, our application calls our parent&#8217;s implementation of
+<code>onCreate</code>, and then inflates the layout for our application. Layouts
+are XML files in which the UI of an Android application is
+declaratively described.</p>
+</div>
+<div class="paragraph">
+<p>Android Studio created a default layout for us (called
+<em>activity_main.xml</em>), but let&#8217;s ignore that and create our own
+layout. To do so, right-click (Ctrl-click on OS X) on the <em>layouts</em>
+directory, and then choose "New" and then "Layout resource file" at
+the very top of the list (Android Studio nicely chooses the most
+likely candidate given the context of the click). Enter "main.xml" as
+the filename, and accept the other defaults.</p>
+</div>
+<div class="paragraph">
+<p>This application requires that we log in, so we know we at least need a field and a
+descriptive label for the username, a password field (and associated
+descriptive label) for the password, a button to click that tells our
+app to attempt to log in, and a status field that indicates success or
+failure of the login. So, let&#8217;s modify the generated <em>main.xml</em> to
+specify this user interface. To edit this file as text, click the
+tab labeled Text next to the tab labeled Design at the very bottom
+of the <em>main.xml</em> pane to switch to text view. Then, edit the file to
+look like the following:</p>
+</div>
+<pre data-type="programlisting" data-code-language="java">&lt;?xml version="1.0" encoding="utf-8"?&gt; &lt;-- <a class="co" id="aco_android_and_the_git_data_api_CO2-1" href="#acallout_android_and_the_git_data_api_CO2-1"><img src="callouts/1.png" alt="1"/></a> --&gt;
+&lt;LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    &gt;  &lt;-- <a class="co" id="aco_android_and_the_git_data_api_CO2-2" href="#acallout_android_and_the_git_data_api_CO2-2"><img src="callouts/2.png" alt="2"/></a> --&gt;
+&lt;TextView
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="GitHub Username:"
+    /&gt;
+&lt;EditText
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/username"
+    /&gt;
+
+&lt;TextView
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="GitHub Password:"
+    /&gt;
+
+&lt;EditText
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/password"
+    android:inputType="textWebPassword"
+    /&gt;  &lt;-- <a class="co" id="aco_android_and_the_git_data_api_CO2-3" href="#acallout_android_and_the_git_data_api_CO2-3"><img src="callouts/3.png" alt="3"/></a> --&gt;
+
+&lt;Button
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:text="Login"
+    android:id="@+id/login"
+    /&gt;  &lt;-- <a class="co" id="aco_android_and_the_git_data_api_CO2-4" href="#acallout_android_and_the_git_data_api_CO2-4"><img src="callouts/4.png" alt="4"/></a> --&gt;
+
+&lt;TextView
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:id="@+id/login_status"
+    /&gt;
+
+&lt;/LinearLayout&gt;</pre>
+
+<p>You may have complicated feelings about XML files (I know I do), but
+the Android layout XML files are a straightforward way to design
+layouts declaratively, and there is a great ecosystem of GUI tools
+that provide sophisticated ways to manage them. Scanning this XML
+file, it should be relatively easy to understand what is
+happening here.</p>
+
+<dl class="calloutlist">
+<dt><a class="co" id="acallout_android_and_the_git_data_api_CO2-1" href="#aco_android_and_the_git_data_api_CO2-1"><img src="callouts/1.png" alt="1"/></a></dt>
+<dd><p>The entire layout is wrapped in a <code>LinearLayout</code>, which simply
+positions each element stacked vertically inside it. We set the
+height and width layout attributes to <code>match_parent</code>, which means this
+layout occupies the entire space of the screen.</p></dd>
+<dt><a class="co" id="acallout_android_and_the_git_data_api_CO2-2" href="#aco_android_and_the_git_data_api_CO2-2"><img src="callouts/2.png" alt="2"/></a></dt>
+<dd><p>We then add the elements we described previously: pairs of <code>TextView</code>
+and <code>EditView</code> for the label and entry options necessary for the
+username and password.</p></dd>
+<dt><a class="co" id="acallout_android_and_the_git_data_api_CO2-3" href="#aco_android_and_the_git_data_api_CO2-3"><img src="callouts/3.png" alt="3"/></a></dt>
+<dd><p>The password field customizes the type to be a password field,
+which means the entry is hidden when we enter it.</p></dd>
+<dt><a class="co" id="acallout_android_and_the_git_data_api_CO2-4" href="#aco_android_and_the_git_data_api_CO2-4"><img src="callouts/4.png" alt="4"/></a></dt>
+<dd><p>Some elements in the XML have an ID attribute, which allows us to
+access the items within our Java code, such as when we need to assign
+a handler to a button or retrieve text entered by the user from an
+entry field. We will demonstrate this in a moment.</p></dd>
+</dl>
+<div class="paragraph">
+<p>You can review the visual structure of this XML file by clicking
+the "Design" tab to switch back to design mode.</p>
+</div>
+<div class="paragraph">
+<p>We also need a layout once we have logged in. Create a file called
+<em>logged_in.xml</em> using the same set of steps. Once
+logged in, the user is presented with a layout asking him to choose
+which repository to save into, to enter his blog post into
+a large text field, and then to click a button to submit that blog
+post. We also leave an empty status box beneath the button to
+provide context while saving the post:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    &gt;
+  &lt;TextView
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:text="Logged into GitHub"
+      android:layout_weight="0"
+      android:id="@+id/status" /&gt;
+
+  &lt;EditText
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:hint="Enter the blog repository"
+      android:id="@+id/repository"
+      android:layout_weight="0"
+      /&gt;
+
+    &lt;EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter the blog title"
+        android:id="@+id/title"
+        android:layout_weight="0" /&gt;
+
+    &lt;EditText
+      android:gravity="top"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      android:hint="Enter your blog post"
+      android:id="@+id/post"
+      android:layout_weight="1"
+      /&gt;
+
+  &lt;Button
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_weight="0"
+      android:id="@+id/submit"
+      android:text="Send blog post"/&gt;
+
+&lt;/LinearLayout&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Most of this should be familiar once you have reviewed the <em>main.xml</em>
+file (and be sure to copy this from the associated sample repository
+on GitHub if you don&#8217;t want to copy it in yourself).</p>
+</div>
+<div class="paragraph">
+<p>Now that we have our XML established, we can ready our application for
+testing.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="android-automated-testing">Android Automated Testing</h3>
+<div class="paragraph">
+<p>Android supports three types of tests: unit tests, integration tests,
+and user interface (UI) tests. Unit tests validate very tightly
+defined and isolated pieces of code, while integration tests and UI tests test
+larger pieces of the whole. On Android, integration tests generally
+mean instantiation of data managers or code that interacts with
+multiple components inside the app, while UI testing permits testing
+of user-facing elements like buttons or text fields.
+In this chapter we will create a unit test and a UI test.</p>
+</div>
+<div class="paragraph">
+<p>One important note: Unit tests run on your development machine, not the Android
+device itself. UI tests run on the Android device (or emulator). There
+can be subtle differences between the Java interpreter running on your development
+machine and the Dalvik interpreter running on your Android device, so
+it is worthwhile to use a mixture of the three types of tests. Stated
+another way, write at least one test that runs on the device or
+emulator itself!</p>
+</div>
+<div class="sect3">
+<h4 id="unit-tests-for-our-github-client">Unit Tests for Our GitHub Client</h4>
+<div class="paragraph">
+<p>Let&#8217;s start by defining a unit test. Since the unit test runs on our
+development machine, our test and implementation code should be
+written such that they do not need to load any Android classes. This
+forces us to constrain functionality to only the GitHub API. We will
+define a helper class that will handle all the interaction with the
+GitHub API but does not know about Android whatsoever. Then, we can
+write a test harness that takes that class, instantiates it, and
+validates our calls to GitHub produce the right results.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+You might legitimately ask: is a unit test the right place to verify
+an API call? Will this type of test be fast, given that slow-running
+unit tests are quickly ignored by software developers? Would it be
+better to mock out the response data inside our unit tests? These are
+all good questions!
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>To set up unit tests, we need to switch the build variant to unit
+tests. Look for a vertical tab on the lefthand side of Android
+Studio. Click this, and then where it says "Test Artifact" switch
+to "Unit Tests." From the project view (click the "Project" vertical tab if
+project view is not already selected) you can expand the "java"
+directory, and you should then see a directory with "(test)" in
+parentheses indicating this is where tests go. If this directory is
+not there, create a directory using the command line (this command
+would work: <code>mkdir -p app/src/test/java/com/example/ghru</code>).</p>
+</div>
+<div class="paragraph">
+<p>Then, create a test file called <em>GitHubHelperTest.java</em> that looks like the following:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">package com.example.ghru;
+
+import com.squareup.okhttp.OkHttpClient; //  <b class="conum">(1)</b>
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.Response;
+
+import org.junit.Test; //  <b class="conum">(2)</b>
+
+import java.util.Date;
+
+import static org.junit.Assert.assertTrue;
+
+/**
+ * To work on unit tests, switch the Test Artifact in the Build Variants view.
+ */
+public class GitHubHelperTest { //  <b class="conum">(3)</b>
+    @Test
+    public void testClient() throws Exception {
+
+        String login = System.getenv("GITHUB_HELPER_USERNAME"); //  <b class="conum">(4)</b>
+        String password = System.getenv("GITHUB_HELPER_PASSWORD");
+        String repoName = login + ".github.io";
+
+        int randomNumber = (int)(Math.random() * 10000000);
+        String randomString = String.valueOf( randomNumber );
+        String randomAndDate = randomString + " " +
+	  (new Date()).toString() ; //  <b class="conum">(5)</b>
+
+        GitHubHelper ghh = new GitHubHelper( login, password ); //  <b class="conum">(6)</b>
+        ghh.SaveFile(repoName,
+             "Some random title",
+             "Some random body text",
+             randomAndDate );
+
+        Thread.sleep(3000); //  <b class="conum">(7)</b>
+
+        String url = "https://api.github.com/repos/" +  //  <b class="conum">(8)</b>
+        login + "/" + repoName + "/events";
+        OkHttpClient ok = new OkHttpClient();
+        Request request = new Request.Builder()
+                .url( url )
+                .build();
+        Response response = ok.newCall( request ).execute();
+        String body = response.body().string();
+
+        assertTrue( "Body does not have: " + randomAndDate,   //  <b class="conum">(9)</b>
+            body.contains( randomAndDate ) );
+    }
+
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<ol>
+<li>
+<p>First, we import the OkHttp library, a library for making HTTP
+calls. We will verify that our GitHub API calls made it all the way into
+GitHub by looking at the event log for our repository, a log
+accessible via HTTP.</p>
+</li>
+<li>
+<p>Next, we import JUnit, which provides us with an annotation
+<code>@Test</code> we can use to indicate to a test runner that certain methods
+are test functions (and should be executed as tests when in test mode).</p>
+</li>
+<li>
+<p>We create a class called <code>GitHubHelperTest</code>. In it, we define a
+sole test case <code>testClient</code>. We use the <code>@Test</code> annotation to indicate
+to JUnit that this is a test case.</p>
+</li>
+<li>
+<p>Now we specify our login information and the repository we want to
+test against. In order to keep the password out of our source code, we
+use an environment variable we can specify when we run the
+tests.</p>
+</li>
+<li>
+<p>Next, we build a random string. This unique string will be our
+commit message, a beacon that allows us to verify that our commit made it
+all the way through and was stored on GitHub, and to differentiate it from
+other commits made recently by other tests.</p>
+</li>
+<li>
+<p>Now, to the meat of the test: we instantiate our GitHub helper class
+with login credentials, then use the <code>SaveFile</code> function to save the
+file. The last parameter is our commit message, which we will verify
+later.</p>
+</li>
+<li>
+<p>There can be times when the GitHub API has registered the commit
+but the event is not yet displayed in results coming back from the
+API; sleeping for a few seconds fixes this.</p>
+</li>
+<li>
+<p>Next, we go through the steps to make an HTTP call with the OkHttp
+library. We load a URL that provides us with the events for a
+specified repository, events that will have the commit message when
+it is a push type event. This repository happens to be public so we
+don&#8217;t require authentication against the GitHub API to see this data.</p>
+</li>
+<li>
+<p>Once we have the body of the HTTP call, we can scan it to verify
+the commit message is there.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>The final steps deserve a bit more investigation. If we load the event
+URL from cURL, we see data like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash">$ curl https://api.github.com/repos/burningonup/burningonup.github.io/events
+[
+  {
+    "id": "3244787408",
+    "type": "PushEvent",
+    ...
+    "repo": {
+      "id": 44361330,
+      "name": "BurningOnUp/BurningOnUp.github.io",
+      "url":
+      "https://api.github.com/repos/BurningOnUp/BurningOnUp.github.io"
+    },
+    "payload": {
+      ...
+      "commits": [
+        {
+          "sha": "28f247973e73e3128737cab33e1000a7c281ff4b",
+          "author": {
+            "email": "unknown@example.com",
+            "name": "Unknown"
+          },
+          "message": "207925 Thu Oct 15 23:06:09 PDT 2015",
+          "distinct": true,
+          "url":
+      "https://api.github.com/repos/BurningOnUp/BurningOnUp.github.io/..."
+        }
+      ]
+    }
+...
+]</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This is obviously JSON. We see the type is PushEvent for this event,
+and it has a commit message that matches our random string format. We
+could reconstitute this into a complex object structure, but scanning
+the JSON as a string works for our test.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="android-ui-tests">Android UI Tests</h4>
+<div class="paragraph">
+<p>Let&#8217;s now write a UI test. Our test will start our app, find the
+username and password fields, enter in the proper username and
+password text, then click the login button, and finally verify that we
+have logged in by checking for the text "Logged into GitHub" in our
+UI.</p>
+</div>
+<div class="paragraph">
+<p>Android uses the Espresso framework to support UI testing. We
+already installed Espresso with our Gradle configuration, so we can
+now write a test. Tests are written by deriving from a generic test
+base class (<code>ActivityInstrumentationTestCase2</code>). Any public function
+defined inside the test class is run as a test.</p>
+</div>
+<div class="paragraph">
+<p>In Android Studio, from the "Build Variant" window, select "Android
+Instrumentation Test," which will then display a test directory called
+"androidTest." These are tests that will run on the emulator or
+actual device. Inside the directory, make a new file called
+<em>MainActivityTest.java</em>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">package com.example.ghru;
+
+import android.support.test.InstrumentationRegistry; // // <b class="conum">(1)</b>
+import android.test.ActivityInstrumentationTestCase2;
+import static android.support.test.espresso.Espresso.onView;
+import static android.support.test.espresso.action.ViewActions.*;
+import static android.support.test.espresso.assertion.ViewAssertions.matches;
+import static android.support.test.espresso.matcher.ViewMatchers.*;
+
+public class MainActivityTest  // // <b class="conum">(2)</b>
+    extends ActivityInstrumentationTestCase2&lt;MainActivity&gt; {
+
+    public MainActivityTest() {
+        super( MainActivity.class ); // // <b class="conum">(3)</b>
+    }
+
+    public void testLogin() { // // <b class="conum">(4)</b>
+        injectInstrumentation( InstrumentationRegistry.
+        getInstrumentation() ); // // <b class="conum">(5)</b>
+        MainActivity mainActivity = getActivity();
+        String username = mainActivity // // <b class="conum">(6)</b>
+                .getString( R.string.github_helper_username );
+        onView( withId( R.id.username ) ) // // <b class="conum">(7)</b>
+            .perform( typeText( username ) ); // // <b class="conum">(8)</b>
+        String password = mainActivity
+                .getString( R.string.github_helper_password );
+        onView( withId( R.id.password ) )
+            .perform( typeText( password ) );
+        onView( withId( R.id.login ) )
+            .perform( click() );
+        onView( withId( R.id.status ) ) // // <b class="conum">(9)</b>
+            .check( matches( withText( "Logged into GitHub" ) ) );
+
+
+    }
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<ol>
+<li>
+<p>We import the instrumentation registry (for instrumenting the
+tests of our app), the base class, and matchers that will be used to
+make assertions in our tests.</p>
+</li>
+<li>
+<p>We create a test class that derives from the
+<code>ActivityInstrumentationTestCase2</code> generic.</p>
+</li>
+<li>
+<p>The constructor of an Espresso test implementation needs to call
+the parent constructor with the class of the activity for test, in
+this case <code>MainActivity</code>.</p>
+</li>
+<li>
+<p>Our test verifies that we can log in to GitHub, so we name it accordingly.</p>
+</li>
+<li>
+<p>We then load the instrumentation registry, and also call
+<code>getActivity</code>, which actually instantiates and starts the activity. In
+many Espresso tests these two steps will occur in a function annotated as
+a <code>@Before</code> function if they are used across multiple tests (in which
+case they will be run before each test). Here to simplify our function
+count we can call them inside the single test function.</p>
+</li>
+<li>
+<p>It is never a good idea to store credentials inside of a code
+repository, so we retrieve the username and  password from a resource
+XML file using the <code>getString</code> function available using the
+activity. We will show what the contents of this secret file could
+look like presently.</p>
+</li>
+<li>
+<p>Once we have the username, we can enter it in the text field in
+our UI. With the <code>onView</code> function we can interact with a view (for
+example: a button or text field). <code>withId</code> finds the view using the
+resource identifier inside the XML layout files. Once we have the
+view, we can then perform an action (using the <code>perform</code> function)
+like typing in text. This chain of calls enters the GitHub username
+into the first text field.</p>
+</li>
+<li>
+<p>We then complete our interaction with the UI, entering in the
+password and then clicking the login button.</p>
+</li>
+<li>
+<p>If all is successful, we should see the text "Logged into
+GitHub." Under the hood, this test will verify that we are logged in to
+GitHub and display the successful result.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>To provide a username and password to our test and to keep these
+credentials out of our source code, create a file called <em>secrets.xml</em>
+inside our <em>strings</em> directory inside the resource folder. This file
+should look like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;resources&gt;
+    &lt;string name="github_helper_login"&gt;MyUsername&lt;/string&gt;
+    &lt;string name="github_helper_password"&gt;MyPwd123&lt;/string&gt;
+&lt;/resources&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Make sure this is not checked into your source code by
+adding an exception to <em>.gitignore</em> (the command <code>echo
+"secrets.xml" &gt;&gt; .gitgnore</code> is a quick way to add this to your <em>.gitignore</em> file).</p>
+</div>
+<div class="paragraph">
+<p>Our tests will not even compile yet because we have not yet written the
+other parts of the application. As such, we will skip the setup
+required to run our tests within Android Studio for now.</p>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s now build the application itself to pass these tests.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="application-implementation">Application Implementation</h3>
+<div class="paragraph">
+<p>Now we can start writing some Java code for our application. Let&#8217;s
+make it so our <code>MainActivity</code> class will inflate the layouts we
+defined earlier:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">package com.example.ghru;
+
+import android.app.Activity;
+import android.os.Bundle;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.view.View;
+
+public class MainActivity extends Activity
+{
+    /** Called when the activity is first created. */
+    @Override
+    public void onCreate(Bundle savedInstanceState)
+    {
+        super.onCreate(savedInstanceState);
+        setContentView( R.layout.main);
+
+        Button login = (Button)findViewById( R.id.login );
+        login.setOnClickListener(new View.OnClickListener() { // // <b class="conum">(1)</b>
+            public void onClick(View v) {
+                login(); // // <b class="conum">(2)</b>
+            }
+        });
+    }
+
+    private void login() {
+
+        setContentView(R.layout.logged_in); // // <b class="conum">(3)</b>
+
+        Button submit = (Button)findViewById( R.id.submit );
+        submit.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) { // // <b class="conum">(4)</b>
+                doPost(); (4)
+            }
+        });
+    }
+
+    private void doPost() {
+        TextView tv = (TextView)findViewById( R.id.post_status ); // // <b class="conum">(5)</b>
+        tv.setText( "Successful jekyll post" );
+    }
+
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This code mocks out the functionality we will be building and shows us
+exactly what the UI will look like once that code is completed.</p>
+</div>
+<div class="colist arabic">
+<ol>
+<li>
+<p>We register a click handler for our login button.</p>
+</li>
+<li>
+<p>When the login button is clicked, we call the <code>login()</code> function that triggers a login flow.</p>
+</li>
+<li>
+<p>Once we have logged in, we inflate the logged-in layout, suitable
+for making a blog post.</p>
+</li>
+<li>
+<p>We then set up another click handler for the submit button; when
+clicked, we call the <code>doPost()</code> function.</p>
+</li>
+<li>
+<p>Our <code>doPost()</code> function updates the status message at the bottom
+of our application.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Even though our code is not functionally complete, this application will
+compile. This is a good time to play with this application and verify
+that the UI looks appropriate. Our login form looks like <a href="#simple-ui-blog-posts">A simple UI for making blog post entries</a>.</p>
+</div>
+<div id="simple-ui-blog-posts" class="imageblock smallereighty">
+<div class="content">
+<img src="images/btwg_07in04.png" alt="btwg 07in04">
+</div>
+<div class="title">Figure 4. A simple UI for making blog post entries</div>
+</div>
+<div class="sect3">
+<h4 id="code-to-log-in-to-github">Code to Log In to GitHub</h4>
+<div class="paragraph">
+<p>Now we can wire in the GitHub API. Let&#8217;s first work on the <code>login()</code>
+function. Poking into the
+<a href="http://bit.ly/1SQ93Qf">EGit
+libary reference</a>, we can write GitHub login code, which is as simple as
+the following:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">GitHubClient client = new GitHubClient();
+client.setCredentials("us3r", "passw0rd");</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The context in which the code runs makes as much of a difference as the
+code. The Android OS disallows any code from making network
+connections unless it runs inside a background thread.
+If you are not a Java developer already, and the thought of using
+threads with Java sounds daunting, dispell your worries. The
+Android SDK provides a great class for managing background tasks
+called <code>AsyncTask</code>. This class provides several entry points into the
+lifecycle of a thread that is managed by the Android OS. We implement
+a class and then override two functions provided by <code><span class="keep-together">Async</span>Task</code>: the
+first function is <code>doInBackground()</code>, which handles operations off the
+main thread (our background thread code), and the second function is
+<code>onPost<span class="keep-together">Execute()</span></code>, which runs on the UI thread and allows us to update
+the UI with the results of the code that ran inside <code>doInBackground()</code>.</p>
+</div>
+<div class="paragraph">
+<p>Before we implement the login, we need to update our <code>onCreate</code>
+function of the <code>MainActivity</code>. Our login button handles logging in,
+so let&#8217;s register a click handler on the login button that will call
+the login task we will define inside our class based off <code><span class="keep-together">Async</span>Task</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">...
+    @Override
+    public void onCreate(Bundle savedInstanceState)
+    {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.main);
+
+        Button login = (Button)findViewById( R.id.login );
+        login.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    EditText utv = (EditText)findViewById( R.id.username );
+                    EditText ptv = (EditText)findViewById( R.id.password );
+                    username = (String)utv.getText().toString();
+                    password = (String)ptv.getText().toString(); // // <b class="conum">(1)</b>
+                    TextView status =
+		      (TextView)findViewById( R.id.login_status );
+                    status.setText( "Logging in, please wait..." ); // // <b class="conum">(2)</b>
+                    new LoginTask().execute( username, password );  // // <b class="conum">(3)</b>
+                }
+            });
+    }
+...</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<ol>
+<li>
+<p>We retrieve the username and password from our UI elements.</p>
+</li>
+<li>
+<p>Our UI should notify the user that a login is occurring in a
+background task, so we grab the status text element and update the text in it.</p>
+</li>
+<li>
+<p>We then start the background thread process to do our login. This
+syntax creates a new thread for us with the username and password as
+parameters. Android will manage the lifecycle of this thread for us,
+including starting the new thread separate from the main UI thread.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Now we can implement <code>LoginTask</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">...
+    class LoginTask extends AsyncTask&lt;String, Void, Boolean&gt; {   // // <b class="conum">(1)</b>
+        @Override
+            protected Boolean doInBackground(String... credentials) { // // <b class="conum">(2)</b>
+            boolean rv = false;
+            UserService us = new UserService();
+            us.getClient().setCredentials( credentials[0], credentials[1] );
+            try {
+                User user = us.getUser( credentials[0] );  // // <b class="conum">(3)</b>
+                rv = null != user;
+            }
+            catch( IOException ioe ) {}
+            return rv;
+        }
+
+        @Override
+            protected void onPostExecute(Boolean result) {
+            if( result ) {
+                loggedIn();  // // <b class="conum">(4)</b>
+            }
+            else { // // <b class="conum">(5)</b>
+                TextView status = (TextView)findViewById( R.id.login_status );
+                status.setText( "Invalid login, please check credentials" );
+            }
+        }
+    }
+...</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<ol>
+<li>
+<p>Here we define our class derived from AsyncTask. You see three
+types in the generics signature: <code>String</code>, <code>Void</code>, and
+<code>Boolean</code>. These are the parameters to our entry point, an
+intermediate callback and the final callback, which returns control to
+the calling thread. The first type allows us to parameterize our
+instantiated task; we need to provide a username and password to the
+background task, and the first type in the signature allows us to pass
+an array of Strings. You can see in the actual function definition
+that the ellipsis notation provides a way to parameterize a function
+with a variable number of arguments (called varargs). Inside our
+defined function we expect we will send two Strings in, and we make
+sure to do that in our call.</p>
+</li>
+<li>
+<p>Once inside the <code>doInBackground()</code> function, we instantiate a
+<code>UserService</code> class, a wrapper around the GitHub API, which interacts
+with the user service API call. In order to access this information,
+we have to retrieve the client for this service call and provide the
+client with the username and password credentials. This is the syntax
+to do that.</p>
+</li>
+<li>
+<p>We wrap the call to <code>getUser()</code> in a try block as the function
+signature can throw an error (if the network were down, for example).
+We don&#8217;t really need to retrieve information about the user using the
+User object, but this call verifies that our username and password are
+correct, and we store this result in our return value.
+GitHub will not use the credentials you set until you make an API
+call, so we need to use our credentials to access something in order
+to verify that those credentials work.</p>
+</li>
+<li>
+<p>Let&#8217;s call our function <code>loggedIn()</code> instead of <code>login()</code> to more
+accurately reflect the fact that when we call this, we are already
+logged in to GitHub.</p>
+</li>
+<li>
+<p>If our login was a failure, either because of network failure, or
+because our credentials were incorrect, we indicate this in the status
+message. A user can retry if they wish.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p><code>loggedIn</code> updates the UI once logging in has completed and then initiates
+the post on GitHub:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">...
+    private void loggedIn() {
+
+        setContentView(R.layout.logged_in);  // // <b class="conum">(1)</b>
+
+        Button submit = (Button)findViewById( R.id.submit );
+        submit.setOnClickListener(new View.OnClickListener() { // // <b class="conum">(2)</b>
+            public void onClick(View v) {
+
+                TextView status = (TextView) findViewById(R.id.login_status);
+                status.setText("Logging in, please wait...");
+
+                EditText post = (EditText) findViewById(R.id.post); // // <b class="conum">(3)</b>
+                String postContents = post.getText().toString();
+
+                EditText repo = (EditText) findViewById(R.id.repository);
+                String repoName = repo.getText().toString();
+
+                EditText title = (EditText) findViewById(R.id.title);
+                String titleText = title.getText().toString();
+
+                doPost(repoName, titleText, postContents); // // <b class="conum">(4)</b>
+            }
+        });
+    }
+...</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<ol>
+<li>
+<p>Inflate the logged-in layout to reflect the fact we are now logged
+in.</p>
+</li>
+<li>
+<p>Then, install a click handler on the submit button so that when we
+submit our post information, we can start the process to create the
+post on GitHub.</p>
+</li>
+<li>
+<p>We need to gather up three details the user provides: the
+post body, the post title, and the repository name.</p>
+</li>
+<li>
+<p>Using these three pieces of data, we can then call into <code>doPost</code>
+and initiate the asynchronous task.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Building out <code>doPost()</code> should be more familiar now that we have
+experience with AsyncTask. <code>doPost()</code> makes the commit inside of
+GitHub, and it performs the network activity it needs to run on a
+background thread:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">...
+    private void doPost( String repoName, String title, String post ) {
+        new PostTask().execute( username, password, repoName, title, post );
+    }
+
+    class PostTask extends AsyncTask&lt;String, Void, Boolean&gt; {
+
+        @Override
+        protected Boolean doInBackground(String... information) { // // <b class="conum">(1)</b>
+            String login = information[0];
+            String password = information[1];
+            String repoName = information[2];
+            String titleText = information[3];
+            String postContents = information[4];
+
+            Boolean rv = false; // // <b class="conum">(2)</b>
+            GitHubHelper ghh = new GitHubHelper(login, password); // // <b class="conum">(3)</b>
+            try {
+                rv = ghh.SaveFile(repoName, titleText,
+                postContents, "GhRu Update"); // // <b class="conum">(4)</b>
+            } catch (IOException ioe) { // // <b class="conum">(5)</b>
+                Log.d(ioe.getStackTrace().toString(), "GhRu");
+            }
+            return rv;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean result) {
+            TextView status = (TextView) findViewById(R.id.status);
+            if (result) { // // <b class="conum">(6)</b>
+                status.setText("Successful jekyll post");
+
+                EditText post = (EditText) findViewById(R.id.post);
+                post.setText("");
+
+                EditText repo = (EditText) findViewById(R.id.repository);
+                repo.setText("");
+
+                EditText title = (EditText) findViewById(R.id.title);
+                title.setText("");
+            } else {
+                status.setText("Post failed.");
+            }
+        }
+    }
+...</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<ol>
+<li>
+<p>First, we retrieve the parameters we need to send off to the
+GitHub API. Notice that we don&#8217;t attempt to retrieve these from the
+UI. Background threads don&#8217;t have access to the Android UI functions.</p>
+</li>
+<li>
+<p>This function returns a true or false value indicating success or
+failure (using the variable <code>rv</code> for "return value"). We assume that
+it fails unless everything we need to do inside our function works
+exactly as expected, so set the expectation to false to start. The
+value of our return statement is passed to the next stage in the
+lifecycle of the thread, a function called <code>onPostExecute</code> (an
+optional stage in the thread lifecycle we will use to report
+status of the operation back to the user).</p>
+</li>
+<li>
+<p>Now, we instantiate the <code>GitHubHelper</code> class. This instantiation
+and usage should look very familiar as it is the same thing we did
+inside our unit test.</p>
+</li>
+<li>
+<p>Our helper class returns success or failure. If we have reached
+this point, this is our final return value.</p>
+</li>
+<li>
+<p>We will wrap the call to <code>SaveFile</code> inside a try/catch block to
+make sure we handle errors; these will most likely be network errors.</p>
+</li>
+<li>
+<p><code>onPostExecute()</code> is the function we (optionally) return to once
+our background task has completed. It receives the return value from
+our previous function. If we have a true value returned from
+<code>doInBackground()</code>, then our save file succeeded and we can update the
+UI of our application.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>We need to import the support classes. The JARs and classes for EGit
+have already been added to our project automatically using
+Gradle. Make sure you add these <code>import</code> statements to the top of the
+file, under the other imports:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">...
+import android.view.View;
+import android.os.AsyncTask;
+import org.eclipse.egit.github.core.service.UserService;
+import org.eclipse.egit.github.core.User;
+import java.io.IOException;
+...</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now we are ready to write the code to write data into GitHub.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="code-to-talk-to-github">Code to Talk to GitHub</h4>
+<div class="paragraph">
+<p>Our last step is to write the code that handles putting content into GitHub.
+This is not a simple function, because the GitHub API requires you
+build out the structure used internally by Git. A great reference for learning more about
+this structure is the free and open-source book called <a href="https://progit.org/"><em>Pro Git</em></a> and
+specifically the last chapter called
+<a href="http://git-scm.com/book/en/Git-Internals">Git Internals</a>.</p>
+</div>
+<div class="paragraph">
+<p>In a nutshell, the GitHub
+API expects you to create a Git "tree" and then place a "blob" object
+into that tree. You then wrap the tree in a "commit" object and then
+create that commit on GitHub using a data service wrapper. In
+addition, writing a tree into GitHub requires knowing the base SHA
+identifier, so you&#8217;ll see code that retrieves the last SHA in the
+tree associated with our current branch. This code will work
+regardless of whether we are pushing code into the master branch, or
+into the gh-pages branch, so this utility class works with real
+Jekyll blogs.</p>
+</div>
+<div class="paragraph">
+<p>We&#8217;ll write a helper class called <code>GitHubHelper</code> and add a single
+function that writes a file to our repository.</p>
+</div>
+<div class="paragraph">
+<p>The GitHub API requires that files stored in repositories be
+either Base64 encoded or UTF-8. The Apache Foundation provides a suite of tools
+published to Maven (the same software repository where we grabbed the
+EGit libraries), which can do this encoding for us, and which were
+already installed in our Gradle file previously (the "commons-codec" declaration).</p>
+</div>
+<div class="paragraph">
+<p>We will start by defining a series of high-level functions inside
+<code>SaveFile</code> to get through building a commit inside of GitHub. Each
+function itself contains some complexity so let&#8217;s look first at the
+overview of what it takes to put data into GitHub using the Git Data API:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">package com.example;
+
+import android.util.Log;
+
+import org.eclipse.egit.github.core.*;
+import org.eclipse.egit.github.core.client.GitHubClient;
+import org.eclipse.egit.github.core.service.CommitService;
+import org.eclipse.egit.github.core.service.DataService;
+import org.eclipse.egit.github.core.service.RepositoryService;
+import org.eclipse.egit.github.core.service.UserService;
+import org.apache.commons.codec.binary.Base64;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.io.IOException;
+import java.util.*;
+
+class GitHubHelper {
+
+    String login;
+    String password;
+
+    GitHubHelper( String _login, String _password ) {
+        login = _login;
+        password = _password;
+    }
+
+    public boolean SaveFile( String _repoName,
+                             String _title,
+                             String _post,
+                             String _commitMessage ) throws IOException {
+        post = _post;
+        repoName = _repoName;
+        title = _title;
+        commitMessage = _commitMessage;
+
+        boolean rv = false;
+
+        generateContent();
+        createServices();
+        retrieveBaseSha();
+
+        if( null != baseCommitSha &amp;&amp; "" != baseCommitSha ) {
+            createBlob();
+            generateTree();
+            createCommitUser();
+            createCommit();
+            createResource();
+            updateMasterResource();
+            rv = true;
+        }
+
+        return rv;
+    }
+
+...</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>SaveFile</code> function goes through each step of writing data into
+a repository using the GitHub API. We will walk through each of these
+functions. As you can see, the <code>SaveFile</code> function has the same
+signature as the function we call inside our unit test.</p>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s implement each of the functions specified in the
+GitHubHelper class.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="writing-the-blog-content">Writing the Blog Content</h4>
+<div class="paragraph">
+<p>First, we implement <code>generateContent()</code>. The following code snippet
+shows the functions defined to generate the content we will place
+into our remote Git repository stored on GitHub:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">...
+    String commitMessage; // // <b class="conum">(1)</b>
+    String postContentsWithYfm;
+    String contentsBase64;
+    String filename;
+    String post;
+    String title;
+    String repoName;
+
+    private void generateContent() { // // <b class="conum">(2)</b>
+        postContentsWithYfm =  // // <b class="conum">(3)</b>
+        "---\n" +
+        "layout: post\n" +
+        "published: true\n" +
+        "title: '" + title + "'\n---\n\n" +
+        post;
+        contentsBase64 =  // // <b class="conum">(4)</b>
+        new String( Base64.encodeBase64( postContentsWithYfm.getBytes() ) );
+        filename = getFilename();
+    }
+
+    private String getFilename() {
+        String titleSub = title.substring( 0,  // // <b class="conum">(5)</b>
+                       post.length() &gt; 30 ?
+                       30 :
+                       title.length() );
+        String jekyllfied = titleSub.toLowerCase() // // <b class="conum">(6)</b>
+        .replaceAll( "\\W+", "-")
+        .replaceAll( "\\W+$", "" );
+        SimpleDateFormat sdf = new SimpleDateFormat( "yyyy-MM-dd-" ); // // <b class="conum">(7)</b>
+        String prefix = sdf.format( new Date() );
+        return "_posts/" + prefix + jekyllfied + ".md"; // // <b class="conum">(8)</b>
+    }
+
+    String blobSha;
+    Blob blob;
+...</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You will notice many similarities between this Java code and the
+Ruby code we used in <a href="#Jekyll">[Jekyll]</a> when generating filenames
+and escaping whitespace.</p>
+</div>
+<div class="colist arabic">
+<ol>
+<li>
+<p>First, we set up several instance variables we will use when
+storing the data into GitHub: the commit message, the full post
+including the YAML Front Matter (YFM), the post contents encoded as
+Base64, the filename, and then the three parameters we saved from the
+call to <code>SaveFile()</code>: the post itself, the title, and the
+repository name.</p>
+</li>
+<li>
+<p>The <code>generateContent</code> function creates the necessary components for our
+new post: the full content Base64 encoded, and the filename we will
+use to store the content.</p>
+</li>
+<li>
+<p>Here we create the YAML Front Matter (see <a href="#Jekyll">[Jekyll]</a> for more
+details on YFM). This YAML specifies the "post" layout and sets
+publishing to "true." We need to terminate the YAML with two newlines.</p>
+</li>
+<li>
+<p>Base64 encodes the contents of the blog post
+itself using a utility class found inside the Apache Commons
+library. Contents inside a Git repository are stored either as UTF-8
+content or Base64; we could have used UTF-8 since this is text content
+but Base64 works losslessly, and you can always safely use Base64
+without concerning yourself about the content.</p>
+</li>
+<li>
+<p>Next, inside <code>getFilename()</code>, create the title by using the first
+30 characters of the post.</p>
+</li>
+<li>
+<p>Convert the title to lowercase, and replace the whitespace with
+hyphens to get the Jekyll post title format.</p>
+</li>
+<li>
+<p>Jekyll expects the date to be formatted as <code>yyyy-MM-dd</code>, so use
+the java <code>SimpleDateFormat</code> class to help create a string of that format.</p>
+</li>
+<li>
+<p>Finally, create the filename from all these pieces, prepending
+<code>_posts</code> to the filename, where Jekyll expects posts to reside.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>Now we will set up the services necessary to store a commit inside GitHub.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="github-services">GitHub Services</h4>
+<div class="paragraph">
+<p>Next, we implement <code>createServices()</code>. There are several services
+(wrappers around Git protocols) we need to instantiate. We don&#8217;t
+use them all immediately, but we will need them at various steps
+during the file save process. The <code>createServices</code> call manages these
+for us:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">...
+    RepositoryService repositoryService;
+    CommitService commitService;
+    DataService dataService;
+
+    private void createServices() throws IOException {
+        GitHubClient ghc = new GitHubClient();
+        ghc.setCredentials( login, password );
+        repositoryService = new RepositoryService( ghc );
+        commitService = new CommitService( ghc );
+        dataService = new DataService( ghc );
+    }
+
+...</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As a side note, writing things this way would allow us to specify an
+enterprise endpoint instead of GitHub.com. Refer to the <a href="#appendix_b">[appendix_b]</a> for specific syntax on how to do this.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="the-base-sha-from-the-repository-and-branch">The Base SHA from the Repository and Branch</h4>
+<div class="paragraph">
+<p>Now we implement <code>retrieveBaseSha()</code>. A Git repository is a directed
+acyclic graph (DAG) and as such, (almost) every node in the graph points
+to another commit (or potentially two if it is a merge commit). When
+we append content to our graph, we need to determine the prior node in
+that graph and attach the new node. <code>retrieve<span class="keep-together">Base</span>Sha</code> does this: it
+finds the SHA hash for our last commit, a SHA hash that is
+functionally an address inside our tree. To determine this address,
+our application needs to have a reference to the repository, and we
+use the repository service we instantiated earlier to get this
+reference. Once we have the repository, we need to look inside the
+correct branch: <code>getBranch</code> does this for us:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">...
+
+    private void createServices() throws IOException {
+        GitHubClient ghc = new GitHubClient();
+        ghc.setCredentials( login, password );
+        repositoryService = new RepositoryService( ghc );
+        commitService = new CommitService( ghc );
+        dataService = new DataService( ghc );
+    }
+
+    Repository repository;
+    RepositoryBranch theBranch;
+    String baseCommitSha;
+    private void retrieveBaseSha() throws IOException {
+        // get some sha's from current state in git
+        repository =  repositoryService.getRepository(login, repoName);
+        theBranch = getBranch();
+        baseCommitSha =  theBranch.getCommit().getSha();
+    }
+
+    public RepositoryBranch getBranch() throws IOException {
+        List&lt;RepositoryBranch&gt; branches =
+	  repositoryService.getBranches(repository);
+        RepositoryBranch master = null;
+        // Iterate over the branches and find gh-pages or master
+        for( RepositoryBranch i : branches ) {
+            String theName = i.getName().toString();
+            if( theName.equalsIgnoreCase("gh-pages") ) {
+                theBranch = i;
+            }
+            else if( theName.equalsIgnoreCase("master") ) {
+                master = i;
+            }
+        }
+        if( null == theBranch ) {
+            theBranch = master;
+        }
+        return theBranch;
+    }
+
+...</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This SHA commit is very important. Without it, we cannot create a
+new commit that links into our existing commit graph. In our starting
+point function <code>SaveFile()</code> we discontinue our commit steps if the SHA
+hash is not retrieved properly.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="creating-the-blob">Creating the Blob</h4>
+<div class="paragraph">
+<p>Contents inside a Git repository are stored as blobs. <code>createBlob</code>
+manages storing our content as a blob object, and then uses the
+dataService to store this blob into a repository. Until we have called
+<code>dataService.createBlob</code>, we have not actually placed the object
+inside GitHub. Also, remember that blobs are not linked into our DAG
+by themselves; they need to be associated with our DAG vis-a-vis a
+tree and commit object, which we do next:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">...
+    String blobSha;
+    Blob blob;
+    private void createBlob() throws IOException {
+        blob = new Blob();
+        blob.setContent(contentsBase64);
+        blob.setEncoding(Blob.ENCODING_BASE64);
+        blobSha = dataService.createBlob(repository, blob);
+    }
+
+...</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="generating-a-tree">Generating a Tree</h4>
+<div class="paragraph">
+<p>Next, we generate a tree by implementing <code>generateTree()</code>. A tree
+wraps a blob object and provides basically a path to our object: if
+you were designing an operating system, the tree would be the filename
+path and the blob is an inode. Our data service manager uses a
+repository name and a base SHA address, one that we retrieved earlier,
+to validate that this is a valid starting point inside our
+repository. Once we have a tree, we fill out the necessary tree
+attributes, like tree type (blob) and
+tree mode (blob), and set the SHA from the previously created blob
+object along with the size. Then we store the tree into our GitHub
+account using the data service object:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">...
+    Tree baseTree;
+    private void generateTree() throws IOException {
+        baseTree = dataService.getTree(repository, baseCommitSha);
+        TreeEntry treeEntry = new TreeEntry();
+        treeEntry.setPath( filename );
+        treeEntry.setMode( TreeEntry.MODE_BLOB );
+        treeEntry.setType( TreeEntry.TYPE_BLOB );
+        treeEntry.setSha(blobSha);
+        treeEntry.setSize(blob.getContent().length());
+        Collection&lt;TreeEntry&gt; entries = new ArrayList&lt;TreeEntry&gt;();
+        entries.add(treeEntry);
+        newTree = dataService.createTree( repository, entries,
+	  baseTree.getSha() );
+    }
+
+...</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="creating-the-commit">Creating the Commit</h4>
+<div class="paragraph">
+<p>We are getting close to actually finalizing the creation of content:
+next, implement <code>createCommit()</code>. We have created
+a blob that stores the actual content, and created a tree that
+stores the path to the content (more or less), but since Git is a
+version control system, we also need to store information about who
+wrote this object and why. A commit object stores this
+information. The process should look familiar coming from the previous
+steps: we create the commit and then add relevant metadata, in this case the
+commit message. We also need to provide the commit user with the
+commit. We then use the data service to create the commit
+inside our repository in GitHub at the correct SHA address:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">...
+    CommitUser commitUser;
+    private void createCommitUser() throws IOException {
+        UserService us = new UserService(); // // <b class="conum">(1)</b>
+        us.getClient().setCredentials( login, password );
+        commitUser = new CommitUser(); // // <b class="conum">(2)</b>
+        User user = us.getUser(); // // <b class="conum">(3)</b>
+        commitUser.setDate(new Date());
+        String name = user.getName();
+        if( null == name || name.isEmpty() ) { // // <b class="conum">(4)</b>
+            name = "Unknown";
+        }
+
+        commitUser.setName( name ); // // <b class="conum">(5)</b>
+        String email = user.getEmail();
+        if( null == email || email.isEmpty() ) {
+            email = "unknown@example.com";
+        }
+        commitUser.setEmail( email );
+    }
+
+    Commit newCommit;
+    private void createCommit() throws IOException {
+        // create commit
+        Commit commit = new Commit(); // // <b class="conum">(6)</b>
+        commit.setMessage( commitMessage );
+        commit.setAuthor( commitUser); // // <b class="conum">(7)</b>
+        commit.setCommitter( commitUser );
+        commit.setTree( newTree );
+        List&lt;Commit&gt; listOfCommits = new ArrayList&lt;Commit&gt;(); // // <b class="conum">(8)</b>
+        Commit parentCommit = new Commit();
+        parentCommit.setSha(baseCommitSha);
+        listOfCommits.add(parentCommit);
+        commit.setParents(listOfCommits);
+        newCommit = dataService.createCommit(repository, commit); // // <b class="conum">(9)</b>
+    }
+...</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<ol>
+<li>
+<p>Create a user service object. We will use this to get back user
+data for the logged-in user from GitHub.</p>
+</li>
+<li>
+<p>We then create a commit user. This will be used to annotate the
+commit object (twice in fact, as we will use it for both the author
+and committer).</p>
+</li>
+<li>
+<p>Retrieve the user from the service, loading it from GitHub.</p>
+</li>
+<li>
+<p>Now, attempt to get the name for the logged-in user. If the name
+does not exist (the user has not set a name in their GitHub profile)
+set the name to unknown. Then, store the name in the commit user
+object.</p>
+</li>
+<li>
+<p>Do the same process to establish the email for the commit user.</p>
+</li>
+<li>
+<p>Now, return to the <code>createCommit</code> function and create a commit
+object.</p>
+</li>
+<li>
+<p>We need to use an author and committer, so pass in the commit user
+we created in the <code>createCommitUser</code> function.</p>
+</li>
+<li>
+<p>Next, generate a list of commits. We will only use one, but you
+might recall commits can have multiple parents (a merge, for example)
+and we need to specify the parent or parents. We create
+the list, create a parent, and set the base SHA we determined earlier,
+and then indicate in our new commit that it is the parent.</p>
+</li>
+<li>
+<p>Finally, we create the commit using our data service object.</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="updating-the-master-resource">Updating the Master Resource</h4>
+<div class="paragraph">
+<p>Our final step is to take the new commit SHA and update our branch
+reference to point to it:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">...
+    TypedResource commitResource;
+    private void createResource() {
+        commitResource = new TypedResource(); // // <b class="conum">(1)</b>
+        commitResource.setSha(newCommit.getSha());
+        commitResource.setType(TypedResource.TYPE_COMMIT);
+        commitResource.setUrl(newCommit.getUrl());
+    }
+
+    private void updateMasterResource() throws IOException {
+        Reference reference =
+                dataService.getReference(repository,
+                        "heads/" + theBranch.getName() ); // // <b class="conum">(2)</b>
+        reference.setObject(commitResource);
+        dataService.editReference(repository, reference, true) ; // // <b class="conum">(3)</b>
+    }
+...</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<ol>
+<li>
+<p>First, we create the new commit resource. We then associate the
+new commit SHA, indicate it is a resource of commit type, and then
+link it to our commit using its URL.</p>
+</li>
+<li>
+<p>We use the data service object to get the current branch reference
+from GitHub. Branch references are retrieved by appending "heads" to
+the branch (we determined the branch in a previous step).</p>
+</li>
+<li>
+<p>Finally, we update the branch reference to our new commit resource.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>This is the complete code to add data to GitHub using the Git Data
+API. Good work!</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="passing-all-our-tests">Passing All Our Tests</h4>
+<div class="paragraph">
+<p>Our code is complete. Let&#8217;s make sure our tests run successfully.</p>
+</div>
+<div class="paragraph">
+<p>We need to set up our test configuration to run within Android Studio.
+Select the &#x201c;Build Variants&#x201d; vertical tab on the left, and in Test
+Artifact select Unit Tests. Then, open the Run menu, and
+select &#x201c;Edit configurations&#x201d;. Click the plus symbol, and choose
+JUnit. You will be presented with space to create a unit test run
+configuration. First, click &#x201c;Use classpath of module&#x201d; and
+select &#x201c;app&#x201d;. Make sure the Test Kind is set to class, and then
+click the selector to the right of the class field. It should
+display your test class &#x201c;GitHubHelperTest.java&#x201d;. We will need to store
+the username and password as environment variables, so click to add
+these. Your final configuration should look like <a href="#creating-unit-tests">Creating a unit test configuration</a>.</p>
+</div>
+<div id="creating-unit-tests" class="imageblock">
+<div class="content">
+<img src="images/btwg_07in05.png" alt="btwg 07in05">
+</div>
+<div class="title">Figure 5. Creating a unit test configuration</div>
+</div>
+<div class="paragraph">
+<p>Now, create the UI tests configuration: switch to "Android Instrumentation Tests" in the "Test Artifact"
+of the "Build Variants" tab. Then, click the "Run" menu, and again
+go to "Edit configurations". Click the plus symbol, and this
+time choose "Android Tests." Choose "app" as the module, and then
+select "android.support.test.runner.AndroidJUnitRunner" as the
+specific instrumentation runner. You can choose whichever target
+device you prefer, an emulator, or a physical device if you have
+one. Give the configuration a name like "Android Test."</p>
+</div>
+<div class="paragraph">
+<p>To run your tests, switch to the appropriate test artifact and then
+from the "Run" menu, select "Debug" and choose the proper test
+configuration. You can set breakpoints and step through code in your
+test or implementation from within Android Studio.</p>
+</div>
+<div class="paragraph">
+<p>I personally find it annoying to switch between build variants when I
+want to run my tests, so if you prefer, you can use the command line
+instead (and ignore the need to change build variants):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-bash" data-lang="bash">$ GITHUB_HELPER_USERNAME=MyUsername \
+GITHUB_HELPER_PASSWORD=MyPwd123 \
+./gradlew testDebugUnitTest
+...
+:app:mockableAndroidJar UP-TO-DATE
+:app:assembleDebugUnitTest UP-TO-DATE
+:app:testDebugUnitTest UP-TO-DATE
+
+BUILD SUCCESSFUL
+$ ./gradlew connectedAndroidTest
+...
+:app:compileDebugAndroidTestNdk UP-TO-DATE
+:app:compileDebugAndroidTestSources
+:app:preDexDebugAndroidTest
+:app:dexDebugAndroidTest
+:app:packageDebugAndroidTest
+:app:assembleDebugAndroidTest
+:app:connectedDebugAndroidTest
+
+BUILD SUCCESSFUL</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You will see similar results with the Android Studio test runner
+windows. Our tests pass and our application is complete.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+If you want to see a more complicated version of the GitHub API on
+Android, take a look at <a href="https://github.com/xrd/TeddyHyde.git">Teddy
+Hyde</a> (also available on the Google Play Store). Teddy Hyde uses OAuth
+to log in to GitHub, and has a much richer set of features for editing
+Jekyll blogs.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="summary">Summary</h3>
+<div class="paragraph">
+<p>This application will allow you to write into a real Jekyll blog,
+adding posts, upon which GitHub will regenerate your site. This little
+application manages quite a few things: formatting the filename
+correctly, encoding the data for submission to GitHub, and we have a
+unit test and UI test that help to verify the functionality.</p>
+</div>
+<div class="paragraph">
+<p>In the next chapter we will use CoffeeScript to create our own chat
+robot that requests pull request reviews from chat room members
+using the Activity API.</p>
+</div>
+</div>
+</div>
+</div>
+
+      
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.0/anchor.min.js" integrity="sha256-lZaRhKri35AyJSypXXs4o6OPFTbTmUoltBbDCbdzegg=" crossorigin="anonymous"></script>
+    <script>anchors.add();</script>
+    
+  </body>
+</html>
