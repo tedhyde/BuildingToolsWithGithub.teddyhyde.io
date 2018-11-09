@@ -1,0 +1,961 @@
+# GitHub Wikis with Gollum
+
+GitHub wikisid=ix\_chapter-03-gollum-asciidoc0range=startofrange
+id=ix\_chapter-03-gollum-asciidoc0range=startofrange
+range=startofrangeGollumGitHub wikis
+withid=ix\_chapter-03-gollum-asciidoc1
+id=ix\_chapter-03-gollum-asciidoc1range=startofrange
+range=startofrangeWikis have revolutionized the way we create and digest
+information. It turns out that they are a great complement to technical
+projects (code repositories) because they allow nontechnical users to
+contribute in ways other than adding code. Gollum is an open source wiki
+created by GitHub. Just as Git has revolutionized collaborative editing
+of code, Gollum wikis layer the benefits of Git onto the widely used
+wiki publishing workflow. Gollum wikis are themselves repositories that
+generally annotate other typically code-centric repositories. GitHub
+makes it easy to associate a wiki with any repository.
+
+In this chapter we’ll explore the basics of using Gollum, creating a
+wiki on GitHub and then learning how to edit it on GitHub and as a
+repository on our local machine. We will then create a Gollum wiki by
+hand from the command line, and show the bare minimum set of files to
+call something a Gollum repository. Finally, we will build a simple
+image organization tool that allows us to edit a Gollum wiki in an
+entirely different way, but still publishes information into GitHub as a
+regular Gollum wiki, exploring a little bit of the internals of Git
+along the way.
+
+> **Note**
+> 
+> This chapter demonstrates code that modifies a Git repository
+> programmatically. You will be able to follow along without possessing
+> a deep understanding of the internals of Git. And, a good supplement
+> to this chapter (and later chapters as well) is the Version Control
+> with Git book from O’Reilly.
+
+## "The Story of Smeagol…​"
+
+Gollumbasicsid=ix\_chapter-03-gollum-asciidoc2
+id=ix\_chapter-03-gollum-asciidoc2range=startofrange
+range=startofrangeAt its most basic form, a Gollum wiki is a Git
+repository with a single file, *Home.ext* (*ext* would be any of the
+supported wiki markup formats, which we will talk about later).
+
+### Repository Linked Wikis
+
+Gollumand repository–linked wikis and repository–linked
+wikisrepositoriesand associated Gollum wikis and associated Gollum
+wikisAny repository on GitHub, public or private, can have an associated
+Gollum wiki. To create a wiki linked to your repository, visit the
+repository page and then look in the rightmost colum. You’ll see an icon
+that looks like a book, next to which will be the word "Wiki," as in
+[figure\_title](#integrated_gollum_wiki_in_the_sidebar).
+
+![Accessing the associated wiki from the
+sidebar](images/btwg_03in01.png)
+
+Clicking this link will bring you to a page where you are asked to
+create a wiki for the first time. GitHub will ask you to create the
+"Home" page, which is the starting point in a Gollum wiki
+([figure\_title](#starting_a_gollum_wiki)). GitHub will automatically
+create a page template with the project name; you can customize this
+information to suit your own needs. Clicking "Save Page" will save your
+first page and create the wiki for you.
+
+![Genesis of a new wiki, creating the home page](images/btwg_03in02.png)
+
+Your wiki is now as public as your repository is public. Public
+repositories have public wikis, accessible to anyone. Private
+repositories have private wikis, accessible only to those users or
+organizations that have rights to edit the repository data.
+
+Let’s review the markup options for Gollum wikis now.
+
+### Markup and Structure
+
+Gollummarkup optionsid=ix\_chapter-03-gollum-asciidoc3
+id=ix\_chapter-03-gollum-asciidoc3range=startofrange
+range=startofrangeGollum files can be written in any of the supported
+GitHub Markup formats"Github Markup" formats, which include ASCIIdoc,
+Creole, Markdown, Org Mode, Pod, RDoc, ReStructuredText, Textile, and
+MediaWiki. The variety of markup languages brings flexibility but it can
+be difficult to know which one to use. MarkdownMarkdown (and its variant
+cousins) is the most popular markup language on GitHub, and is well
+liked on other popular sites like Stack Overflow. If you are unsure
+about which language to use, Markdown is a safe bet because it is
+ubiquitous across GitHub. [???](#Jekyll) has a much deeper overview of
+Markdown.
+
+If you do choose Markdown, in addition to the standard vanilla Markdown
+language tags, Gollum adds its own set of wiki-specific tags. There are
+often subtle (or conflicting) differences from other wiki markup so it
+is worth reviewing the [Gollum repository documentation
+page](https://github.com/gollum/gollum/wiki). We’ll go over the most
+important ones here.
+
+#### Links
+
+Gollumlink tag link tagHTMLlinksGollum tag Gollum tagMarkdownlink tag
+link tagLinks obviously convert into the `<a>` HTML tag. Each format has
+its own linking format: in Markdown you use `[text](URL)`. Gollum adds
+its own link tag: `  `.
+
+In addition:
+
+  - You can add a link title using the bar character:
+    `[[http://foobar.com|A link to foobar]]`.
+
+  - Links can be either external or internal links.
+
+  - A link like `[[Review Images]]` will be converted to a relative link
+    to the page *review-images.ext* (where *.ext* is the preferred
+    extension you are using with your wiki, most likely Markdown).
+
+Wikis are generally a collection of pages linked together in myriad
+ways, and this assumption about the structure of links makes writing
+pages easier.
+
+> **Warning**
+> 
+> As we mentioned, there are differences between Gollum wiki tags and
+> other wikis, despite their having similar syntax. One such example is
+> MediaWiki, where links with titles use the opposite ordering `[[A link
+> to
+> foobar|http://foobar.com]]`, so caveat emptor.
+
+#### Code snippets
+
+code snippetsGollumcode snippets in wikis code snippets in wikisGollum
+(the wiki) was invented at GitHub, a company dedicated to improving the
+lives of software developers, so it stands to reason Gollum wikis would
+support insertion of code snippets. To include a snippet of code, use
+three backticks, followed by an optional language name, and close the
+block of code using three more backticks. If you use the language name,
+Gollum will do proper syntax highlighting for most languages:
+
+```` ruby
+```ruby
+def hello
+  puts "hello"
+end
+```
+````
+
+Gollum [at one point](http://bit.ly/1JMzd4m) supported inclusion of
+files from any GitHub repository (and any branch\!) using a syntax like
+this:
+
+```` ruby
+```ruby:github:xrd/TeddyHyde/blob/master/Gemfile```
+````
+
+Unfortunately, this no longer works. According to current documentation
+for Gollum, this tag allows inclusion of files from the parent
+repository:
+
+```` ruby
+```ruby:/lib/gollum/app.rb```
+````
+
+But I found this to be broken as well. At the time of writing, it
+tragically appears that there is no way to insert code from the parent
+repository (or any other repository) into your wiki content.
+
+#### Structural components
+
+footers, in Gollum wikisGollumadding structural components adding
+structural componentsheadersin Gollum wikis in Gollum wikissidebars, in
+Gollum wikisGollum includes capabilities to add sidebars, headers, and
+footers. If you include a file called \_Sidebar.ext inside your
+repository, you’ll see it as a sidebar for every file rendered. Sidebars
+are automatically added to any file and any file from subdirectories
+that do not have their own sidebar files. If you wanted to add sidebars
+specific to a subdirectory, add another sidebar file in the subdirectory
+and this file will override the top-level sidebar file.
+
+#### No styling or JavaScript
+
+CSSGollum limitations with Gollum limitations withGollumstyling
+limitations styling limitationsJavaScriptGollum limitations with Gollum
+limitations withFor security reasons, Gollum strips out all CSS and
+JavaScript from raw markup files. You can include your own JavaScript or
+CSS file when running Gollum from the command line (discussed
+momentarily) using the `--custom-css` or `--custom-js` switches, but
+there is no way to include these files on a wiki when your Gollum wiki
+is hosted on GitHub.
+
+#### Inserting images
+
+Golluminserting images inserting imagesimagesGollum tag format for
+Gollum tag format forImages are inserted into your document using the
+same tag format &\#x5b;&\#x5b;ceo.png&\#x5d;&\#x5d;: this adds the
+correct HTML tags to include an image named *ceo.png* inside your page.
+This basic syntax is often extended for additional funtionality. For
+example, to add a frame and an alt tag, you could use syntax like
+`[[ceo.png|frame|alt=Our CEO
+relaxing on the beach]]`. This creates the proper HTML tags for the same
+image, and also adds a frame and alt text (helpful for better context
+and the extra information is used by screenreaders for visually impaired
+users as well). Review the documentation on the Gollum repository for
+more details about the breadth of the image options.
+
+You can also add images using the editor on GitHub. But you’ll notice
+that either way you are adding a link to an image and that there is no
+way to upload images into GitHub from the editor
+([figure\_title](#no_image_upload_only_image_urls)).
+
+![No image upload, only image URLs](images/btwg_03in03.png)
+
+For nontechnical users, this makes Gollum wikis on GitHub almost
+unusable if they need to add images. Let’s address this problem by
+building our own customized image-centric Gollum editor that still
+interoperates with regular Gollum wikis. We can put this editor in front
+of nontechnical users, allowing them to add images, and then publish the
+wiki into GitHub as
+isrange=endofrangestartref=ix\_chapter-03-gollum-asciidoc3
+startref=ix\_chapter-03-gollum-asciidoc3.range=endofrangestartref=ix\_chapter-03-gollum-asciidoc2
+startref=ix\_chapter-03-gollum-asciidoc2
+
+## Hacking Gollum
+
+imagesGollum–based editor forid=ix\_chapter-03-gollum-asciidoc4
+id=ix\_chapter-03-gollum-asciidoc4range=startofrange
+range=startofrangeWould Gollumas hackable wiki as hackable wikian image
+editor based on Gollum be of general use? On many software teams there
+is tension between the design team and the software team stemming from
+the fact that designers generally don’t like using source-code tools to
+manage images. This causes issues when software developers rely on
+designs that are rapidly changing: coders quickly get out of sync with
+the latest designs. As a wiki, Gollum is the perfect tool to bridge this
+gap between designers and coders: wikis are easy to read and modify by
+nontechnical users. Since Gollum is a hackable wiki, we can build our
+own workflow tool that allows designers to manage images and coders to
+easily see those changes in a source-code repository.
+
+This will be a dual-purpose repository. We can use the repository with
+Gollum as a standard wiki, and we can use it with our application to
+enter data in a more powerful way than Gollum permits from its default
+interface. The data will still be compatible with Gollum and will be
+hosted on GitHub.
+
+Rubygem installation gem installationTo begin, install the Gollum Ruby
+gem and then initialize our repository:
+
+``` bash
+$ gem install gollum
+$ mkdir images
+$ cd images
+$ git init .
+$ printf "### Our home" > Home.md
+$ git add Home.md
+$ git commit -m "Initial commit"
+```
+
+We’ve just created a wiki compatible with Gollum. Let’s see what it
+looks like inside Gollum. Run the `gollum` command then open
+*<http://localhost:4567/>* in your browser, as shown in
+[figure\_title](#gollum_running_locally).
+
+![Viewing the wiki home page running on our
+laptop](images/btwg_03in04.png)
+
+As you can see, this tiny set of commands was enough to create the
+basics of the Gollum wiki structure.
+
+> **Warning**
+> 
+> command lineediting Gollum from editing Gollum fromIf you edit a
+> Gollum wiki from the command line, be aware that Gollum only looks
+> inside the repository data for files. If you have added something to
+> the working directory or have not yet commited files in your index,
+> they will not be visible to Gollum.
+
+Now let’s begin creating the web app that will help us store images
+inside a Gollum wiki.
+
+## The Starting Point of a Gollum Editor
+
+Gollumimage editor construction image editor constructionNow we will
+create our custom editor. Sinatrafor Gollum image editor construction
+for Gollum image editor constructionWe’ll use Sinatra, a Ruby library
+that provides a simple DSL (domain-specific language) for building web
+applications. First, create a file called *image.rb* and put the
+following contents inside it:
+
+``` ruby
+require 'sinatra'
+require 'gollum-lib'
+wiki = Gollum::Wiki.new(".")
+get '/pages' do
+  "All pages: \n" + wiki.pages.collect { |p| p.path }.join( "\n" )
+end
+```
+
+Then, create the Gemfile, install the dependencies, and run the web
+application:
+
+``` bash
+$ echo "source 'https://rubygems.org'
+gem 'sinatra', '1.4.5'
+gem 'gollum-lib', '4.1.0'" >> Gemfile
+$ bundle install
+Fetching gem metadata from https://rubygems.org/..........
+Resolving dependencies...
+Installing charlock_holmes (0.7.3)
+Using diff-lcs (1.2.5)
+Installing github-markup (1.3.3)
+Using mime-types (1.25.1)
+...
+$ bundle exec ruby image.rb
+$ open http://localhost:4567/pages
+```
+
+We specify at least the minimum 4.1.0 for `gollum-lib` as the interface
+and list of supporting libraries has changed. We then run within the
+bundler context (using gems installed from this Gemfile rather than
+system gems) using the `bundle exec ruby image.rb` command.
+
+You’ll see a report of the files that exist in our Gollum wiki right
+now. We’ve only added one file, the *Home.md* file.
+
+## Programmatically Handling Images
+
+Gollumprogrammatically handling imagesid=ix\_chapter-03-gollum-asciidoc5
+id=ix\_chapter-03-gollum-asciidoc5range=startofrange
+range=startofrangeimageshandling
+programmaticallyid=ix\_chapter-03-gollum-asciidoc6
+id=ix\_chapter-03-gollum-asciidoc6range=startofrange
+range=startofrangeLet’s add to our server. We want to supportuploading
+ZIP files uploading ZIP files into our system that we will then unpack
+and add to our repository, as well as add a list of these files to our
+wiki. Modify our *image.rb* script to look like this:
+
+``` ruby
+require 'sinatra'
+require 'gollum-lib'
+require 'tempfile'
+require 'zip'
+require 'rugged'
+
+def index( message=nil )
+  response = File.read(File.join('.', 'index.html'))
+  response.gsub!( "<!-- message -->\n",
+  "<h2>Received and unpacked #{message}</h2>" ) if message
+  response
+end
+
+wiki = Gollum::Wiki.new(".")
+get '/' do
+  index()
+end
+
+post '/unpack' do
+  @repo = Rugged::Repository.new('.')
+  @index = Rugged::Index.new
+
+  zip = params[:zip][:tempfile]
+  Zip::Zip.open( zip ) { |zipfile|
+    zipfile.each do |f|
+      contents = zipfile.read( f.name )
+      filename = f.name.split( File::SEPARATOR ).pop
+      if contents and filename and filename =~ /(png|jp?g|gif)$/i
+        puts "Writing out: #{filename}"
+      end
+    end
+  }
+  index( params[:zip][:filename] )
+end
+```
+
+We’ll need an *index.html* file as well, so add that:
+
+``` ruby
+<html>
+<body>
+<!-- message -->
+<form method='POST' enctype='multipart/form-data' action='/unpack'>
+Choose a zip file:
+<input type='file' name='zip'/>
+<input type='submit' name='submit'>
+</form>
+</body>
+</html>
+```
+
+This server script receives a POST request at the `/unpack` mount point
+and retrieves a ZIP file from the parameters passed into the script. It
+then opens the ZIP file (stored as a temp file on the server side),
+iterates over each file in the ZIP, strips the full path from the
+filename, and then prints out that filename (if it looks like an image)
+to our console. Regardless of whether we are accessing the root of our
+server, or have just posted to the `/unpack` mount point, we always need
+to render our index page. When we do render it after unzipping, we
+replace a comment stored in the index file with a status message
+indicating the script received the correct file we posted.
+
+RubyZipRugged libraryWe need to add the new Ruby libraries (RubyZip and
+Rugged) to our Gemfile: update the required gems using the following
+commands, and then rerun our Sinatra server script:
+
+``` bash
+$ echo "gem 'rubyzip', '1.1.7'
+gem 'rugged', '0.23.2'" >> Gemfile
+$ bundle install
+$ bundle exec ruby image.rb
+```
+
+> **Warning**
+> 
+> Rugged requires the libgit2 libraries (the pure C libraries for
+> accessing Git repositories). Rugged gives you access to modification
+> of Git repositories in the elegance of the Ruby language but with the
+> speed of C. However, as this library is based on libgit2, and libgit2
+> requires a C compiler, you will need to install this toolset first to
+> install Rugged. On OS X this can look like `brew install cmake` or
+> `apt-get install cmake` for Linux.
+
+Then, we can open *<http://localhost:4567/>* and test uploading a ZIP
+file full of images. You’ll see output similar to this in your console
+after uploading a ZIP file:
+
+``` bash
+...
+[2014-05-07 10:08:49] INFO  WEBrick 1.3.1
+[2014-05-07 10:08:49] INFO  ruby 2.0.0 (2013-05-14)
+[x86_64-darwin13.0.0]
+== Sinatra/1.4.5 has taken the stage on 4567 for development with
+backup from WEBrick
+[2014-05-07 10:08:49] INFO  WEBrick::HTTPServer#start: pid=46370
+port=4567
+Writing out: IMG1234.png
+Writing out: IMG5678.png
+Writing out: IMG5678.png
+...
+```
+
+We are not doing anything beyond printing out the names of the images in
+the ZIP. We’ll actually insert them into our Git repository in the next
+section.range=endofrangestartref=ix\_chapter-03-gollum-asciidoc6
+startref=ix\_chapter-03-gollum-asciidoc6range=endofrangestartref=ix\_chapter-03-gollum-asciidoc5
+startref=ix\_chapter-03-gollum-asciidoc5
+
+## Using the Rugged Library
+
+GollumRugged library for adding files to
+wikiid=ix\_chapter-03-gollum-asciidoc7
+id=ix\_chapter-03-gollum-asciidoc7range=startofrange
+range=startofrangeRugged
+libraryid=ix\_chapter-03-gollum-asciidoc8range=startofrange
+id=ix\_chapter-03-gollum-asciidoc8range=startofrange
+range=startofrangeOur end goal for this script is to add files to our
+Gollum wiki, which means adding files to the repository that backs our
+Gollum wiki. The Rugged library handles the grunt work of this type of
+task easily. GritRugged as successor to Rugged as successor toRugged is
+the successor to the original Ruby library for Git (called Grit).
+Gollum, at the time of writing, uses the Grit libraries, which also
+provide a binding to the libgit2 library, a "portable, pure C
+implementation of the Git core methods." Grit has been abandoned (though
+there are unofficial maintainers) and the Gollum team intends to use
+Rugged as the long-term library backing Gollum. Rugged is written in
+Ruby and (provided you like Ruby) is a more elegant way to interface
+with a Git repository than raw Git commands. As you might expect, Rugged
+is maintained by several employees of GitHub.
+
+To change our script to modify our Git repository, let’s change our
+script to no longer print the filename (using the `puts` method inside
+the ZIP decode block) and instead call a new method called
+`write_file_to_repo`. And, at the end of the ZIP block, add a method
+build\_commit() methodcalled `build_commit`, which builds the commit
+from our new files. Our new file (omitting the unchanged code at the
+head of the file) looks like this:
+
+``` ruby
+post '/unpack' do
+  @repo = Rugged::Repository.new('.')
+  @index = Rugged::Index.new
+
+  zip = params[:zip][:tempfile]
+  Zip::Zip.open( zip ) { |zipfile|
+    zipfile.each do |f|
+      contents = zipfile.read( f.name )
+      filename = f.name.split( File::SEPARATOR ).pop
+      if contents and filename and filename =~ /(png|jp?g|gif)$/i
+        write_file_to_repo contents, filename # Write the file
+      end
+    end
+    build_commit() # Build a commit from the new files
+  }
+  index( params[:zip][:filename] )
+end
+
+def get_credentials
+  contents = File.read File.join( ENV['HOME'], ".gitconfig" )
+  @email = $1 if contents =~ /email = (.+)$/
+  @name = $1 if contents =~ /name = (.+)$/
+end
+
+def build_commit
+  get_credentials()
+  options = {}
+  options[:tree] = @index.write_tree(@repo)
+  options[:author] = { :email => @email, :name => @name, :time => Time.now }
+  options[:committer] = { :email => @email, :name => @name, :time => Time.now }
+  options[:message] ||= "Adding new images"
+  options[:parents] = @repo.empty? ? [] : [ @repo.head.target ].compact
+  options[:update_ref] = 'HEAD'
+
+  Rugged::Commit.create(@repo, options)
+
+end
+
+def write_file_to_repo( contents, filename )
+  oid = @repo.write( contents, :blob )
+  @index.add(:path => filename, :oid => oid, :mode => 0100644)
+end
+```
+
+As you can see from the code, Rugged handles a lot of the grunt work
+required when creating a commit inside a Git repository. Rugged has a
+simple interface to creating a blob inside your Git repository
+(`write`), and adding files to the index (the `add` method), and also
+has a simple and clean interface to build the tree object (`write_tree`)
+and then build the commit (`Rugged::Commit.create`).
+
+To ease the burden of hardcoding our commit credentials, we implement a
+method calledget\_credentials method `get_credentials` that loads up
+your credentials from a file called *.gitconfig* located in your home
+directory. You probably have this if you have used Git for anything at
+all on your machine, but if this file is missing, this method will fail.
+On my machine this file looks like the following code snippet. The
+`get_credentials` method simply loads up this file and parses it for the
+name and email address. If you wanted to load the credentials using
+another method, or even hardcode them, you can just modify this method
+to suit your needs. The instance variables `@email` and `@name` are then
+used in the `build_commit()` method:
+
+``` ini
+[user]
+        name = Chris Dawson
+        email = xrdawson@gmail.com
+[credential]
+        helper = cache --timeout=3600
+...
+```
+
+Let’s verify that things are working correctly after uploading a ZIP
+file. Jumping into a terminal window after uploading a new file, imagine
+running these commands:
+
+``` bash
+$ git status
+```
+
+To our surprise, we will see something like this:
+
+``` bash
+$ git status
+On branch master
+Changes to be committed:
+  (use "git reset HEAD <file>..." to unstage)
+
+  deleted:    images/3190a7759f7f668.../IMG_20120825_164703.jpg
+  deleted:    images/3190a7759f7f668.../IMG_20130704_151522.jpg
+  deleted:    images/3190a7759f7f668.../IMG_20130704_174217.jpg
+```
+
+We just added those files; why is Git reporting them as deleted?
+
+To understand why this happens, remember that in Git there are three
+places files can reside: the working directory, the staging area or
+index, and the repository itself. Your working directory is the set of
+local files you are working on. The `git status` command describes
+itself as "show the working tree status." Rugged operates on the
+repository itself, and the Rugged calls in the preceding code operated
+on the index and then built a commit. This is important to note because
+our files will not exist in our working directory if we only write them
+using the Rugged calls, and if we do this, we cannot reference them
+inside our wiki page when we are running Gollum locally. We’ll fix this
+in the next section.
+
+We’ve now added the files to our repository, but we have not exposed
+these files inside our wiki. Let’s modify our server script to write out
+each file to a wiki page for review. As we mentioned in the previous
+section, we need to make sure we write the files to both the working
+index and the repository (using the Rugged library `write` call). Then
+we can generate a Review file that details all the images
+uploaded.range=endofrangestartref=ix\_chapter-03-gollum-asciidoc8
+startref=ix\_chapter-03-gollum-asciidoc8range=endofrangestartref=ix\_chapter-03-gollum-asciidoc7
+startref=ix\_chapter-03-gollum-asciidoc7
+
+## Adding Images to a Review File
+
+Now that we have successfully unzipped and processed the images, we can
+add them to a file for review. We will call this file `Review.md`. The
+code to write the review file looks like this:
+
+``` ruby
+def write_review_file( files, dir )
+   review_filename = "Review.md"
+   contents = "## Review Images\n\n"
+   files.each do |f|
+      contents += "### #{f} \n[[#{dir}/#{f}]]\n\n"
+   end
+
+  File.write review_filename, contents
+  oid = @repo.write( contents, :blob )
+  @index.add(:path => review_filename, :oid => oid, :mode => 0100644)
+end
+```
+
+The method is straightforward: we pass in the list of files and a
+subdirectory where we wrote out the image files to disk. Then, we
+generate a Markdown file with a header (using the two hash formatting
+characters) stating "Review Images," and then iterate over the list of
+images, entering the filename as a subheader. We then use the Gollum
+image markup tag (two braces, then the image filename, then closing with
+two more braces). We write out the file to disk. Finally, we add the
+file to the repository and then to the index. The commit that we built
+for the images will include this review file as well, since it is added
+to the index before the images are processed—as long as we place the
+call to `write_review_file` before the call to `build_commit` like so:
+
+``` ruby
+ ...
+  write_review_file files, dir # write out a review file
+  build_commit() # Build a commit from the new files
+ ...
+```
+
+Now, let’s take a look at how images are stored inside our repository,
+particularly if the same image is uploaded twice.
+
+## Optimizing for Image Storage
+
+Gollumoptimizing for image storageid=ix\_chapter-03-gollum-asciidoc9
+id=ix\_chapter-03-gollum-asciidoc9range=startofrange
+range=startofrangeimagesoptimizing repository for storage
+ofid=ix\_chapter-03-gollum-asciidoc10
+id=ix\_chapter-03-gollum-asciidoc10range=startofrange
+range=startofrangeIf a designer uploads the same image twice, what
+happens? Our code writes the uploaded image to a path on disk that is
+based on the parent SHA hash of the repository (and this means we will
+always write the file to a different path, even when the file is the
+same as a previous uploaded file). It would look to an untrained eye
+like we are adding the file multiple times. However, the nature of Git
+permits us to add the same file multiple times without incurring any
+additional storage cost beyond the first addition (and the minimal cost
+of a tree structure). When a file is added to a Git repository, an SHA
+hash is generated from the file contents. For example, generating the
+SHA hash from an empty file will always return the same SHA hash:\[1\]
+
+``` bash
+$ echo -en "blob 0\0" | shasum
+e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+$ printf '' | git hash-object -w --stdin
+e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+```
+
+Adding a ZIP file with a bunch of files where only one or two differs
+from the prior ZIP file means that Git will properly reference the same
+file multiple times. Unfortunately, GitHub does not provide an interface
+for reviewing the statistics of wikis in the same way they do for
+regular repositories. We can, however, review our repository size from
+within the local repository by running the count-objects Git subcommand.
+As an example, I uploaded a ZIP file with two images inside of it. I
+then use the count-objects command and see this:
+
+``` bash
+$ git gc
+...
+$ git count-objects -v
+count: 0
+size: 0
+in-pack: 11
+packs: 1
+size-pack: 2029
+prune-packable: 0
+garbage: 0
+size-garbage: 0
+```
+
+Inspecting the first ZIP file, I see these statistics about it:
+
+``` bash
+$ unzip -l ~/Downloads/Photos\ \(4\).zip
+Archive:  /Users/xrdawson/Downloads/Photos (4).zip
+  Length     Date   Time    Name
+ --------    ----   ----    ----
+  1189130  01-01-12 00:00   IMG_20130704_151522.jpg
+   889061  01-01-12 00:00   IMG_20130704_174217.jpg
+ --------                   -------
+  2078191                   2 files
+```
+
+Now let’s use another ZIP file with the same two files present but with
+an additional image file added:
+
+``` bash
+unzip -l ~/Downloads/Photos\ \(5\).zip
+Archive:  /Users/xrdawson/Downloads/Photos (5).zip
+  Length     Date   Time    Name
+ --------    ----   ----    ----
+  1189130  01-01-12 00:00   IMG_20130704_151522.jpg
+   566713  01-01-12 00:00   IMG_20120825_164703.jpg
+   889061  01-01-12 00:00   IMG_20130704_174217.jpg
+ --------                   -------
+  2644904                   3 files
+```
+
+Then, I upload the second ZIP file. If I rerun the count-objects command
+(after running `git gc`, a command that packs files efficiently and
+makes our output more human readable), I see this:
+
+``` bash
+$ git gc
+...
+$ git count-objects -v
+count: 0
+size: 0
+in-pack: 17
+packs: 1
+size-pack: 2578
+prune-packable: 0
+garbage: 0
+size-garbage: 0
+```
+
+Notice that our packed size has only changed by about half a MB, which
+is the compressed size of the additional third file, but more
+importantly, there was no impact from the other two files on our
+repository size, even though they were added at different paths.
+
+If we upload the secondary file yet again, we will regenerate and commit
+a new version of the *Review.md* file, but no new files will need to be
+created inside our Git repository object store from the images directory
+(even though their paths have changed), so our impact on the repository
+will be minimal:
+
+``` bash
+$ git gc
+...
+$ git count-objects -v
+count: 0
+size: 0
+in-pack: 21
+packs: 1
+size-pack: 2578
+prune-packable: 0
+garbage: 0
+size-garbage: 0
+```
+
+As you can see, our packed size has barely changed, an indication that
+the only changes were a new Git tree object and commit object. We still
+have the files located in our repository at a variety of paths so our
+review pages will work no matter what revision we are accessing:
+
+``` bash
+$ find images
+images
+images/7507409915d00ad33d03c78af0a4004797eec4b4
+images/7507409915d00ad33d03c78af0a4004797eec4b4/IMG_20120825_164703.jpg
+images/7507409915d00ad33d03c78af0a4004797eec4b4/IMG_20130704_151522.jpg
+images/7507409915d00ad33d03c78af0a4004797eec4b4/IMG_20130704_174217.jpg
+images/7f9505a4bafe8c8f654e22ea3fd4dab8b4075f75
+images/7f9505a4bafe8c8f654e22ea3fd4dab8b4075f75/IMG_20120825_164703.jpg
+images/7f9505a4bafe8c8f654e22ea3fd4dab8b4075f75/IMG_20130704_151522.jpg
+images/7f9505a4bafe8c8f654e22ea3fd4dab8b4075f75/IMG_20130704_174217.jpg
+images/b4be28e5b24bfa46c4942d756a3a07efd24bc234
+images/b4be28e5b24bfa46c4942d756a3a07efd24bc234/IMG_20130704_151522.jpg
+images/b4be28e5b24bfa46c4942d756a3a07efd24bc234/IMG_20130704_174217.jpg
+```
+
+Git and Gollum can efficiently store the same file at different paths
+without overloading the
+repository.range=endofrangestartref=ix\_chapter-03-gollum-asciidoc10
+startref=ix\_chapter-03-gollum-asciidoc10range=endofrangestartref=ix\_chapter-03-gollum-asciidoc9
+startref=ix\_chapter-03-gollum-asciidoc9
+
+## Reviewing on GitHub
+
+Gollumreviewing wiki on GitHubid=ix\_chapter-03-gollum-asciidoc11
+id=ix\_chapter-03-gollum-asciidoc11range=startofrange
+range=startofrangeThe raison d’etre for this wiki is to annotate a
+development project. If you follow the instructions and create a new
+wiki for a repository, you’ll then be able to push up the changes we’ve
+made using our image.rb script. Once you have created a new wiki, look
+for a box on the right that says "Clone this wiki locally," as seen in
+[figure\_title](#gollum_git_clone_url).
+
+![Getting the clone URL for our wiki](images/btwg_03in05.png)
+
+Copy that link, and then enter a terminal window where we can then add a
+remote URL to our local repository that allows us to synchronize our
+repositories and publish our images into GitHub. Gollum wikis have a
+simple URL structure based on the original clone URL: just add the word
+`.wiki` to the end of the clone URL (but before the final `.git`
+extension). So, if the original clone URL of the repository is
+`git@github.com:xrd/webiphany.com.git` our clone URL for the associated
+wiki will be `git@github.com:xrd/webiphany.com.wiki.git`. Once we have
+the URL, we can add it as a remote to our local repository using the
+following commands:
+
+``` bash
+$ git remote add origin git@github.com:xrd/webiphany.com.wiki.git
+$ git pull # This will require us to merge the changes...
+$ git push
+```
+
+When we pull, we will be asked to merge our changes since GitHub created
+a *Home.md* file that did not exist in our local repository. We can just
+accept the merge as is. The `git push` publishes our changes. If we then
+visit the wiki, we’ll see an additional file listed under the pages
+sidebar to the right. Clicking the Review page, as in
+[figure\_title](#images_displayed_within_a_gollum_wiki), we can see the
+images we’ve added most recently.
+
+![An image review page](images/btwg_03in06.png)
+
+Not sure why our designer is providing us with an image of a couch, but
+I am sure he has his reasons.
+
+Once we have published the file, we can click the Review link in the
+sidebar to see the most current version of the Review page. We also can
+review the revisions of this file by clicking the "3 Commits" (or
+whatever number of commits have occurred with this file) link right
+underneath the page title. Jumping onto that page shows us the full
+history of this file, as shown in
+[figure\_title](#a_view_on_the_revisions_from_within_github).
+
+![Wiki history review via the Commit Log](images/btwg_03in07.png)
+
+Clicking any of the SHA hashes will display the page at that revision in
+our history and show us the state of the document at any given moment in
+history. Unfortunately, jumping back and forth between revisions
+requires two clicks, one from the Review page to the list of revisions,
+and then another click to jump into the revision we want, but this
+permits us to review changes between the comps provided from our
+designer.
+
+It would be nice if GitHub provided a simple way to jump from a revision
+to the parent (older) revision, but it doesn’t expose this in its site
+at this point. We can fix this, however, by generating our own special
+link inside the Review page itself, which will magically know how to
+navigate to a previous version of the
+page.range=endofrangestartref=ix\_chapter-03-gollum-asciidoc11
+startref=ix\_chapter-03-gollum-asciidoc11
+
+## Improving Revision Navigation
+
+Gollumimproving revision navigation improving revision
+navigationrevisions, improving navigation ofIn our example, we only have
+three revisions right now, and all share the same commit message
+("Adding new images"). This is not very descriptive and makes it
+challenging to understand the differences between revisions, which is
+critical when we are trying to understand how things have changed
+between comps. We can improve this easily.
+
+First, let’s add a commit message field to our upload form:
+
+``` html
+<html>
+<body>
+<!-- message -->
+<form method='POST' enctype='multipart/form-data' action='/unpack'>
+Choose a zip file:
+<input type='file' name='zip'/>
+<input type='text' name='message' placeholder='Enter commit message'/>
+<input type='submit' name='submit'>
+</form>
+</body>
+</html>
+```
+
+Then, let’s adjust the commit message inside our *image.rb* script,
+which is a one-line change to the options hash, setting the value of it
+to the parameter we are now passing in for commit:
+
+``` ruby
+  ...
+options[:committer] = { :email => @email, :name => @name, :time => Time.now }
+options[:message] = params[:message]
+options[:parents] = @repo.empty? ? [] : [ @repo.head.target ].compact
+  ...
+```
+
+Now, if our designer posts a new version of the UI comps, they can
+specify what changes were made, and we have a record of that in our
+change log, which is exposed on the revisions section of our wiki hosted
+on GitHub.
+
+## Fixing Linking Between Comp Pages
+
+comp pages, fixing linking betweenGollumfixing linking between comp
+pages fixing linking between comp pagesAs noted, there is no quick way
+to jump between comps once we are inside a review revision. However, if
+you recall we used the parent SHA hash to build out our image links. We
+can use this to build out a navigation links inside our comp page when
+we are on a revision page while viewing the history.
+
+Again, it is a simple change: one line within thewrite\_review\_file
+method `write_review_file` method. After the block that creates each
+link to the image files, add a line that builds a link to the parent
+document via its SHA hash using the parent SHA found in our Rugged
+object under `@repo.head.target`. This link will allow us to navigate to
+prior revisions in our history:
+
+``` ruby
+  ...
+files.each do |f|
+  contents += "### #{f} \n[[#{dir}/#{f}]]\n\n"
+end
+contents += "[Prior revision (only when viewing history)]" +
+"(#{@repo.head.target})\n\n"
+
+File.write review_filename, contents
+oid = @repo.write( contents, :blob )
+@index.add(:path => review_filename, :oid => oid, :mode => 0100644)
+  ...
+```
+
+Now, when we view the Review file history, we see a link to each prior
+version. Is it possible to provide a link to the next version in our
+history? Unfortunately, we have no way to predict the SHA hash of the
+next commit made to the repository, so we cannot build this link inside
+our *Review.md* file with our Ruby script. However, we do get something
+just as good for free because we can simply use the back button to jump
+back to the prior page in the history stack of our browser. We might try
+to get clever and use a link with JavaScript to call
+window.history.back() but Gollum will foil this attempt by stripping
+JavaScript from rendered markup files. This is generally a good thing,
+as we don’t want to permit rogue markup inside our wiki pages, but it
+does limit our options in this situation.
+
+Unfortunately, these links do not work when you are viewing the review
+file itself (clicking them brings you to a page that asks you to create
+this as a new page). Liquid tagsGollum, unlike Jekyll, does not support
+Liquid tags, which would permit building a link using the username and
+repository. Right now we don’t have access to these variables, so our
+link needs to be relative, which works when we are in history review,
+but not in the normal review. It does not affect viewing the files so
+this would require educating your stakeholders on the limitations of
+this link.range=endofrangestartref=ix\_chapter-03-gollum-asciidoc4
+startref=ix\_chapter-03-gollum-asciidoc4
+
+## Summary
+
+In this chapter we learned how to create a Gollum wiki from scratch,
+both on GitHub and as a fresh repository from the command line. We then
+looked at the different ways to use the Gollum command-line tool and
+learned why this is a nice option when we want to run our own Gollum
+server. Finally, we built a customized Gollum image-centric editor using
+the Rugged and Sinatra Ruby
+libraries.range=endofrangestartref=ix\_chapter-03-gollum-asciidoc1
+startref=ix\_chapter-03-gollum-asciidoc1range=endofrangestartref=ix\_chapter-03-gollum-asciidoc0
+startref=ix\_chapter-03-gollum-asciidoc0
+
+In the next chapter we’ll switch gears completely and build a GUI
+application for searching GitHub issues. And we’ll do it in Python.
+
+1.  This is explained beautifully in the blog
+    <http://alblue.bandlem.com/2011/08/git-tip-of-week-objects.html>.

@@ -1,0 +1,2164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?asciidoc-toc?>
+<?asciidoc-numbered?>
+<article xmlns="http://docbook.org/ns/docbook" xmlns:xl="http://www.w3.org/1999/xlink" version="5.0" xml:lang="en">
+<info>
+<title>Ruby and Jekyll</title>
+<date>2018-11-09</date>
+</info>
+<section xml:id="Jekyll">
+<title>Ruby and Jekyll</title>
+<simpara><indexterm>
+<primary>Jekyll</primary><secondary>id=ix_chapter-05-jekyll-asciidoc0</secondary><tertiary>range=startofrange</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-05-jekyll-asciidoc0</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>The Jekyll project calls itself a "blog-aware, static site generator
+in Ruby." At its core, Jekyll is a very simple set of
+technologies for building websites. Simplicity is what gives Jekyll
+its power: using Jekyll you will never have to learn about database
+backends, complicated server installations, or any of the myriad
+processes involved with most monolithic website technologies. Many
+prominent technical bloggers use Jekyll as their blogging platform.</simpara>
+<simpara>Like many of the open source technologies in heavy usage at GitHub,
+Jekyll was originally developed by Tom Preson Warner, one of the
+cofounders of GitHub, and Nick Quaranto, of 37 Signals, though there
+are now thousands of contributors to the Jekyll codebase.
+Unsurprisingly, the strength of the Jekyll tool comes not from the
+brilliance of the original developers or the brilliance of the idea,
+but the way those original developers cultivated community and
+involvement among their users.</simpara>
+<section xml:id="_learning_and_building_with_jekyll">
+<title>Learning and Building with Jekyll</title>
+<simpara>In this chapter we will investigate the structure of a Jekyll blog,
+illustrating the few major technology pieces involved. Once we have
+familiarized ourselves with Jekyll, we will then create a Jekyll blog
+from scratch using the command-line tools. Then we will write a Ruby
+program that scrapes a blog-like website and converts the scraped
+information into a new Jekyll blog.</simpara>
+</section>
+<section xml:id="_what_is_jekyll">
+<title>What Is Jekyll?</title>
+<simpara><indexterm>
+<primary>Jekyll</primary><secondary>basics</secondary><tertiary>id=ix_chapter-05-jekyll-asciidoc1</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-05-jekyll-asciidoc1</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>Jekyll specifies a file structure format: conform to this format and
+Jekyll will compile your files into HTML. Jekyll builds on top of two
+proven tools: <indexterm>
+<primary>Markdown</primary><secondary>and Jekyll</secondary>
+</indexterm>
+<indexterm>
+<primary>and Jekyll</primary>
+</indexterm>Markdown, a markup language that is surprisingly
+readable and expressive, and <indexterm>
+<primary>Liquid Markup</primary><secondary>Jekyll and</secondary>
+</indexterm>
+<indexterm>
+<primary>Jekyll and</primary>
+</indexterm>Liquid Markup, a simple programming language that
+gives you just enough components to build modern web
+pages requiring conditionals and loops, but safe enough that you can
+run untrusted pages on public servers. With these two technologies and
+agreement on a layout structure, Jekyll can build very complicated websites paradoxically without requiring a complicated structure of files
+and technologies.</simpara>
+<simpara>Jekyll works natively with GitHub because a Jekyll blog is
+stored as a Git repository. When you push files into GitHub from a
+repository GitHub recognizes as a Jekyll site, GitHub
+automatically rebuilds the site for you.
+Jekyll is an open source generator and defines a format for your
+source files, a format other tools can easily understand and
+operate upon. This means you can build your own tools to interact with
+a Jekyll blog. Combining an open source tool like Jekyll with a well-written API like the GitHub API makes for some powerful publishing
+tools.</simpara>
+<section xml:id="_operating_jekyll_locally">
+<title>Operating Jekyll Locally</title>
+<simpara><indexterm>
+<primary>Jekyll</primary><secondary>operating locally</secondary>
+</indexterm>
+<indexterm>
+<primary>operating locally</primary>
+</indexterm><indexterm>
+<primary>jekyll gem</primary>
+</indexterm>To really use Jekyll, you&#8217;ll need the <literal>jekyll</literal> gem. As we explain in
+<xref linkend="appendix"/>, we could install a ruby gem using this command:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ gem install jekyll</programlisting>
+<simpara>There are two issues with installing this way. The first is that any
+commands we run inside the command line are lost to us and the world
+(other than in our private shell history file). The second is that if
+we are going to publish any of our sites to GitHub, we will want to
+make sure we are matching the exact versions of Jekyll and its
+dependencies so that a site that works on our local laptop also works
+when published into GitHub. If you don&#8217;t take care of this, you&#8217;ll
+occasionally get an email like this from GitHub:</simpara>
+<programlisting language="text" linenumbering="unnumbered"> The page build failed with the following error:
+
+ page build failed
+
+ For information on troubleshooting Jekyll see
+ https://help.github.com/articles/using-jekyll-with-pages#troubleshooting
+ If you have any questions please contact GitHub Support.</programlisting>
+<simpara>The fix for these two issues is a simple one. You&#8217;ve probably seen other
+chapters using a <literal>Gemfile</literal> to install Ruby libraries. Instead of
+using a manual command like <literal>bundle</literal> to install from the command line,
+let&#8217;s put this dependency into the Gemfile. Then, anyone else using
+this repository can run the command <literal>bundle install</literal> and install the
+correct dependencies. And instead of using the <literal>jekyll</literal> gem directly, use the
+<literal>github-pages</literal> gem, which synchronizes your Jekyll gem versions with
+those on GitHub. If you do get the preceding email, run the command <literal>bundle update</literal>
+to make sure that everything is properly set up and synchronized and
+generally this will reproduce the issues on your local setup, which is
+a much faster place to fix them:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ printf "gem 'github-pages' &gt;&gt; Gemfile
+$ bundle install</programlisting>
+<simpara>Creating and managing your dependencies inside a Gemfile is the smart
+way to get your Jekyll tool synced with the version running on GitHub.</simpara>
+<simpara>Now we are ready to create a Jekyll blog.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-05-jekyll-asciidoc1</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-05-jekyll-asciidoc1</primary>
+</indexterm></simpara>
+</section>
+</section>
+<section xml:id="_jekyll_blog_quick_start">
+<title>Jekyll Blog Quick Start</title>
+<simpara><indexterm>
+<primary>Jekyll blogs</primary><secondary>id=ix_chapter-05-jekyll-asciidoc2</secondary><tertiary>range=startofrange</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-05-jekyll-asciidoc2</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>We have our required tools installed, so <indexterm>
+<primary>Jekyll blogs</primary><secondary>simple blog creation</secondary><tertiary>id=ix_chapter-05-jekyll-asciidoc3</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-05-jekyll-asciidoc3</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>let&#8217;s create a simple blog. Run
+these commands:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ jekyll new myblog
+$ cd myblog</programlisting>
+<simpara>The<indexterm>
+<primary>jekyll new command</primary><secondary>id=ix_chapter-05-jekyll-asciidoc4</secondary><tertiary>range=startofrange</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-05-jekyll-asciidoc4</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm> <literal>jekyll new</literal> command creates the necessary structure for a
+minimal Jekyll blog. Taking a look inside the directory, you&#8217;ll see a
+few files that comprise the structure of a basic Jekyll blog.</simpara>
+<simpara>The <literal>jekyll new</literal> command installs two CSS files: one for
+the blog (<emphasis>main.css</emphasis>) and one for syntax highlighting (<emphasis>syntax.css</emphasis>).
+Remember, you are in full control of this site; the <emphasis>main.css</emphasis> file is
+simply boilerplate, which you can completely throw away if it does not
+suit your needs. The syntax file helps when including code snippets
+and contains syntax highlighting CSS that prettifies many programming
+languages.</simpara>
+<simpara><indexterm>
+<primary>gitignore file</primary>
+</indexterm>Installation of a new blog comes with a <emphasis>.gitignore</emphasis> file as well that contains one entry: <em>_site</em>. When you use the Jekyll library to build your site locally, all files are by default built into the <em>_site</em> directory. This <emphasis>.gitignore</emphasis> file prevents those files from being included inside your repository as they are overwritten by the Jekyll command on GitHub when your files are pushed up to GitHub.</simpara>
+<note>
+<simpara>The <literal>jekyll new</literal> command does not create or initialize a new Git
+repository for you with your files. If you want to do this, you will need to
+use the <literal>git init</literal> command. The Jekyll initialization command does create the
+proper structure for you to easily add all files to a Git repository;
+just use <literal>git add .; git commit</literal> and your <emphasis>.gitignore</emphasis> file will be added
+and configure your repository to ignore unnecessary files like the
+<em>_site</em> <indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-05-jekyll-asciidoc4</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-05-jekyll-asciidoc4</primary>
+</indexterm>directory.</simpara>
+</note>
+<simpara>All your blog posts are stored in the <em>_posts</em> directory. Jekyll sites
+are not required to have a <em>_posts</em> directory (you can use Jekyll with
+any kind of static site) but if you do include files in this directory
+Jekyll handles them in a special way. If you look in the <em>_posts</em>
+directory now, you see that the Jekyll initialization command has
+created <span class="keep-together">your first</span> post for you, something like
+<em>_posts/2014-03-03-welcome-to-jekyll.Markdown</em>. These posts have a
+special naming format: the title of the post (with any whitespace replaced with
+hyphens) trailed by the date and then an extension (either <emphasis>.Markdown</emphasis>
+or <emphasis>.md</emphasis> for Markdown files, or <emphasis>.textile</emphasis> for Textile).</simpara>
+<simpara>Your new Jekyll blog also comes with a few HTML files: an <emphasis>index.html</emphasis> file,
+which is the starting point for your blog, and several layout files,
+which are used as wrappers when generating your content. If you look
+in the <em>_layouts</em> directory, notice there is a file named
+<emphasis>default.html</emphasis> and another named <emphasis>post.html</emphasis>. These files are the
+layout files, files that are wrapped around all generated content,
+like those from your Markdown-formatted blog posts. For
+example, the <emphasis>post.html</emphasis> file is wrapped around the generated content
+of each file stored inside the <em>_posts</em> directory. First, the markup content is
+turned into HTML and then the layout wrapper is applied. If you look
+inside each of the files inside the <em>_layouts</em> directory, you will see
+that each contains a placeholder with <literal>{{ content }}</literal>. This
+placeholder is replaced with the generated content from other files.</simpara>
+<simpara>These placeholders are actually a markup language on their <indexterm>
+<primary>Liquid Markup</primary><secondary>origins</secondary>
+</indexterm>
+<indexterm>
+<primary>origins</primary>
+</indexterm>own:
+<emphasis>Liquid Markup</emphasis>. Liquid Markup was developed and open sourced by
+Shopify.com. Liquid Markup arose from a desire to have a safe way
+to host programmatic constructs (like loops and variables) inside a
+template, without exposing the rendering context
+to a full-fledged programming environment. Shopify wanted to create a
+way for untrusted users of its public-facing systems to upload
+dynamic content but not worry that the markup language would permit
+malicious activity; for example, given a full-fledged embedded
+programming language, Shopify would open itself to attack if a user
+wrote code to open network connections to sites on its internal
+networks. Templating languages like PHP or ERB (embedded Ruby
+templates, popular with the Ruby on Rails framework) allow fully
+embedded code snippets, and while this is very powerful when you have full control
+over your source documents, it can be dangerous to provide a mechanism
+where that embedded code could look like <literal>system("rm -rf /")</literal>.
+Liquid Markup provides many of the benefits of embedded programming templates,
+without the dangers. We will show several examples of Liquid Markup
+and how they work later in the chapter.</simpara>
+<simpara>Lastly, your Jekyll directory has a special file called <em>_config.yml</em>.
+This is the Jekyll configuration file. Peering into it, you&#8217;ll see it
+is very basic:</simpara>
+<programlisting language="yaml" linenumbering="unnumbered">name: Your New Jekyll Site
+markdown: redcarpet
+highlighter: pygments</programlisting>
+<simpara>We only have three lines to contend with and they are simple to
+understand: the name of our site, the Markdown parser used by our
+Jekyll command, and whether to use <literal>pygments</literal> to do syntax highlighting.</simpara>
+<simpara>To view this site locally run this command:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ jekyll serve</programlisting>
+<simpara>This command builds the entirety of your Jekyll directory, and then
+starts a mini web server to serve the files up to you. If you then
+visit <emphasis><link xl:href="http://localhost:4000">http://localhost:4000</link></emphasis> in your web browser, you will see
+something on the front page of your site and a single blog post listed in
+the index, as shown in <xref linkend="bare-jekyll-site"/>.</simpara>
+<figure xml:id="bare-jekyll-site">
+<title>A bare Jekyll site</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/btwg_0601.png"/>
+</imageobject>
+<textobject><phrase>btwg 0601</phrase></textobject>
+</mediaobject>
+</figure>
+<simpara>Clicking into the link inside the "Blog Posts" section, you will then
+see your first post, as in <xref linkend="a-sample-post"/>.</simpara>
+<figure xml:id="a-sample-post">
+<title>A sample post</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/btwg_0602.png"/>
+</imageobject>
+<textobject><phrase>btwg 0602</phrase></textobject>
+</mediaobject>
+</figure>
+<simpara>Our Jekyll initialization command created this new post for us. This page
+is backed by the Markdown file inside the <em>_posts</em> directory we saw earlier:</simpara>
+<programlisting language="yaml" linenumbering="unnumbered">---
+layout: post
+title:  "Welcome to Jekyll!"
+date:   2014-03-03 12:56:40
+categories: jekyll update
+---</programlisting>
+<simpara>You&#8217;ll find this post in your <em>_posts</em> directory&#x2014;edit this
+post and rebuild (or run with the <literal>-w</literal> switch) to see your changes!
+To add new posts, simply add a file in the <em>_posts</em> directory
+that follows the convention: YYYY-MM-DD-name-of-post.ext.</simpara>
+<simpara>Jekyll also offers powerful support for code snippets:</simpara>
+<programlisting language="liquid" linenumbering="unnumbered">{% highlight ruby %}
+def print_hi(name)
+  puts "Hi, #{name}"
+end
+print_hi('Tom')
+#=&gt; prints 'Hi, Tom' to STDOUT.
+{% endhighlight %}</programlisting>
+<simpara>Check out the <link xl:href="http://jekyllrb.com">Jekyll docs</link> for more info on how to get
+the most out of Jekyll. File all bugs/feature requests at
+<link xl:href="https://github.com/mojombo/jekyll">Jekyll&#8217;s GitHub repo</link>.</simpara>
+<simpara>Hopefully you agree that this is a fairly intuitive and readable
+alternative to raw HTML. This simplicity and readability is one of the
+major benefits of using Jekyll. Your source files maintain a
+readability that allows you to focus on the content itself, not on the
+technology that will eventually make them beautiful. Let&#8217;s go over
+this file and investigate some of the important pieces.</simpara>
+<section xml:id="_yfm_yaml_front_matter">
+<title>YFM: YAML Front Matter</title>
+<simpara><indexterm>
+<primary>Jekyll blogs</primary><secondary>YAML Front Matter</secondary>
+</indexterm>
+<indexterm>
+<primary>YAML Front Matter</primary>
+</indexterm><indexterm>
+<primary>YFM (YAML Front Matter)</primary>
+</indexterm>The first thing we see in a
+Jekyll file is the YAML Front Matter (YFM):</simpara>
+<programlisting language="yaml" linenumbering="unnumbered">---
+layout: post
+title:  "Welcome to Jekyll!"
+date:   2014-03-03 12:56:40
+categories: jekyll update
+---</programlisting>
+<simpara>YFM is a snippet of YAML ("YAML Aint Markup Language")
+delimited by three hyphens on both the top and bottom. YAML is a simple structured
+data serialization language used by many open source projects instead
+of XML. Many people find it more readable and editable by humans
+than XML. The YFM in this file shows a few configuration options: a
+layout, the title, the date, and a list of categories.</simpara>
+<simpara>The layout specified references one of the files in our <em>_layouts</em>
+directory. If you don&#8217;t specify a layout file in the YFM, then Jekyll
+assumes you want to use a file called <emphasis>default.html</emphasis> to wrap your
+content. You can easily imagine adding your own custom layout files
+to this directory and then overriding them in the YFM. If you look at
+this file, you see that it manually specifies the <literal>post</literal> layout.</simpara>
+<simpara>The title is used to generate the <literal>&lt;title&gt;</literal> tag and can be used
+anywhere else you need it inside your template using the double-braces syntax from Liquid Markup: <literal>{{ page.title }}</literal>. Notice that any
+variable from the <em>_config.yml</em> file is prefixed with the <literal>site.</literal>
+namespace, while variables from your YFM are prefixed with <literal>page.</literal>
+Though the title matches the filename (after replacing
+spaces with hyphens), changing the title in the YFM does not affect
+the name of the URL generated by Jekyll. If you want to change the URL, you need to
+rename the file itself. This is a nice benefit if you need to slightly modify the
+title and don&#8217;t want to damage preexisting URLs.</simpara>
+<simpara>The date and categories are two other variables included in the YFM.
+They are completely optional and strangely unused by the structure and
+templates created by default using the Jekyll initializer. They do
+provide additional context to the post, but are only stored in the
+Markdown file and not included inside the generated content itself.
+The categories list is often used to generate an index file of
+categories with a list of each post included in a category. If you
+come from a Wordpress background, you&#8217;ll likely have used categories.
+These are generated dynamically from the MySQL database each time you
+request a list of them, but in Jekyll this file is statically generated.
+If you wanted something more dynamic, you could imagine generating a
+JSON file with these categories and files, and then building a
+JavaScript widget that requests this file and then does something
+more interactive on the client side. Jekyll can take any template file
+and convert it to JSON (or any other format)&#x2014;you are not limited to
+just generating HTML files.</simpara>
+<simpara>YFM is completely optional. A post or page can be rendered into your
+Jekyll site without any YFM inside it. Without YFM, your page is
+rendered using the defaults for those variables, so make sure the
+default template, at the very least, is what you expect will wrap
+around all pages left with unspecified layouts.</simpara>
+<simpara><indexterm>
+<primary>published variable</primary>
+</indexterm>One important default variable for YFM is the published variable. This
+variable is set to true by default. This means that if you create a
+file in your Jekyll repository and do not manually specify the
+published setting, it will be published automatically. If you set the
+variable to false, the post will not be published. With
+private repositories you can keep the contents of draft posts entirely
+private until writing has completed by making sure published is set
+to false. Unfortunately, not all tools that help you create Jekyll
+Markdown files remember to set the published variable explicitly
+inside of YFM, so make sure you check before committing the file to
+your repository if there is something you don&#8217;t yet want published.</simpara>
+</section>
+<section xml:id="_jekyll_markup">
+<title>Jekyll Markup</title>
+<simpara><indexterm>
+<primary>Jekyll blogs</primary><secondary>markup</secondary>
+</indexterm>
+<indexterm>
+<primary>markup</primary>
+</indexterm><indexterm>
+<primary>Markdown</primary><secondary>and Jekyll markup</secondary>
+</indexterm>
+<indexterm>
+<primary>and Jekyll markup</primary>
+</indexterm>Going past the YFM, we can start to see the structure of
+Markdown files. Markdown files can be, at their simplest, just textual
+information without any formatting characters. In fact, if your layout files are
+well done, you can definitely create great blog posts without any
+fancy formatting, just pure textual content.</simpara>
+<simpara>But with a few small Markdown additions, you can really make posts
+shine. One of the first Markdown components we notice is the backtick
+character, which is used to wrap small spans of code (or code-ish
+information, like filenames in this case). <indexterm>
+<primary>HTML</primary><secondary>Markdown shortcuts for</secondary>
+</indexterm>
+<indexterm>
+<primary>Markdown shortcuts for</primary>
+</indexterm>As you use more and more
+Markdown, you&#8217;ll find Markdown to be insidiously clever in the way it
+provides formatting characters without the onerous weight that HTML
+requires to offer the same explicit formatting.</simpara>
+<simpara><indexterm>
+<primary>links</primary><secondary>Markdown tags for</secondary>
+</indexterm>
+<indexterm>
+<primary>Markdown tags for</primary>
+</indexterm>Links can be specified using <literal>[format][link]</literal>, where <literal>link</literal> is the
+fully qualified URL (like "<emphasis><link xl:href="http://example.com">http://example.com</link></emphasis>"), or a reference to a
+link at the bottom of the page. In our page we have two references,
+keyed as <literal>jekyll-gh</literal> and <literal>jekyll</literal>; we can then use these inside our
+page with syntax like <literal>[Jekyll&#8217;s GitHub repo][jekyll-gh]</literal>. Using
+references has an additional benefit in that you can use the link more
+than once by its short name.</simpara>
+<simpara><indexterm>
+<primary>headers</primary><secondary>Markdown tags for</secondary>
+</indexterm>
+<indexterm>
+<primary>Markdown tags for</primary>
+</indexterm>Though not offered in the sample, Markdown provides an easy way to
+generate headers of varying degrees. To add a header, use the <literal><emphasis role="marked"></literal>
+character, and repeat the <literal></emphasis></literal> character to build smaller headers.
+These delimiters simply map to the H tag; two hash characters (<literal><emphasis role="marked"></literal>)
+turns into an <literal>&lt;h2&gt;</literal> tag. Building text enclosed by <literal>&lt;h3&gt;</literal> tags looks
+like <literal></emphasis># Some Text</literal>. You can optionally match the same number of hash
+symbols at the end of the line if you find it more expressive (<literal><emphasis role="marked">#
+Some Text </emphasis>#</literal>), but you don&#8217;t have to.</simpara>
+<simpara>Markdown offers easy shortcuts for most HTML elements: numbered and
+unordered lists, emphasis, and more. And, if you cannot find a
+Markdown equivalent, you can embed normal HTML right next to
+Markdown formatting characters. The best way to write Markdown is to
+keep a
+<link xl:href="https://github.com/adam-p/Markdown-here/wiki/Markdown-Cheatsheet">Markdown
+cheat sheet</link> near you when writing. <link xl:href="http://daringfireball.net">John Gruber from Daring
+Fireball</link> invented Markdown, and his site has a more in-depth
+description of the how and why of Markdown.</simpara>
+</section>
+<section xml:id="_using_the_jekyll_command">
+<title>Using the Jekyll Command</title>
+<simpara><indexterm>
+<primary>Jekyll</primary><secondary>using the Jekyll command</secondary>
+</indexterm>
+<indexterm>
+<primary>using the Jekyll command</primary>
+</indexterm><indexterm>
+<primary>jekyll &#8211;&#8211;help command</primary>
+</indexterm>Running <literal>jekyll --help</literal> will show you the options for running Jekyll.
+You already saw the <literal>jekyll serve</literal> command, which builds the files into
+the <em>_site</em> directory and then starts a web server with its root at that directory.
+If you start to use this mechanism to build your Jekyll sites then
+there are a few other switches you&#8217;ll want to learn about.</simpara>
+<simpara><indexterm>
+<primary>Jekyll</primary><secondary>watch switch</secondary>
+</indexterm>
+<indexterm>
+<primary>watch switch</primary>
+</indexterm><indexterm>
+<primary>watch switch</primary>
+</indexterm>If you are authoring and adjusting a page often, and switching back
+into your browser to see what it looks like, you&#8217;ll find utility in
+the <literal>-w</literal> switch ("watch"). This can be used to automatically
+regenerate the entire site if you make changes to any of the source
+files. If you edit a post file and save it, that file will be
+regenerated automatically. Without the <literal>-w</literal> switch you would need to
+kill the Jekyll server, and then restart it.</simpara>
+<caution>
+<simpara>The Jekyll watch switch does reload all HTML and markup files, but
+does not reload the <em>_config.yml</em> file. If you make changes to it, you
+will need to stop and restart the server.</simpara>
+</caution>
+<simpara>If you are running multiple Jekyll sites on the same laptop, you&#8217;ll
+quickly find that the second instance of <literal>jekyll serve</literal> fails because
+it cannot open port 4000. In this case, use <literal>jekyll --port 4010</literal> to
+open port 4010 (or whatever port you wish to use instead).</simpara>
+</section>
+<section xml:id="_privacy_levels_with_jekyll">
+<title>Privacy Levels with Jekyll</title>
+<simpara><indexterm>
+<primary>Jekyll</primary><secondary>privacy levels with</secondary>
+</indexterm>
+<indexterm>
+<primary>privacy levels with</primary>
+</indexterm><indexterm>
+<primary>privacy, Jekyll</primary>
+</indexterm>Jekyll repositories on GitHub can be either public or private
+repositories. If your repository is public you can host public content
+generated from the Jekyll source files without publishing the source
+files themselves. Remember, as noted previously, that any file without
+<literal>publishing: false</literal> inside the YFM will be made public the moment you
+push it into your repository.</simpara>
+</section>
+<section xml:id="_themes">
+<title>Themes</title>
+<simpara><indexterm>
+<primary>Jekyll</primary><secondary>themes</secondary>
+</indexterm>
+<indexterm>
+<primary>themes</primary>
+</indexterm><indexterm>
+<primary>themes, Jekyll</primary>
+</indexterm>Jekyll does not support theming internally, but it is trivial to add
+any CSS files or entire CSS frameworks. You can also fork an existing
+Jekyll blog that has the theming you like. We will show how and where
+to add your own customized CSS later in the chapter.</simpara>
+</section>
+<section xml:id="_publishing_on_github">
+<title>Publishing on GitHub</title>
+<simpara><indexterm>
+<primary>Jekyll blogs</primary><secondary>publishing on GitHub</secondary>
+</indexterm>
+<indexterm>
+<primary>publishing on GitHub</primary>
+</indexterm>Once you have your blog created, you can easily publish it to GitHub.
+There are two ways you can publish Jekyll blogs:</simpara>
+<itemizedlist>
+<listitem>
+<simpara>As a github.io site</simpara>
+</listitem>
+<listitem>
+<simpara>On a domain you own</simpara>
+</listitem>
+</itemizedlist>
+<simpara>GitHub offers free personal blogs that are hosted on the github.io
+domain. And you can host any site with your own domain name with a
+little bit of configuration.</simpara>
+<section xml:id="_using_a_github_io_jekyll_blog">
+<title>Using a GitHub.io Jekyll blog</title>
+<simpara><indexterm>
+<primary>GitHub.io personal blog site</primary>
+</indexterm><indexterm>
+<primary>Jekyll blogs</primary><secondary>GitHub.io site creation</secondary>
+</indexterm>
+<indexterm>
+<primary>GitHub.io site creation</primary>
+</indexterm>To create a github.io personal blog site, your Jekyll blog should be
+on the master branch of your Git repository. The repository should be
+named <literal>username.github.io</literal> on GitHub. If everything is set up correctly
+you can then publish your Jekyll blog by adding a remote for GitHub
+and pushing your files up. If you use the <literal>hub</literal> tool (a command for
+interacting with Git and GitHub), you can go from start to finish with
+a few simple commands. Make sure to change the first line to reflect
+your username.</simpara>
+<note>
+<simpara>The<indexterm>
+<primary>hub tool</primary>
+</indexterm> hub tool was originally written in Ruby and as such could be
+easily installed using only <literal>gem install hub</literal>, but hub was recently
+rewritten in Go. Go has a somewhat more complicated installation
+process, so we won&#8217;t document it here. If you have the <literal>brew</literal> command
+installed for OS X, you can install hub with the <literal>brew install hub</literal>
+command. Other platforms vary, so check <link xl:href="http://github.com/github/hub">http://github.com/github/hub</link>
+to determine the best way for your system.</simpara>
+</note>
+<simpara>Use these commands to install your github.io hosted Jekyll blog:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ export USERNAME=xrd
+$ jekyll new $USERNAME.github.io
+$ cd $USERNAME.github.io
+$ git init
+$ git commit -m "Initial checkin" -a
+$ hub create  # You'll need to login here...
+$ sleep $((10*60)) &amp;&amp; open $USERNAME.github.io</programlisting>
+<simpara>The second to the last line creates a repository on GitHub for you
+with the same name as the directory. That last line sleeps for 10
+minutes while your github.io site is provisioned on GitHub, and then
+opens the site in your browser for you. It can take ten minutes for
+GitHub to configure your site the first time, but subsequent content
+pushes will be reflected immediately.</simpara>
+</section>
+</section>
+<section xml:id="_hosting_on_your_own_domain">
+<title>Hosting On Your Own Domain</title>
+<simpara><indexterm>
+<primary>Jekyll blogs</primary><secondary>hosting your own domain</secondary><tertiary>id=ix_chapter-05-jekyll-asciidoc5</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-05-jekyll-asciidoc5</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>To host a blog on your own domain name, you need to use the <literal>gh-pages</literal>
+branch inside your repository. You need to create a CNAME file in your
+repository, and then finally establish DNS settings to point your domain to
+the GitHub servers.</simpara>
+<section xml:id="_the_gh_pages_branch">
+<title>The gh-pages branch</title>
+<simpara><indexterm>
+<primary>gh&#8211;pages branch</primary>
+</indexterm><indexterm>
+<primary>Jekyll blogs</primary><secondary>hosting via gh&#8211;pages branch</secondary>
+</indexterm>
+<indexterm>
+<primary>hosting via gh&#8211;pages branch</primary>
+</indexterm>To work on the gh-pages branch, check it out and create the branch
+inside your repository:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ git checkout -b gh-pages
+$ rake post title="My next big blog post"
+$ git add _posts
+$ git commit -m "Added my next big blog post"
+$ git push -u origin gh-pages</programlisting>
+<simpara>You will need to always remember to work on the gh-pages branch; if
+this repository is only used as a blog, then this probably is not an
+issue. Adding the <literal>-u</literal> switch will make sure that Git always pushes up
+the gh-pages branch whenever you do a push.</simpara>
+</section>
+<section xml:id="_the_cname_file">
+<title>The CNAME file</title>
+<simpara><indexterm>
+<primary>CNAME file</primary>
+</indexterm><indexterm>
+<primary>Jekyll blogs</primary><secondary>and CNAME file</secondary>
+</indexterm>
+<indexterm>
+<primary>and CNAME file</primary>
+</indexterm>The CNAME file is a simple text file with the domain name inside of it:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ echo 'mydomain.com' &gt; CNAME
+$ git add CNAME
+$ git commit -m "Added CNAME"
+$ git push</programlisting>
+<simpara>Once you have pushed the CNAME file to your repository, you can verify
+that GitHub thinks the blog is established correctly by visiting the
+admin page of your repository. An easy way to get there is using the
+<literal>github</literal> gem, which is no longer actively maintained but is still a useful command-line tool:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ gem install github
+$ github admin # Opens up https://github.com/username/repo/settings</programlisting>
+<simpara>The github gem is a useful command-line tool, but unfortunately it is
+tied to an older version of the GitHub API, which means the documented
+functionality is often incorrect.</simpara>
+<simpara>If your blog is correctly set up, you will see something like <xref linkend="settings-jekyll-blog"/> in the middle of your settings page.</simpara>
+<figure xml:id="settings-jekyll-blog">
+<title>Settings for a Jekyll blog</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/btwg_0603.png"/>
+</imageobject>
+<textobject><phrase>btwg 0603</phrase></textobject>
+</mediaobject>
+</figure>
+<simpara>GitHub has properly recognized the CNAME file and will accept requests
+made to that host on its servers. We are still not yet complete,
+however, in that we need to make sure the DNS is established for our site.</simpara>
+</section>
+<section xml:id="_dns_settings">
+<title>DNS settings</title>
+<simpara><indexterm>
+<primary>DNS settings</primary>
+</indexterm><indexterm>
+<primary>Jekyll blogs</primary><secondary>DNS settings</secondary>
+</indexterm>
+<indexterm>
+<primary>DNS settings</primary>
+</indexterm>Generally, establishing DNS settings for your site is straightforward.
+<indexterm>
+<primary>subdomain, DNS setup with</primary>
+</indexterm>It is easiest if you are setting up DNS with a <emphasis>subdomain</emphasis> as opposed
+to an <emphasis>apex domain</emphasis>. To be more concrete, an <indexterm>
+<primary>apex domains</primary>
+</indexterm>apex domain is a site
+like <emphasis>mypersonaldomain.com</emphasis>, while a subdomain would be
+<emphasis>blog.mypersonaldomain.com</emphasis>.</simpara>
+<simpara>Setting up a blog on a subdomain is simple: create a CNAME record in DNS that points
+to <emphasis>username.github.io</emphasis>.</simpara>
+<simpara>For an apex domain, things are slightly more complicated. You must create DNS
+A records to point to these IP addresses: <literal>192.30.252.153</literal> and
+<literal>192.30.252.154</literal>.  These are the IP addresses right now; there is
+always the possibility that GitHub could change these at some point in
+the future. For this reason, hosting on apex domains is risky. If
+GitHub needed to change its IP addresses (say during a denial-of-service attack), you would need to respond to this, and deal with the
+DNS propagation issues. If you instead use a subdomain, the CNAME
+record will automatically redirect to the correct IP even if it is
+changed by GitHub<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-05-jekyll-asciidoc5</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-05-jekyll-asciidoc5</primary>
+</indexterm>.<footnote><simpara>This is all well documented on the <link xl:href="https://help.github.com/articles/setting-up-a-custom-domain-with-github-pages">GitHub blog.</link></simpara></footnote></simpara>
+</section>
+</section>
+</section>
+<section xml:id="_importing_from_other_blogs">
+<title>Importing from Other Blogs</title>
+<simpara><indexterm>
+<primary>Jekyll blogs</primary><secondary>importing from other blogs into</secondary><tertiary>id=ix_chapter-05-jekyll-asciidoc6</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-05-jekyll-asciidoc6</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>There are many tools that can be used to import an existing blog into
+Jekyll. As Jekyll is really nothing more than a file-layout
+convention, you just need to pull the relevant pieces (the post
+itself, and associated metadata like the post title, publishing date,
+etc.) and then write out a file with those contents. Jekyll blogs
+prefer Markdown, but they work fine with HTML content, so you can
+often convert a blog with minimal effort, and there are good tools
+that automate things for you.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-05-jekyll-asciidoc6</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-05-jekyll-asciidoc6</primary>
+</indexterm></simpara>
+<section xml:id="_from_wordpress">
+<title>From Wordpress</title>
+<simpara><indexterm>
+<primary>Wordpress</primary><secondary>importing into Jekyll blogs from</secondary>
+</indexterm>
+<indexterm>
+<primary>importing into Jekyll blogs from</primary>
+</indexterm>The most popular importer is the Wordpress importer. You will need the
+'jekyll-import' gem. This gem is distributed separately from the core
+Jekyll gem, but will be installed if you use the <literal>github-pages</literal> gem
+inside your Gemfile and use the <literal>bundle</literal> command.</simpara>
+<section xml:id="_importing_with_direct_database_access">
+<title>Importing with direct database access</title>
+<simpara><indexterm>
+<primary>Wordpress</primary><secondary>importing with direct database access</secondary>
+</indexterm>
+<indexterm>
+<primary>importing with direct database access</primary>
+</indexterm>Once you have the <literal>jekyll-import</literal> gem, you can convert a Wordpress
+blog using a command like this:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ ruby -rubygems -e 'require "jekyll-import";
+    JekyllImport::Importers::WordPress.run({
+      "dbname"   =&gt; "wordpress",
+      "user"     =&gt; "hastie",
+      "password" =&gt; "lanyon",
+      "host"     =&gt; "localhost",
+      "status"         =&gt; ["publish"]
+    })'</programlisting>
+<simpara>This command will import from an existing Wordpress installation,
+provided that your Ruby code can access your database. This will work if you can
+log in to the server itself and run the command on the server, or if
+the database is accessible across the network (which is generally bad
+practice when hosting Wordpress!).</simpara>
+<simpara>Note the status option: this specifies that imported pages and posts
+are published automatically. More specifically, the YAML for each file
+will specify <literal>published: true</literal>, which will publish the page or post
+into your blog. If you want to review each item individually, you can
+specify a status of <literal>private</literal>, which will export the pages into Jekyll
+but leave them unpublished. Remember that if your repository is
+public, posts marked as unpublished will not be displayed in the blog but
+can still be seen if someone visits your the repository for your blog
+on GitHub.</simpara>
+<simpara>There are many more options than listed here. For example, by default,
+the Wordpress-Jekyll importer imports categories from your Wordpress
+database, but you can turn this off by specifying <literal>"categories" &#8658;
+false</literal>.</simpara>
+</section>
+<section xml:id="_importing_from_the_wordpress_xml">
+<title>Importing from the Wordpress XML</title>
+<simpara><indexterm>
+<primary>Wordpress</primary><secondary>importing database as XML file</secondary>
+</indexterm>
+<indexterm>
+<primary>importing database as XML file</primary>
+</indexterm>Another alternative is to export the entire database as an XML file.
+Then, you can run the importer on that file:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">ruby -rubygems -e 'require "jekyll-import";
+    JekyllImport::Importers::WordpressDotCom.run({
+      "source" =&gt; "wordpress.xml",
+      "no_fetch_images" =&gt; false,
+      "assets_folder" =&gt; "assets"
+    })'</programlisting>
+<simpara>This can be used to export files from a server you don&#8217;t
+maintain, but works with sites you do maintain and might be a more
+plausible option than running against a database.</simpara>
+<simpara>To export the XML file, visit the export page on your Wordpress
+site. This is usually mapped to <emphasis>/wp-admin/export.php</emphasis>, so it will be
+something like <emphasis><link xl:href="https://blogname.com/wp-admin/export.php">https://blogname.com/wp-admin/export.php</link></emphasis> (replacing
+&#x201c;blogname.com&#x201d; with your blog&#8217;s name).</simpara>
+<simpara>Like many free tools, there are definitely limitations to using this
+method of export. If your Wordpress site is anything beyond the
+simplest of Wordpress sites, then using this tool to import from
+Wordpress means you will lose much of the metadata stored inside your
+blog. This metadata can include pages, tags, custom fields, and image
+attachments.</simpara>
+<simpara><indexterm>
+<primary>Exitwp</primary>
+</indexterm>If you want to keep this metadata, then you might
+consider another import option like Exitwp. Exitwp is a Python tool
+that provides a much higher level of fidelity between the original
+Wordpress site and the final Jekyll site, but has a longer learning
+curve and option set.</simpara>
+</section>
+</section>
+<section xml:id="_exporting_from_wordpress_alternatives">
+<title>Exporting from Wordpress Alternatives</title>
+<simpara>If you use another blog format other than Wordpress, chances are there
+is a Jekyll importer for it. Jekyll has dozens of importers, well
+documented on the <link xl:href="http://import.jekyllrb.com">Jekyll importer site</link>.</simpara>
+<simpara><indexterm>
+<primary>Jekyll blogs</primary><secondary>importing from Tumblr</secondary>
+</indexterm>
+<indexterm>
+<primary>importing from Tumblr</primary>
+</indexterm><indexterm>
+<primary>Tumblr</primary>
+</indexterm>For example, this command-line example from the importer site exports
+from Tumblr blogs:</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">$ ruby -rubygems -e 'require "jekyll-import";
+    JekyllImport::Importers::Tumblr.run({
+      "url"            =&gt; "http://myblog.tumblr.com",
+      "format"         =&gt; "html", <co xml:id="CO1-1"/>
+      "grab_images"    =&gt; false,  <co xml:id="CO1-2"/>
+      "add_highlights" =&gt; false,  <co xml:id="CO1-3"/>
+      "rewrite_urls"   =&gt; false   <co xml:id="CO1-4"/>
+    })'</programlisting>
+<simpara>The Tumblr import plug-in has a few interesting options.</simpara>
+<calloutlist>
+<callout arearefs="CO1-1">
+<para>Write out HTML; if you prefer to use Markdown use <literal>md</literal>.</para>
+</callout>
+<callout arearefs="CO1-2">
+<para>This importer will grab images if you provide a true value.</para>
+</callout>
+<callout arearefs="CO1-3">
+<para>Wrap code blocks (indented four spaces) in a Liquid Markup "highlight" tag
+if this is set to true.</para>
+</callout>
+<callout arearefs="CO1-4">
+<para>Write pages that redirect from the old Tumblr paths to the new
+Jekyll paths using this configuration option.</para>
+</callout>
+</calloutlist>
+<simpara>Exporting from Tumblr is considerably easier than Wordpress. The
+Tumblr exporter scrapes all public posts from the blog, and then
+converts to a Jekyll-compatible post format.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-05-jekyll-asciidoc3</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-05-jekyll-asciidoc3</primary>
+</indexterm></simpara>
+<simpara>We&#8217;ve seen how we can use the importers available on
+<a href="http://import.jekyllrb.com"><em>import.jekyllrb.com</em></a> to import. What if we have a nonstandard site
+we need to import?</simpara>
+</section>
+</section>
+<section xml:id="_scraping_sites_into_jekyll">
+<title>Scraping Sites into Jekyll</title>
+<simpara><indexterm>
+<primary>Jekyll blogs</primary><secondary>scraping sites into</secondary><tertiary>id=ix_chapter-05-jekyll-asciidoc7</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-05-jekyll-asciidoc7</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>scraping</primary><secondary>into Jekyll</secondary><tertiary>id=ix_chapter-05-jekyll-asciidoc8</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-05-jekyll-asciidoc8</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>Jekyll provides various importers that make it easy to convert an
+existing blog into a Jekyll blog. But if you have a nonstandard
+blog, or a site that is not a blog, you still have options for
+migrating it to Jekyll. The first option is to write your own importer
+by perusing the <link xl:href="http://github.com/jekyll/jekyll-import">source of the
+Jekyll importers on GitHub</link>. This is probably the right way to
+build an importer if you plan on letting others use it, as it will
+extend several Jekyll importer classes already available to make
+importing standard for other contributors.</simpara>
+<simpara>Another option is to simply write out files in the simple format that
+is a Jekyll blog. This is much lazier than reading through the Jekyll
+tools and their libraries, of course. I started as a Perl programmer and
+always loved this quote from Larry Wall, the creator of Perl: "We will
+encourage you to develop the three great virtues of a programmer:
+laziness, impatience, and hubris." Let&#8217;s accept our inherent laziness
+and choose the second route. We&#8217;ll write some code to scrape a site
+and make a new Jekyll site from scratch, learning about the structure
+of a Jekyll blog through trial and error.</simpara>
+<simpara>While living in Brazil in 2000 I built a site called ByTravelers.com,
+an early travel blog. At some point, I sadly lost the database and
+thought the site contents were completely gone. Almost by accident, I
+happened upon ByTravelers on Archive.org, the Internet Archive. I
+found that almost all of the articles were listed there and
+available. Though the actual database is long gone, could we recover
+the data from the site using Archive.org?</simpara>
+<section xml:id="_jekyll_scraping_tactics">
+<title>Jekyll Scraping Tactics</title>
+<simpara><indexterm>
+<primary>Jekyll blogs</primary><secondary>scraping tactics</secondary>
+</indexterm>
+<indexterm>
+<primary>scraping tactics</primary>
+</indexterm><indexterm>
+<primary>scraping</primary><secondary>tactics</secondary>
+</indexterm>
+<indexterm>
+<primary>tactics</primary>
+</indexterm>We can start by looking at the structure of the archive presented on
+Archive.org. Go to Archive.org, enter "bytravelers.com" into the
+search box in the middle of the page, and then click "BROWSE HISTORY."
+You will see a calendar view that shows all the pages
+scraped by the Internet Archive for this site as shown in <xref linkend="calendar-view-archive"/>.</simpara>
+<figure xml:id="calendar-view-archive">
+<title>Calendar view of Archive.org</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/btwg_0604.png"/>
+</imageobject>
+<textobject><phrase>btwg 0604</phrase></textobject>
+</mediaobject>
+</figure>
+<simpara>In the middle of 2003 I took down the server, intending to
+upgrade it to another set of technologies, and never got around to
+completing this migration, and then lost the data. If we click the
+calendar item on June 6th, 2003, we will see a view of the data that
+was more or less complete at the height of the site&#8217;s functionality
+and data. There are a few broken links to images, but otherwise the
+site is functionally archived inside Archive.org (<xref linkend="calendar-view-bytravelers"/>).</simpara>
+<figure xml:id="calendar-view-bytravelers">
+<title>Archive of ByTravelers.com on Archive.org</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/btwg_0605.png"/>
+</imageobject>
+<textobject><phrase>btwg 0605</phrase></textobject>
+</mediaobject>
+</figure>
+<simpara>Taking the URL from our browser, we can use this as our starting point for
+scraping. Clicking around throughout the site, it becomes evident that
+each URL to a journal entry uses a standard format; in other words,
+<emphasis><link xl:href="http://www.bytravelers.com/journal/entry/56">http://www.bytravelers.com/journal/entry/56</link></emphasis> indicates the 56th
+journal item stored on the site. With this knowledge in hand, we can
+iterate over the first hundred or so URLs easily.</simpara>
+</section>
+<section xml:id="_setting_up">
+<title>Setting Up</title>
+<simpara><indexterm>
+<primary>Jekyll blogs</primary><secondary>scraper setup</secondary><tertiary>id=ix_chapter-05-jekyll-asciidoc9</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-05-jekyll-asciidoc9</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>scraping</primary><secondary>setting up a scraper</secondary><tertiary>id=ix_chapter-05-jekyll-asciidoc10</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-05-jekyll-asciidoc10</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>A naive implementation of a scraper would be a single Ruby file in
+which the execution and functionality were contained all in one.
+However, if we expose the functionality as a class, and then
+instantiate the class in a separate file, we can also write tests
+that utilize and validate the same steps as the runner script. So,
+let&#8217;s take this smarter approach and create three files: the scraper
+class, the runner class (which instantiates and "runs" our scraper), and the test
+file (which instantiates and validates the functionality of our scraper).</simpara>
+<simpara>First, the runner script:</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">#!/usr/bin/env ruby
+
+require './scraper'
+
+scraper = Scraper.new()
+scraper.run()</programlisting>
+<simpara>Our barebones scraper class just looks like this:</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">class Scraper
+  def run
+
+  end
+end</programlisting>
+<simpara>We also need to have a manifest file, the Gemfile, where we will
+document our library dependencies:</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">source "https://rubygems.org"
+
+gem "github-pages"
+gem "rspec"</programlisting>
+<simpara>Then, install our gems using the command <literal>bundle</literal>. That installs the
+rspec tool, the Jekyll tool, and associated libraries.</simpara>
+<simpara>Finally, we can create our test harness:</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">require './scraper'
+
+describe "#run" do
+  it "should run" do
+    scraper = Scraper.new
+    scraper.run()
+  end
+end</programlisting>
+<simpara>Remember to run using the <literal>bundle exec rspec scraper_spec.rb</literal> command,
+which makes everything run inside the bundler context (and load our
+libraries from the Gemfile, instead of the default system gems):</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ bundle exec rspec scraper_spec.rb
+.
+
+Finished in 0.00125 seconds (files took 0.12399 seconds to load)
+1 example, 0 failures</programlisting>
+<simpara>There is nothing we are explicitly testing yet, but
+our test harness displays that our code inside our tests will match
+closely the code we write inside our runner wrapper.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-05-jekyll-asciidoc10</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-05-jekyll-asciidoc10</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-05-jekyll-asciidoc9</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-05-jekyll-asciidoc9</primary>
+</indexterm></simpara>
+</section>
+<section xml:id="_scraping_titles">
+<title>Scraping Titles</title>
+<simpara><indexterm>
+<primary>Ruby</primary><secondary>for scraping titles</secondary>
+</indexterm>
+<indexterm>
+<primary>for scraping titles</primary>
+</indexterm><indexterm>
+<primary>scraping</primary><secondary>titles</secondary>
+</indexterm>
+<indexterm>
+<primary>titles</primary>
+</indexterm><indexterm>
+<primary>titles, scraping</primary>
+</indexterm>Let&#8217;s start with something simple: scraping the titles from the
+site. <indexterm>
+<primary>Mechanize</primary><secondary>id=ix_chapter-05-jekyll-asciidoc11</secondary><tertiary>range=startofrange</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-05-jekyll-asciidoc11</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>We&#8217;ll use Ruby to scrape the site; Ruby has some intuitive gems like
+mechanize that simplify building web clients. There is an API for
+the Internet archive, but I found it flakey and unreliable, so we&#8217;ll
+just scrape the site. Add these additional lines to the Gemfile using
+this command and then install the libraries:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ echo "gem 'mechanize'" &gt;&gt; Gemfile
+$ bundle</programlisting>
+<simpara>Now we can modify our scraper to use the mechanize gem and retrieve content from Archive.org:</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">require 'mechanize' # <co xml:id="CO2-1"/>
+
+class Scraper
+
+  attr_accessor :root # <co xml:id="CO2-2"/>
+  attr_accessor :agent
+
+  def initialize # <co xml:id="CO2-3"/>
+    @root = "http://web.archive.org/web/20030820233527/" +
+    "http://bytravelers.com/journal/entry/" # <co xml:id="CO2-4"/>
+    @agent = Mechanize.new
+  end
+
+  def run
+    100.times do |i| # <co xml:id="CO2-5"/>
+      url = "#{@root}#{i}" # <co xml:id="CO2-6"/>
+      @agent.get( url ) do |page|
+        puts "#{i} #{page.title}"
+      end
+    end
+  end
+
+end</programlisting>
+<calloutlist>
+<callout arearefs="CO2-1">
+<para>Require the mechanize library.</para>
+</callout>
+<callout arearefs="CO2-2">
+<para>We use a Ruby method called <literal>attr_accessor</literal>, which creates a public
+instance variable. We can use variables created using <literal>attr_accessor</literal>
+by prefixing the variable name with an <literal>@</literal> character. Instance
+variables are accessible outside the class as well.</para>
+</callout>
+<callout arearefs="CO2-3">
+<para>When a method named <literal>initialize</literal> is defined for a class, this
+method is called right after object creation, so this is the appropriate
+place for us to initialize the member variables.</para>
+</callout>
+<callout arearefs="CO2-4">
+<para>Initialize the variables to default values. We store the root of
+the URL to the cached copy of ByTravelers.com here.</para>
+</callout>
+<callout arearefs="CO2-5">
+<para>Our run method runs the block inside 100 times.</para>
+</callout>
+<callout arearefs="CO2-6">
+<para>Our block starts by generating a URL to the specific page,
+retrieves the page, and then prints out the index in our loop plus the
+title of the page object.</para>
+</callout>
+</calloutlist>
+<simpara>Let&#8217;s run our scraper and see what happens now:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ bundle exec ./run.rb
+...
+53 Read Journal Entries
+54 Read Journal Entries
+55 Read Journal Entries
+56 Read Journal Entries
+57 Internet Archive Wayback Machine
+58 Internet Archive Wayback Machine
+...</programlisting>
+<simpara>You can see that some of the entries have a generic "Internet Archive
+Wayback Machine" while some have "Read Journal Entries." Archive.org
+will respond with a placeholder title when it does not have content
+from the site (as is the case with item #58, for example). We should
+ignore those pages that don&#8217;t have the string "Read Journal Entries"
+as the title (which tells us Archive.org does have cached content from
+our site).</simpara>
+<simpara>Now that we have all the content, we can start finding the important
+pieces inside and putting them into our Jekyll posts.</simpara>
+</section>
+<section xml:id="_refinining_with_interactive_ruby">
+<title>Refinining with Interactive Ruby</title>
+<simpara><indexterm>
+<primary>interactive Ruby shell (IRB)</primary>
+</indexterm><indexterm>
+<primary>Ruby IRB</primary>
+</indexterm><indexterm>
+<primary>scraping</primary><secondary>with Ruby IRB</secondary>
+</indexterm>
+<indexterm>
+<primary>with Ruby IRB</primary>
+</indexterm>There are two things that make Mechanize immensely powerful as the
+foundation for a scraping tool: easy access to making HTTP calls, and
+a powerful searching syntax once you have a remote document. You&#8217;ve
+seen how Mechanize makes it simple to make a GET request. Let&#8217;s
+explore sifting through a massive document to get the important pieces
+of textual content. We can manually explore scraping using the Ruby
+IRB (interactive Ruby shell):</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">$ irb -r./scraper
+2.0.0-p481 :001 &gt; scraper = Scraper.new
+ =&gt; #&lt;Scraper:0x00000001e37ca8...&gt;
+2.0.0-p481 :002 &gt; page = scraper.agent.get "#{scraper.root}#{56}"
+ =&gt; #&lt;Mechanize::Page {url #&lt;URI::HTTP:0x00000001a85218...&gt;</programlisting>
+<simpara>The first line invokes IRB and uses the <literal>-r</literal> switch to load the
+scraper library in the current directory. If you have not used IRB
+before, there are a few things to know that
+will make life easier. The IRB has a prompt, which indicates the
+version of Ruby you are using, and the index of the command you are
+running. IRB has a lot of features beyond what we will discuss here,
+but those indexes can be used to replay history and for job control,
+like many other types of shells. At the IRB prompt you can enter Ruby
+and IRB executes the command immediately. Once the command executes,
+IRB prints the result; the characters <literal>&#8658;</literal> indicate the return
+value. When you are playing with Ruby, return values will often be complex
+objects: the return value when
+you use <literal>scraper.agent.get</literal> is a Mechanize Ruby object. This is a very
+large object, so printing it out takes a lot of real estate. We&#8217;ve
+abbreviated the majority of it here, and will do that for many complex
+objects to save space when discussing IRB.</simpara>
+<simpara>The last command in IRB saves the HTTP GET request as a page object.
+Once we have the page, how do we extract information from it?
+Mechanize has a nice piece of syntactic sugar that makes it easy to
+search the DOM structure: the "/" operator. Let&#8217;s try it:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">2.0.0-p481 :003 &gt; page / "tr"
+ =&gt; []</programlisting>
+<simpara>If our query path had found anything, we would have seen a return
+value with an array of Mechanize objects, but in this case we got back an
+empty array (which indicates nothing was found). Unfortunately, the
+paths vary when the document is loaded into a browser (the browser can
+customize the DOM or the server can send slightly different data to
+the client). But if we experiment with similar paths inside IRB, we
+will find what we need. It helps to jump back and forth between Chrome
+and IRB, examining the structure of the HTML inside Chrome and then
+testing a search path using IRB. Eventually, we come across this search path:</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">2.0.0-p481 :004 &gt; items = page /  "table[valign=top] tr"
+ =&gt; [#&lt;Nokogiri::XML::Element:0xc05670 name="font"
+      attributes=[#&lt;Nokogiri::XML::Attr:0xc05328 name="size"
+      value="-2"&gt;]...
+2.0.0-p481 :005 &gt; items.length
+ =&gt; 5
+2.0.0-p481 :006 &gt; items[0].text()
+ =&gt; "\n\n\n\n\n\n\n\n\n\nBeautiful Belize\n\n\n\n\n\n\n"
+2.0.0-p481 :005 &gt; items[0].text().strip
+ =&gt; "Beautiful Belize"</programlisting>
+<simpara>Eureka, we found the pattern that gives us our title. We had to jump
+around inside the results from the query, but we can correlate the
+text on the page inside the browser with different structures found
+using the query inside IRB. It is important to note that we have to
+strip whitespace from the title to make it presentable. We can
+incorporate this into our scraper code, but this is a good moment to
+think about how we can write tests to verify this works properly. And
+when we start writing tests, we open the door for another opportunity:
+caching to our HTTP requests.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-05-jekyll-asciidoc11</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-05-jekyll-asciidoc11</primary>
+</indexterm></simpara>
+</section>
+<section xml:id="_writing_tests_and_caching">
+<title>Writing Tests and Caching</title>
+<simpara><indexterm>
+<primary>caching</primary><secondary>and scraping</secondary><tertiary>id=ix_chapter-05-jekyll-asciidoc12</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-05-jekyll-asciidoc12</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>scraping</primary><secondary>writing tests and caching</secondary><tertiary>id=ix_chapter-05-jekyll-asciidoc13</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-05-jekyll-asciidoc13</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>Were we to run our <literal>run.rb</literal> script again, we would notice that it
+prints the document title, then halts as it retrieves the content from
+the server, and then prints again, stopping and starting until
+complete. The content from Archive.org does not change at all since
+the original site was
+scraped years ago, so there is no reason we need to get the latest
+content; content even several months stale will be the same as content
+retrieved a few moments ago. It seems like a good opportunity to put a
+caching layer between us and the code, reducing impact on Archive.org
+and making our script run faster. In addition, if we structure our
+code to make retrieval and processing happen independently, we can
+write tests to verify the processing:</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">require 'mechanize'
+require 'vcr' # <co xml:id="CO3-1"/>
+VCR.configure do |c| # <co xml:id="CO3-2"/>
+  c.cassette_library_dir = 'cached'
+  c.hook_into :webmock
+end
+
+class Scraper
+
+  attr_accessor :root
+  attr_accessor :agent
+  attr_accessor :pages # <co xml:id="CO3-3"/>
+
+  def initialize
+    @root = "http://web.archive.org/web/20030820233527/" +
+    "http://bytravelers.com/journal/entry/"
+    @agent = Mechanize.new
+    @pages = [] # <co xml:id="CO3-4"/>
+  end
+
+  def scrape
+    100.times do |i|
+      begin
+        VCR.use_cassette("bt_#{i}") do # <co xml:id="CO3-5"/>
+          url = "#{@root}#{i}"
+          @agent.get( url ) do |page|
+            if page.title.eql? "Read Journal Entries" # <co xml:id="CO3-6"/>
+              pages &lt;&lt; page
+            end
+          end
+        end
+      rescue Exception =&gt; e
+        STDERR.puts "Unable to scrape this file (#{i})"
+      end
+    end
+  end
+
+  def process_title( row )
+    row.strip # <co xml:id="CO3-7"/>
+  end
+
+  def run
+    scrape()
+    @pages.each do |page| # <co xml:id="CO3-8"/>
+      rows = ( page / "table[valign=top] tr" )
+      puts process_title( rows[0].text() )
+    end
+  end
+
+end</programlisting>
+<calloutlist>
+<callout arearefs="CO3-1">
+<para>We require the VCR gem: this gem intercepts HTTP requests, sending
+them out normally the first time, and caching all successive calls,
+completely transparent to the user.</para>
+</callout>
+<callout arearefs="CO3-2">
+<para>VCR must be configured when you use it: in this case we specify a
+directory where results will be cached, and tell it what mocking
+library we should use to store the cached results.</para>
+</callout>
+<callout arearefs="CO3-3">
+<para>We establish a new variable called pages. We will scrape all the
+pages into this array (and get them for free once the information is
+cached).</para>
+</callout>
+<callout arearefs="CO3-4">
+<para>Initialize the pages array here.</para>
+</callout>
+<callout arearefs="CO3-5">
+<para>To use the VCR recording feature, we wrap any code that makes
+HTTP requests inside a VCR block with a name specifying the cassette
+to save it under. In this case, we use a cassette named bt (for
+ByTravelers) with the index of the page. The first time we use the
+scraper to request the page, it is retrieved and stored inside the
+cache. Successive calls to the scraper <literal>get</literal> method are retrieved from
+the cached responses.</para>
+</callout>
+<callout arearefs="CO3-6">
+<para>We then look for any titles that look like pages archived into
+Archive.org (using the title to differentiate) and if we find one,
+store that page into our pages array for later processing.</para>
+</callout>
+<callout arearefs="CO3-7">
+<para>We move the title processing into its own method called
+<literal>process_title</literal>. Here we use the information and remove any
+whitespace.</para>
+</callout>
+<callout arearefs="CO3-8">
+<para>Inside of <literal>run</literal> we now call <literal>scrape</literal> to load the pages, and then
+iterate over each page, searching inside them and processing the titles.</para>
+</callout>
+</calloutlist>
+<simpara>We need to install the VCR and webmock libraries, so add them to the
+Gemfile:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ echo "gem 'vcr'" &gt;&gt; Gemfile
+$ echo "gem 'webmock'" &gt;&gt; Gemfile
+$ bundle</programlisting>
+<simpara>If we run our script using <literal>bundle exec ruby ./run.rb</literal>, we will see it
+print out the titles:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ bundle exec ruby ./run.rb
+Unable to scrape this file (14)
+Unable to scrape this file (43)
+Unable to scrape this file (47)
+Unable to scrape this file (71)
+Unable to scrape this file (94)
+Unable to scrape this file (96)
+Third day in Salvador
+The Hill-Tribes of Northern Thailand
+Passion Play of Oberammergau
+"Angrezis in Bharat"
+Cuba - the good and bad
+Nemaste
+Mexico/Belize/Guatemala
+South Africa
+...</programlisting>
+<simpara>We print out the errors (when Archive.org does not have a page for a
+particular URL). Note that as a side effect of caching, things work
+much faster. If we analyze the time we save using the <literal>time</literal> command,
+we see these results:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ time bundle exec ruby ./run.rb # before VCR
+real    0m29.907s
+user    0m2.220s
+sys     0m0.170s
+$ time bundle exec ruby ./run.rb # after VCR
+real    0m3.750s
+user    0m3.474s
+sys     0m0.194s</programlisting>
+<simpara>So, it takes an order of magnitude more time without caching. And, we
+get these cached responses for free, and inside our IRB sessions as well.</simpara>
+<simpara>The titles look good, but the fourth one is a little worrisome. Looks
+like one of the users decided to enclose their title in double
+quotes. To control the formatting, it would be nice to clean that
+up. Let&#8217;s do that, and write tests to verify things work:</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">require './scraper'
+
+describe "#run" do
+  before :each  do
+    @scraper = Scraper.new
+  end
+
+  describe "#process_titles" do
+    it "should correct titles with double quotes" do
+      str = ' something " with a double quote'
+      expect( @scraper.process_title( str ) ).to_not match( /"/ )
+    end
+
+    it "should strip whitespace from titles" do
+      str = '\n\n something between newlines \n\n'
+      expect( @scraper.process_title( str ) ).to_not match( /^\n\n/ )
+    end
+  end
+
+end</programlisting>
+<simpara>If we run this, we see one test pass and one test fail:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ bundle exec rspec scraper_spec.rb
+F.
+
+Failures:
+
+  1) #run #process_titles should correct titles with double quotes
+     Failure/Error: expect( @scraper.process_title( ' something " with
+     a double quote' ) ).to_not match( /"/ )
+       expected "something \" with a double quote" not to match /"/
+       Diff:
+       @@ -1,2 +1,2 @@
+       -/"/
+       +"something \" with a double quote"
+     # ./scraper_spec.rb:10:in `block (3 levels) in &lt;top (required)&gt;'
+
+Finished in 0.01359 seconds (files took 0.83765 seconds to load)
+2 examples, 1 failure
+
+Failed examples:
+
+rspec ./scraper_spec.rb:9 # #run #process_titles should correct titles
+with double quotes</programlisting>
+<simpara>To fix this test, let&#8217;s strip out the double quotes by changing one line
+in the <emphasis>scraper.rb</emphasis> file:</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">...
+
+def process_title( row )
+  row.strip.gsub( /"/, '' )
+end
+
+...</programlisting>
+<simpara>Now both tests pass. That line of code might be worrisome if
+you believe in defensive coding. If this function were called with a
+nil value, for example, it would crash. Even if we could guarantee
+that this situation would never occur from our calling context, it is
+better to make our method safe. Let&#8217;s make sure it works and write a
+test to prove it.</simpara>
+<simpara>Add a test that asserts there is not an error when the argument to
+<literal>process_title</literal> is nil:</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">...
+it "should not crash if the title is nil" do
+  expect{ @scraper.process_title( nil ) }.to_not raise_error()
+end
+...</programlisting>
+<simpara>Running <literal>rspec scraper_spec.rb</literal> results in the following error, which
+we expect since we have not yet fixed the code:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">..F..
+
+Failures:
+
+  1) #run #process_titles should not crash if the title is nil
+     Failure/Error: expect{ @scraper.process_title( nil ) }.to_not raise_error()
+       expected no Exception, got #&lt;NoMethodError: undefined method
+     `strip' for nil:NilClass&gt; with backtrace:
+         # ./scraper.rb:38:in `process_title'
+         # ./scraper_spec.rb:20:in `block (4 levels) in &lt;top (required)&gt;'
+         # ./scraper_spec.rb:20:in `block (3 levels) in &lt;top (required)&gt;'
+     # ./scraper_spec.rb:20:in `block (3 levels) in &lt;top (required)&gt;'
+
+Finished in 0.00701 seconds
+5 examples, 1 failure
+
+Failed examples:
+
+rspec ./scraper_spec.rb:19 # #run #process_titles should not crash if the title
+# is nil</programlisting>
+<simpara>We can fix it with this one simple change:</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">...
+
+def process_title( row )
+  row.strip.gsub( /"/, '' ) if row
+end
+...</programlisting>
+<simpara>Now we are in a position to write out the files for our actual posts.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-05-jekyll-asciidoc13</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-05-jekyll-asciidoc13</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-05-jekyll-asciidoc12</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-05-jekyll-asciidoc12</primary>
+</indexterm></simpara>
+</section>
+<section xml:id="_writing_jekyll_posts">
+<title>Writing Jekyll Posts</title>
+<simpara><indexterm>
+<primary>Jekyll blogs</primary><secondary>writing posts</secondary><tertiary>id=ix_chapter-05-jekyll-asciidoc14</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-05-jekyll-asciidoc14</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>posts, blog</primary><secondary>id=ix_chapter-05-jekyll-asciidoc15</secondary><tertiary>range=startofrange</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-05-jekyll-asciidoc15</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>With our titles in hand, we can generate an actual Jekyll
+post. To keep things simple each post will contain nothing beyond the
+titles for now, but we will quickly add other content. Getting the
+skeleton of a post established allows us to use the Jekyll command-line
+tools to troubleshoot our setup.</simpara>
+<simpara>First, create a Git repository for our files. When the Jekyll tool
+runs, it generates all the files into a directory called <em>_site</em> so we
+should add a <emphasis>.gitignore</emphasis> file, which ignores this directory:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ git init
+$ mkdir _posts
+$ echo "_site" &gt;&gt; .gitignore
+$ git add .gitignore
+$ git commit -m "Initial checkin"</programlisting>
+<simpara>Jekyll Markdown files are very simple: just a bit of YAML at the
+beginning, with text content following, formatted as Markdown.  To
+generate Markdown posts, add a method called <literal>write</literal> to our scraper
+that writes out the processed information after we have retrieved and
+parsed the pages from Archive.org.</simpara>
+<simpara>Jekyll posts are stored inside the <em>_posts</em> directory. As a
+convention, filenames are generated with the date and title,
+lowercased, converted to a string without any characters beyond a-z
+and the hyphen, and terminated by the extension (usually <emphasis>.md</emphasis> for
+Markdown). In order to properly generate the filename, we will need to
+scrape the date, so we will do that as well.</simpara>
+<simpara>As a more concrete example, we want to take something like <literal>Cuba - the
+good and bad</literal> that happened on January 12th, 2001, and make a filename
+like <literal>2001-01-12-cuba-the-good-and-bad.md</literal>. Or,
+<literal>Mexico/Belize/Guatemala</literal> from the same date, and make it into the
+filename <literal>2001-01-12-mexico-belize-guatemala.md</literal>. These conversions
+look like good places to write tests, so we can start there:</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">describe "#get_filename" do
+  it "should take 'Cuba - the good and bad' on January 12th, 2001" +
+      " and get a proper filename" do
+    input = 'Cuba - the good and bad'
+    date = "January 12th, 2001"
+    output = "2001-01-12-cuba-the-good-and-bad.md"
+    expect( @scraper.get_filename( input, date ) ).to eq( output )
+  end
+
+  it "should `Mexico/Belize/Guatemala` and get a proper filename" do
+    input = "Mexico/Belize/Guatemala"
+    date = "2001-01-12"
+    output = "2001-01-12-mexico-belize-guatemala.md"
+    expect( @scraper.get_filename( input, date ) ).to eq( output )
+  end
+end</programlisting>
+<simpara>Let&#8217;s build the<indexterm>
+<primary>get&#95;filename method</primary>
+</indexterm> <literal>get_filename</literal> method. This method uses the handy Ruby
+<literal>DateTime.parse</literal> method to convert a string representation of a date
+into a date object, and then uses the <literal>strfmtime</literal> method to format
+that date into the format we want in our filename:</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">...
+def get_filename( title, date )
+  processed_date = DateTime.parse( date )
+  processed_title = title.downcase.gsub( /[^a-z]+/, '-' )
+  "#{processed_date.strftime('%Y-%m-%d')}-#{processed_title}.md"
+end
+...</programlisting>
+<simpara>If we run our tests now, we will see them both pass.</simpara>
+<simpara>Now we can add to our scraper so that it can write out the posts:</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">def render( processed ) # <co xml:id="CO4-1"/>
+  processed['layout'] = 'post'
+  rendered = "#{processed.to_yaml}---\n\n" # <co xml:id="CO4-2"/>
+  rendered
+end
+
+def write( rendered, processed ) # <co xml:id="CO4-3"/>
+  Dir.mkdir( "_posts" ) unless File.exists?( "_posts" )
+  filename = get_filename( processed['title'], processed['creation_date'] )
+  File.open( "_posts/#{filename}", "w+" ) do |f|
+    f.write rendered
+  end
+end
+
+def process_creation_date( date )
+  tuple = date.split( /last updated on:/ ) # <co xml:id="CO4-4"/>
+  rv = tuple[1].strip if tuple and tuple.length &gt; 1
+  rv
+end
+
+def run
+  scrape()
+  @pages.each do |page| # <co xml:id="CO4-5"/>
+    rows = ( page / "table[valign=top] tr" )
+    processed = {}
+    processed['title'] = process_title( rows[0].text() )
+    processed['creation_date'] = process_creation_date( rows[3].text() ) # <co xml:id="CO4-6"/>
+    rendered = render( processed )
+    write( rendered, processed )
+  end</programlisting>
+<calloutlist>
+<callout arearefs="CO4-1">
+<para>We define a render method. This takes the processed information
+(which arrives as a hash) and renders the information into the proper
+format: the YAML Front Matter (YFM) and then the body (which we don&#8217;t
+have yet). We then return the rendered string.</para>
+</callout>
+<callout arearefs="CO4-2">
+<para>We use the <literal>to_yaml</literal> method on our hash. This method appears when
+we include the yaml library using <literal>require 'yaml'</literal> (not displayed
+here, but easy to add to the <emphasis>scraper.rb</emphasis> file and present in the
+samples on GitHub).</para>
+</callout>
+<callout arearefs="CO4-3">
+<para>The write method writes the rendered content to disk. It makes
+sure the <em>_posts</em> directory is available, and if not, creates it. It
+then writes out the file using our <literal>get_filename</literal> method to get the
+path, prefixed with the <em>_posts</em> directory.</para>
+</callout>
+<callout arearefs="CO4-4">
+<para><literal>process_creation_date</literal> takes a piece from the scraped page and
+breaks it apart by the string &#x201c;<code>last updated</code> on:&#x201d; and uses the second
+item in the resultant array.</para>
+</callout>
+<callout arearefs="CO4-5">
+<para>Inside our run method we now build out the processed hash, finding
+the date and title using rows from the query path we used before.</para>
+</callout>
+<callout arearefs="CO4-6">
+<para>Once we have our processed array, we can "render" it and then
+write out the rendered string to our filesystem.</para>
+</callout>
+</calloutlist>
+<simpara>If we generate the posts by calling <literal>bundle exec ruby ./run.rb</literal> we
+will see our posts generated into the <em>_posts</em> directory. Choosing a
+random one, they look like this:</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">---
+title: Beautiful Belize
+creation_date: '2003-03-23'
+layout: post
+---</programlisting>
+<simpara>As you can see, for now, posts are nothing more than the YFM, but this
+is still a perfectly valid Jekyll post.</simpara>
+<simpara>Now let&#8217;s use the jekyll command-line tool to start looking at our
+posts and to troubleshoot any issues with our Jekyll repository.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-05-jekyll-asciidoc15</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-05-jekyll-asciidoc15</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-05-jekyll-asciidoc14</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-05-jekyll-asciidoc14</primary>
+</indexterm></simpara>
+</section>
+<section xml:id="_using_the_jekyll_command_line_tool">
+<title>Using the Jekyll Command-Line Tool</title>
+<simpara><indexterm>
+<primary>command line</primary><secondary>Jekyll command line tool</secondary><tertiary>id=ix_chapter-05-jekyll-asciidoc16</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-05-jekyll-asciidoc16</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>Jekyll</primary><secondary>command line tool</secondary><tertiary>id=ix_chapter-05-jekyll-asciidoc17</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-05-jekyll-asciidoc17</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>Jekyll blogs</primary><secondary>command line tool</secondary><tertiary>id=ix_chapter-05-jekyll-asciidoc18</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-05-jekyll-asciidoc18</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>Taking a moment to add our files to the Git repository, we can then
+take a look at our site using the <literal>jekyll</literal> command-line tool. Using
+the command-line tool locally will spot check our new content as we
+will see errors immediately (rather than getting notification emails
+from GitHub after publishing there). Errors can occur if our scraper
+does not correctly process the HTML retrieved from Archive.org and
+subsequently generates incorrect Markdown content, for example.</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ git add .
+$ git commit -m "Make this into a Jekyll site"
+...
+$ jekyll serve --watch
+Configuration file: none
+            Source: /home/xrdawson/bytravelers
+       Destination: /home/xrdawson/bytravelers/_site
+      Generating...
+     Build Warning: Layout 'post' requested in _posts/2000-05-23-third-day-in...
+     Build Warning: Layout 'post' requested in _posts/2000-08-28-the-hill-tri...
+     ...
+                    done.
+ Auto-regeneration: enabled for '/home/xrdawson/bytravelers'
+Configuration file: none
+    Server address: http://0.0.0.0:4000/
+  Server running... press ctrl-c to stop.</programlisting>
+<simpara>So, we see a few problems already. First, we don&#8217;t have a layout for
+"post." And, there is no configuration file. Let&#8217;s fix these problems.</simpara>
+<simpara>Add a file called <em>_config.yml</em> to the root directory:</simpara>
+<programlisting language="yaml" linenumbering="unnumbered">name: ByTravelers.com: Online travel information
+markdown: redcarpet
+highlighter: pygments</programlisting>
+<simpara>Remember, the jekyll tool does not reload the configuration file
+automatically, so we should restart the tool by hitting Ctrl-C and
+restarting.</simpara>
+<simpara>Then, create a directory called <em>_layouts</em>, and place a file called
+<emphasis>post.html</emphasis> inside it with these contents:</simpara>
+<programlisting language="html" linenumbering="unnumbered">---
+layout: default
+---
+
+&lt;h1&gt;{{ page.title }}&lt;/h1&gt;
+
+{{ content }}</programlisting>
+<simpara>The <emphasis>post.html</emphasis> layout file is very simple: we use Liquid Markup tags
+to write out the title of the site (contained in an object called
+<literal>page</literal>, which our template has access to) and then the content itself,
+which is the rendered output from the post page.</simpara>
+<simpara>We also need to create a "default" layout, so create this inside the
+<em>_layouts</em> directory with the filename <emphasis>default.html</emphasis>:</simpara>
+<programlisting language="html" linenumbering="unnumbered">&lt;html&gt;
+&lt;head&gt;
+&lt;title&gt;ByTravelers.com&lt;/title&gt;
+&lt;/head&gt;
+
+&lt;body&gt;
+
+{{ content }}
+
+&lt;/body&gt;
+&lt;/html&gt;</programlisting>
+<simpara>This file is almost pure HTML, with only the <literal>{{ content }}</literal> tag. When
+we specify <literal>default</literal> as the layout inside YAML for a Markdown file,
+the Markdown text is converted to HTML, and then this layout file is
+wrapped around it. You can see that the initial post files specify the
+<literal>post</literal> layout, which is wrapped around the content, then the
+<emphasis>post.html</emphasis> layout file specifies the <emphasis>default.html</emphasis> layout, which is
+wrapped around the entire contents.</simpara>
+<simpara>When we add these files, the Jekyll tool will notice the filesystem has changed and regenerate files. We now have generated posts, but
+we don&#8217;t have a master index file, so let&#8217;s add this now.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-05-jekyll-asciidoc18</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-05-jekyll-asciidoc18</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-05-jekyll-asciidoc17</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-05-jekyll-asciidoc17</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-05-jekyll-asciidoc16</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-05-jekyll-asciidoc16</primary>
+</indexterm></simpara>
+</section>
+<section xml:id="_master_index_file_with_liquid_markup">
+<title>Master Index File with Liquid Markup</title>
+<simpara><indexterm>
+<primary>Jekyll blogs</primary><secondary>master index file creation with Liquid Markup</secondary>
+</indexterm>
+<indexterm>
+<primary>master index file creation with Liquid Markup</primary>
+</indexterm><indexterm>
+<primary>Liquid Markup</primary><secondary>master index file creation with</secondary>
+</indexterm>
+<indexterm>
+<primary>master index file creation with</primary>
+</indexterm>We now have the posts generated properly, but we don&#8217;t have an entry page into the blog. <indexterm>
+<primary>index.md file</primary>
+</indexterm>We can create an <emphasis>index.md</emphasis> file, which just displays an index of all the blog posts:</simpara>
+<programlisting language="html" linenumbering="unnumbered">---
+layout: default
+---
+
+&lt;h1&gt;ByTravelers.com&lt;/h1&gt;
+
+Crowd sourced travel information.
+
+&lt;br/&gt;
+
+&lt;div&gt;
+{% for post in site.posts %}
+&lt;a href="{{ post.url }}"&gt;&lt;h2&gt; {{ post.title }} &lt;/h2&gt;&lt;/a&gt;
+{{ post.content | strip_html | truncatewords: 40 }}
+&lt;br/&gt;
+&lt;em&gt;Posted on {{ post.date | date_to_string }}&lt;/em&gt;
+&lt;br/&gt;
+{% endfor %}
+&lt;/div&gt;</programlisting>
+<simpara>Notice that the file combines Markdown (the single <literal>#</literal> character
+converts into an H1 tag) with regular HTML. You are free to mix
+regular HTML inside of Markdown files when there is not a Markdown
+equivalent.</simpara>
+<simpara>Output <indexterm>
+<primary>output tags</primary>
+</indexterm>tags use double braces surrounding the
+content (<literal>{{ site.title }}</literal>) while<indexterm>
+<primary>logic tags</primary>
+</indexterm> logic tags use a brace and percent
+symbol (<literal>{% if site.title %}</literal>). As you might expect, output tags place
+some type of visible output into the page, and logic tags perform some
+logic operation, like conditionals or loops.</simpara>
+<simpara>The preceding template has both output and logic tags. We see a logic tag
+in the form of <literal>{% for &#8230;&#8203; %}</literal>, which loops over each post. Jekyll will
+process the entire posts directory and provide it to pages inside the
+<literal>site.posts</literal> variable, and the <literal>for</literal> logic tag allows us to iterate
+over them. If we use a <literal>{% for &#8230;&#8203; %}</literal> tag we need to "close" the tag
+with a matching <literal>{% endfor %}</literal> tag. Inside of our for
+loop we have several output tags: <literal>{{ post.url }}</literal> outputs the post
+URL associated with a post, for example. We also have <emphasis>filters</emphasis>, which
+are methods defined to process data. One such filter is the
+<literal>strip_html</literal> filter, which you might guess strips out HTML text,
+converting it to escaped text. This is necessary when your text could
+include HTML tags. You&#8217;ll also notice that filters can be "chained";
+we process the body with the <literal>strip_html</literal> filter and then truncate the
+text by 40 characters using the <literal>truncatewords:40</literal> filter.</simpara>
+<simpara>If we open <emphasis><link xl:href="http://localhost:4000">http://localhost:4000</link></emphasis> in our browser, we will see a
+simple index page with the titles of our posts, like <xref linkend="austere_but_a_step_in_the_right_direction"/>.</simpara>
+<figure xml:id="austere_but_a_step_in_the_right_direction">
+<title>The Index Page, for a naked Jekyll blog</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/btwg_06in01.png"/>
+</imageobject>
+<textobject><phrase>btwg 06in01</phrase></textobject>
+</mediaobject>
+</figure>
+<simpara>This index page lists every post: let&#8217;s make it display only the last
+10 posts. Copy the <emphasis>index.md</emphasis> file to a file named <emphasis>archive.md</emphasis>.
+Then, change the <literal>{% for post in site.posts %}</literal> tag to <literal>{% for post in
+site.posts | limit:10 %}</literal>.</simpara>
+<simpara>Each post has an associated page that is generated by Jekyll.
+Clicking any of the links displays the post, which is right now
+just the title. We can now add the rest of the pages from our scraper.</simpara>
+</section>
+<section xml:id="_scraping_body_and_author">
+<title>Scraping Body and Author</title>
+<simpara><indexterm>
+<primary>interactive Ruby shell (IRB)</primary>
+</indexterm><indexterm>
+<primary>scraping</primary><secondary>author and body content</secondary>
+</indexterm>
+<indexterm>
+<primary>author and body content</primary>
+</indexterm>Use IRB to find the author and body content. Start by searching for the author information:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">2.0.0-p481 :037 &gt; rows[2].to_s
+=&gt; "&lt;tr&gt;\n&lt;td align=\"center\"&gt;\n\n\n\n&lt;font size=\"+1\"&gt;author:..."
+2.0.0-p481 :038 &gt; ( rows[2] / "td font" )[0].text()
+=&gt; "author: \n\nMD \n\n\nread more from this author | \nsee maps from this..."
+2.0.0-p481 :039 &gt; author = ( rows[2] / "td font" )[0].text()
+=&gt; "author: \n\nMD \n\n\nread more from this author | \nsee maps from this..."
+2.0.0-p481 :040 &gt; author =~ /author:\s+\n\n([^\s]+)\n\n/
+=&gt; 0
+2.0.0-p481 :041 &gt; $1
+=&gt; "MD"</programlisting>
+<simpara>We start by looking at the second row and converting it to raw HTML.
+We see there is a string author:, which is a likely place to
+reference the author. This string is wrapped by a font tag and a
+td tag, so we can use these search queries to eliminate extra
+information. Then, we convert the HTML to text using the <literal>text()</literal> method
+and use a regular expression to pull out the text after the author:
+string. If a regular expression matches and has a captured expression,
+it will be held in the global variable <literal>$1</literal>. There is more than one
+way to get this information, of course.</simpara>
+<simpara>Next, we retrieve our body from the scraped page. Add a method called
+<code><span class="keep-together">process</span>_body</code> and insert this into our processed hash:</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">def render( processed )
+  processed['layout'] = 'post'
+  filtered = processed.reject{ |k,v| k.eql?('body') } # <co xml:id="CO5-1"/>
+  rendered = "#{filtered.to_yaml}---\n\n" + # <co xml:id="CO5-2"/>
+    "### Written by: #{processed['author']}\n\n" +
+    processed['body']
+  rendered
+end
+ # <co xml:id="CO5-3"/>
+def process_body( paragraphs )
+  paragraphs.map { |p| p.text() }.join "\n\n"
+end
+
+def run
+  scrape()
+  @pages.each do |page|
+    rows = ( page / "table[valign=top] tr" )
+    processed = {}
+    processed['title'] = process_title( rows[0].text() ) # <co xml:id="CO5-4"/>
+    processed['creation_date'] = process_creation_date( rows[3].text() )
+    processed['body'] = process_body( rows[4] / "p"  ) # <co xml:id="CO5-5"/>
+    author_text = ( rows[2] / "td font" )[0].text()
+    processed['author'] = $1.strip if author_text =~ /author:\s+\n\n+(.+)\n\n+/
+    rendered = render( processed )
+    write( rendered, processed )
+  end</programlisting>
+<calloutlist>
+<callout arearefs="CO5-1">
+<para>We need to rewrite <literal>render</literal> slightly. There is no need for the
+entire body content of a post to be included in the YFM. We can
+filter this out using the <literal>reject</literal> method.</para>
+</callout>
+<callout arearefs="CO5-2">
+<para>Then, we append the author and body content to generate the new
+rendered output.</para>
+</callout>
+<callout arearefs="CO5-3">
+<para>Our process body is straightforward: we convert each node passed
+into text (using the <literal>text()</literal> method) and then rejoin them with
+double newlines. Markdown will properly format paragraphs if they are
+separated by two newlines.</para>
+</callout>
+<callout arearefs="CO5-4">
+<para>We then just need to invoke the <literal>process_body</literal> method and insert
+the results into our processed hash.</para>
+</callout>
+<callout arearefs="CO5-5">
+<para>Next, we use the query path we found in our IRB session to retrieve
+the author information, and insert it into our processed hash. The
+author name will then be inserted into our YFM automatically within
+the <literal>render</literal> method, and we will insert it into the post.</para>
+</callout>
+</calloutlist>
+<simpara>We can then run <literal>bundle exec ./run.rb</literal> to rewrite our post files.</simpara>
+</section>
+<section xml:id="_adding_images_to_jekyll">
+<title>Adding Images to Jekyll</title>
+<simpara><indexterm>
+<primary>images</primary><secondary>adding to Jekyll</secondary>
+</indexterm>
+<indexterm>
+<primary>adding to Jekyll</primary>
+</indexterm><indexterm>
+<primary>Jekyll blogs</primary><secondary>adding images to</secondary>
+</indexterm>
+<indexterm>
+<primary>adding images to</primary>
+</indexterm>Jekyll can host any binary files as well, and Markdown files can host
+the proper markup to include these assets. Let&#8217;s add the images from
+the original site:</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">def process_image( title )
+  img = ( title / "img" )
+  src = img.attr('src').text()
+  filename = src.split( "/" ).pop
+
+  output = "assets/images/"
+  FileUtils.mkdir_p output unless File.exists? output
+  full = File.join( output, filename )
+
+  if not File.exists? full or not File.size? full
+    root = "https://web.archive.org"
+    remote = root + src
+    # puts "Downloading #{full} from #{remote}"
+    `curl -L #{remote} -o #{full}`
+  end
+
+  filename
+end</programlisting>
+<simpara>We use the venerable cURL to download our images. Our code makes it so
+that the file is only downloaded the first time. We use the <literal>-L</literal>
+switch to tell cURL to follow redirects, because these images URLs are
+transparently redirected inside the browser.</simpara>
+<simpara>We need to customize our run method to invoke the <literal>process_image</literal> call:
+add <code><span class="keep-together">processed</span>&#x5b;'image'&#x5d; = process_image( rows&#x5b;0&#x5d; )</code> after any of the
+other process methods.</simpara>
+<warning>
+<simpara>I paid an artist for the images used on the original
+ByTravelers.com. If you are using this technique to scrape images or
+text content from another site, make sure you are abiding by all local
+and international copyright laws.</simpara>
+</warning>
+<simpara>Then, modify our post layout to include the image:</simpara>
+<programlisting language="html" linenumbering="unnumbered">---
+layout: default
+---
+
+&lt;h1&gt;{{ page.title }}&lt;/h1&gt;
+
+&lt;img src="/assets/images/{{ page.image }}"&gt;
+
+{{ content }}</programlisting>
+<simpara>Regenerating this page shows us a white background with an awkwardly
+juxtaposed colored image. Adding background colors to the entire site
+will help, so let&#8217;s now modify the CSS for our site.</simpara>
+</section>
+<section xml:id="_customizing_styling_css">
+<title>Customizing Styling (CSS)</title>
+<simpara><indexterm>
+<primary>CSS</primary><secondary>for Jekyll blogs</secondary><tertiary>id=ix_chapter-05-jekyll-asciidoc19</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-05-jekyll-asciidoc19</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>Jekyll blogs</primary><secondary>custom CSS for</secondary><tertiary>id=ix_chapter-05-jekyll-asciidoc20</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-05-jekyll-asciidoc20</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>We used <indexterm>
+<primary>Bootstrap</primary>
+</indexterm>Bootstrap in <xref linkend="JavaScript"/> and will use it again
+here. We will also layer another CSS file on top of Bootstrap to
+customize the colors.</simpara>
+<simpara>First, add a reference to Bootstrap and our custom CSS inside of the
+master layout file, <emphasis>default.html</emphasis>:</simpara>
+<programlisting language="html" linenumbering="unnumbered">&lt;html&gt;
+&lt;head&gt;
+&lt;title&gt;ByTravelers.com&lt;/title&gt;
+
+&lt;link href="/assets/css/bootstrap.min.css" rel="stylesheet"&gt;
+&lt;link href="/assets/css/site.css" rel="stylesheet"&gt;
+
+&lt;/head&gt;
+
+&lt;body&gt;
+
+{{ content }}
+
+&lt;/body&gt;
+&lt;/html&gt;</programlisting>
+<simpara>Then, download the Bootstrap CSS file into the proper folder:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ mkdir assets/css
+$ curl \
+https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css \
+-o assets/css/bootstrap.min.css</programlisting>
+<simpara>Adding a CSS framework like Bootstrap helps things considerably, but
+we should match the original colors as well. Add a file called
+<emphasis>site.css</emphasis> into the <emphasis>assets/css</emphasis> directory:</simpara>
+<programlisting language="css" linenumbering="unnumbered">body {
+color: #000000;
+background-color: #CCCC99;
+}
+
+a {
+color: #603;
+}
+
+.jumbotron {
+background-color: #FFFFCC;
+}</programlisting>
+<simpara>With the Bootstrap library installed, we can slightly modify our
+<emphasis>default.html</emphasis> layout to make the site really stand out. Many Jekyll
+blogs are quite minimalistic and stark, but you are limited only by
+your imagination:</simpara>
+<programlisting language="html" linenumbering="unnumbered">&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;ByTravelers.com&lt;/title&gt;
+    &lt;link href="/assets/css/bootstrap.min.css" rel="stylesheet"&gt;
+    &lt;link href="/assets/css/site.css" rel="stylesheet"&gt;
+  &lt;/head&gt;
+
+  &lt;body&gt;
+
+    &lt;div class="container"&gt;
+      &lt;div class="jumbotron"&gt;
+        &lt;h1&gt;ByTravelers.com&lt;/h1&gt;
+        Alternative travel information
+      &lt;/div&gt;
+      &lt;div class='row&gt;
+        &lt;div class='span12'&gt;
+          &lt;div class="container"&gt;
+            {{ content }}
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/body&gt;
+&lt;/html&gt;</programlisting>
+<simpara>If we reload, we will see a much prettier version of the site (<xref linkend="jekyll-now-livelier"/>).</simpara>
+<figure xml:id="jekyll-now-livelier">
+<title>Restoring the original colors and images</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/btwg_0606.png"/>
+</imageobject>
+<textobject><phrase>btwg 0606</phrase></textobject>
+</mediaobject>
+</figure>
+<simpara>We&#8217;ve now entirely scraped an old site and built a new Jekyll blog, so
+there is just one thing left to do: encourage and permit
+collaboration, which GitHub makes particularly easy.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-05-jekyll-asciidoc20</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-05-jekyll-asciidoc20</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-05-jekyll-asciidoc19</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-05-jekyll-asciidoc19</primary>
+</indexterm></simpara>
+</section>
+<section xml:id="_inviting_contributions_with_github_fork">
+<title>Inviting Contributions with GitHub "Fork"</title>
+<simpara><indexterm>
+<primary>forking</primary>
+</indexterm>When you publish a Jekyll blog, the fact that it is a repository on
+GitHub makes it simple to manage and track changes. In addition,
+because forking is a button click away, you can ask people to
+contribute or make changes with very little friction.
+You might have seen the banner saying "Fork me on GitHub" on many a
+software project page hosted on GitHub. We can motivate others to
+participate in our blog using pull requests. Let&#8217;s add that as a final touch and
+invite people to make contributions the GitHub way. The <link xl:href="https://github.com/blog/273-github-ribbons">GitHub blog
+first posted these banners</link>, and we&#8217;ll use its code almost as is inside our
+<emphasis>default.html</emphasis> page, just changing the reference to our repository in
+the link tag:</simpara>
+<programlisting role="pagebreak-before" language="html" linenumbering="unnumbered">...
+&lt;body&gt;
+
+  &lt;a href="https://github.com/xrd/bytravelers.com"&gt;
+    &lt;img style="position: absolute; top: 0; right: 0; border: 0;"
+	   src="https://..."
+	   alt="Fork me on GitHub"
+	   data-canonical-src="https://.../forkme_right_gray_6d6d6d.png"&gt;&lt;/a&gt;
+
+  &lt;div class="container"&gt;
+    &lt;div class="jumbotron"&gt;
+      &lt;h1&gt;ByTravelers.com&lt;/h1&gt;
+      Alternative travel information
+...</programlisting>
+<simpara>Now anyone can fork our repository, add their own post to the <em>_posts</em> directory, and then issue a pull request asking us to incorporate the new post into our Jekyll blog.</simpara>
+</section>
+<section xml:id="_publishing_our_blog_to_github">
+<title>Publishing Our Blog to GitHub</title>
+<simpara><indexterm>
+<primary>Jekyll blogs</primary><secondary>publishing on GitHub</secondary>
+</indexterm>
+<indexterm>
+<primary>publishing on GitHub</primary>
+</indexterm><indexterm>
+<primary>publishing Jekyll blogs</primary>
+</indexterm>Like any other GitHub repository, we can then publish our blog using
+the same commands we saw with earlier repositories. Obviously you
+should change the username and blog name to suit your own needs:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ export BLOG_NAME=xrd/bytravelers.com
+$ gem install hub
+$ hub create $BLOG_NAME # You might need to login here
+$ sleep $((10*60)) &amp;&amp; open http://bytravelers.com</programlisting>
+<simpara>And, don&#8217;t forget to set up DNS records and give yourself appropriate
+time to let those records propagate out.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-05-jekyll-asciidoc8</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-05-jekyll-asciidoc8</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-05-jekyll-asciidoc7</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-05-jekyll-asciidoc7</primary>
+</indexterm></simpara>
+</section>
+</section>
+<section xml:id="_summary">
+<title>Summary</title>
+<simpara>We&#8217;ve explored the details of Jekyll, looking at the structure of a
+Jekyll blog. Liquid Markup is a powerful way to use programmatic
+constructs inside a Markdown file, and we documented the most
+important concepts around using this templating language. By
+investigating the internals of a Jekyll post, we explained the
+intricacies of YAML Front Matter (YFM) and how seamlessly you can mix
+and match HTML with Markdown syntax. Jekyll blogs can utilize their
+own custom CSS, and we&#8217;ve shown how easy it is
+to use a powerful complete library like Bootstrap layered underneath a
+site-specific small CSS file. And, we built a scraper application
+that retrieves a remote site in its entirety and converts it into the
+correct structure of a Jekyll blog. Even though this scraper application was
+built specifically for a particular site, by adding testing and
+properly structuring the components it should be evident how to reuse
+much of the scraper for anything else you want to quickly convert into
+a Jekyll blog<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-05-jekyll-asciidoc2</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-05-jekyll-asciidoc2</primary>
+</indexterm>.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-05-jekyll-asciidoc0</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-05-jekyll-asciidoc0</primary>
+</indexterm></simpara>
+<simpara>In the next chapter we will continue looking at Jekyll by building an
+Android application that uses the Java GitHub API bindings and allows
+you to create Jekyll blog posts with the Git Data API.</simpara>
+</section>
+</section>
+</article>

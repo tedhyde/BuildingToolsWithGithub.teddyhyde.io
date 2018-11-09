@@ -1,0 +1,1536 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?asciidoc-toc?>
+<?asciidoc-numbered?>
+<article xmlns="http://docbook.org/ns/docbook" xmlns:xl="http://www.w3.org/1999/xlink" version="5.0" xml:lang="en">
+<info>
+<title>Python and the Search API</title>
+<date>2018-11-09</date>
+</info>
+<section xml:id="python_search_api">
+<title>Python and the Search API</title>
+<simpara><indexterm>
+<primary>search API</primary><secondary>id=ix_chapter-08-python-search-asciidoc0</secondary><tertiary>range=startofrange</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-08-python-search-asciidoc0</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>Once you have enough data, no amount of organization will make everything easy to find.
+As Google has taught us, the only system that works at this scale is a search box.
+When you use GitHub, you&#8217;re exposed to both sides of this phenomenon: the repositories you have direct access to&#x2014;which are relatively small in number&#x2014;are given a single level of hierarchy, so you can keep them straight in your head.
+For the rest, the uncountable millions of public repositories that belong to other people, there&#8217;s a search box, with powerful features to help you find what you&#8217;re looking for.</simpara>
+<simpara>Helpfully, GitHub also exposes this capability as an API you can consume from your own applications.
+GitHub&#8217;s Search API gives you access to the full power of the built-in search function.
+This includes  the use of logical and scoping operators, like <literal>"or"</literal> and <literal>"user"</literal>.
+By integrating this feature with your application, you can provide your users a very powerful way of finding what they&#8217;re looking for.</simpara>
+<simpara>In this chapter we&#8217;ll take a close look at this API, and try building a useful application with it.
+We&#8217;ll see how the Search API is structured, what kind of results come back, and how it can help us create a feature for someone on our team.</simpara>
+<section xml:id="_search_api_general_principles">
+<title>Search API General Principles</title>
+<simpara><indexterm>
+<primary>search API</primary><secondary>general principles</secondary><tertiary>id=ix_chapter-08-python-search-asciidoc1</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-08-python-search-asciidoc1</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>The Search API is split into four separate parts: repositories, code, issues, and users.
+These APIs all have different subject matter, and have different formats for their results, but they all behave the same in a few key ways.
+We&#8217;re covering these first, because they&#8217;ll help you understand the results coming back from the specific API calls that we cover later.
+There are four major areas of commonality.</simpara>
+<section xml:id="_authentication">
+<title>Authentication</title>
+<simpara><indexterm>
+<primary>authentication</primary><secondary>of search API user</secondary>
+</indexterm>
+<indexterm>
+<primary>of search API user</primary>
+</indexterm><indexterm>
+<primary>search API</primary><secondary>authentication</secondary>
+</indexterm>
+<indexterm>
+<primary>authentication</primary>
+</indexterm>Your identity as a user can determine the result set from a search query, so it&#8217;s important to know about authentication.
+We cover GitHub authentication fully in <xref linkend="authentication"/>, but this API is also available without logging in.
+However, there are a few limitations to this approach.</simpara>
+<simpara>First, you&#8217;ll only be able to search public repositories.
+This is probably fine if you&#8217;re primarily working with open source software, but users of your application will probably expect to have access to their private code, as well as that of any organizations they belong to.
+Also, since <emphasis>all</emphasis> Enterprise repositories are private, anonymous search is completely useless there.</simpara>
+<simpara><indexterm>
+<primary>rate limits</primary><secondary>authentication and</secondary>
+</indexterm>
+<indexterm>
+<primary>authentication and</primary>
+</indexterm>Secondly, authenticating opens up your rate limit. The limits on search are stricter than other APIs anyway, because search is computationally expensive, but anonymous searches are stricter still. As of this writing, and according to the documentation, anonymous searches are limited to 5 per minute, and you can do 20 authenticated queries per minute. Take a look at <xref linkend="developer-api-rates"/> for more on how to work with rate limits.</simpara>
+<simpara>Here&#8217;s that same information in tabular form:</simpara>
+<informaltable frame="all" rowsep="1" colsep="1">
+<tgroup cols="3">
+<colspec colname="col_1" colwidth="50*"/>
+<colspec colname="col_2" colwidth="25*"/>
+<colspec colname="col_3" colwidth="25*"/>
+<thead>
+<row>
+<entry align="left" valign="top"></entry>
+<entry align="left" valign="top">Anonymous</entry>
+<entry align="left" valign="top">Authenticated</entry>
+</row>
+</thead>
+<tbody>
+<row>
+<entry align="left" valign="top"><simpara>Results include private repositories</simpara></entry>
+<entry align="left" valign="top"><simpara>No</simpara></entry>
+<entry align="left" valign="top"><simpara>Yes</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>Use with Enterprise</simpara></entry>
+<entry align="left" valign="top"><simpara>No</simpara></entry>
+<entry align="left" valign="top"><simpara>Yes</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara>Rate limit</simpara></entry>
+<entry align="left" valign="top"><simpara>5/minute</simpara></entry>
+<entry align="left" valign="top"><simpara>20/minute</simpara></entry>
+</row>
+</tbody>
+</tgroup>
+</informaltable>
+</section>
+<section xml:id="_result_format">
+<title>Result Format</title>
+<simpara><indexterm>
+<primary>return value, search API</primary>
+</indexterm><indexterm>
+<primary>search API</primary><secondary>result format</secondary>
+</indexterm>
+<indexterm>
+<primary>result format</primary>
+</indexterm>No matter what you&#8217;re searching for, the return value from the API follows a certain format.
+Here&#8217;s a sample result from a query, which has been heavily edited to focus only on the parts you&#8217;ll always see:</simpara>
+<programlisting language="json" linenumbering="unnumbered">{
+  "total_count": 824,
+  "incomplete_results": false,
+  "items": [
+    {
+      …
+      "score": 3.357718
+    }
+  ]
+}</programlisting>
+<simpara>Starting from the top: <indexterm>
+<primary>total&#95;count field</primary>
+</indexterm>the <literal>total_count</literal> field represents the total number of search results that turned up from this query.
+It&#8217;s not uncommon for a fairly specific search to turn up thousands of results&#x2014;remember, there are millions of repositories on GitHub.
+By default, only the first 30 are returned, but you can customize this with <literal>page</literal> and <literal>per_page</literal> query parameters in the URL.
+For example, a GET request to this URL will return 45 items, starting with the 46th result:</simpara>
+<programlisting language="text" linenumbering="unnumbered">search/repositories?q=foobar&amp;page=2&amp;page_size=45</programlisting>
+<simpara>Page sizes are generally limited to 100.</simpara>
+<simpara>The<indexterm>
+<primary>incomplete&#95;results field</primary>
+</indexterm> <literal>incomplete_results</literal> field refers to a computational limit placed on the Search API.
+If your search takes too long, the GitHub API will stop it partway through executing, return the results that did complete, and set this flag to <literal>true</literal>.
+For most queries this won&#8217;t be a problem, and the <literal>total_count</literal> will represent all the results from the search, but if your query is complicated, you might only get a partial result set.</simpara>
+<simpara>Search results are returned in <indexterm>
+<primary>items array</primary>
+</indexterm>the <literal>items</literal> array, and each item always has <indexterm>
+<primary>score field</primary>
+</indexterm>a <literal>score</literal> field.
+This field is numeric, but it&#8217;s only a relative measure of how well a result matches the query, and is used for the default sort order&#x2014;highest score first.
+If you do pay attention to it, remember it only has meaning when compared to other results from the same query; a result with a score of 50 isn&#8217;t necessarily ten times "better" than a result scored 5.</simpara>
+<simpara>Here&#8217;s a summary of the important fields:</simpara>
+<informaltable frame="all" rowsep="1" colsep="1">
+<tgroup cols="2">
+<colspec colname="col_1" colwidth="25*"/>
+<colspec colname="col_2" colwidth="75*"/>
+<thead>
+<row>
+<entry align="left" valign="top">Field</entry>
+<entry align="left" valign="top">Meaning</entry>
+</row>
+</thead>
+<tbody>
+<row>
+<entry align="left" valign="top"><simpara><literal>total_count</literal></simpara></entry>
+<entry align="left" valign="top"><simpara>Total search result count</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara><literal>incomplete_results</literal></simpara></entry>
+<entry align="left" valign="top"><simpara><literal>true</literal> if search was halted before finishing</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara><literal>items</literal></simpara></entry>
+<entry align="left" valign="top"><simpara>List of search results</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara><literal>(item).score</literal></simpara></entry>
+<entry align="left" valign="top"><simpara>Relevance of this item as a search result</simpara></entry>
+</row>
+</tbody>
+</tgroup>
+</informaltable>
+</section>
+<section xml:id="_search_operators_and_qualifiers">
+<title>Search Operators and Qualifiers</title>
+<simpara><indexterm>
+<primary>operators, search API</primary>
+</indexterm><indexterm>
+<primary>qualifiers, search API</primary>
+</indexterm><indexterm>
+<primary>search API</primary><secondary>operators and qualifiers</secondary>
+</indexterm>
+<indexterm>
+<primary>operators and qualifiers</primary>
+</indexterm>Of course, it&#8217;s always better if you can avoid pagination altogether, or at least get the best results in the first page.
+Qualifiers and operators can help narrow your search results to fewer pages, hopefully allowing the right result to float to the top.</simpara>
+<simpara><indexterm>
+<primary>search query</primary>
+</indexterm>With the Search API, all searches are done through a search query, which is encoded and passed in the URL as the <literal>q</literal> parameter.
+Most of the query will be free text, but the API also supports some powerful syntax, such as these forms:</simpara>
+<itemizedlist>
+<listitem>
+<simpara><literal>x AND y</literal>, as well as <literal>OR</literal> and <literal>NOT</literal></simpara>
+</listitem>
+<listitem>
+<simpara><code>user:<em>&#x3c;name&#x3e;</em></code>, where <emphasis>name</emphasis> is a user or organization</simpara>
+</listitem>
+<listitem>
+<simpara><code>repo:<em>&#x3c;name&#x3e;</em></code></simpara>
+</listitem>
+<listitem>
+<simpara><code>language:<em>&#x3c;name&#x3e;</em></code></simpara>
+</listitem>
+<listitem>
+<simpara><code>created:<em>&#x3c;date(s)&#x3e;</em></code></simpara>
+</listitem>
+<listitem>
+<simpara><code>extension:<em>&#x3c;pattern&#x3e;</em></code> matches file extensions (like <emphasis>py</emphasis> or <emphasis>ini</emphasis>)</simpara>
+</listitem>
+</itemizedlist>
+<simpara><indexterm>
+<primary>numerical values, in search queries</primary>
+</indexterm>Numerical values and dates can have ranges:</simpara>
+<itemizedlist>
+<listitem>
+<simpara><literal>2015-02-01</literal> will match only the given date</simpara>
+</listitem>
+<listitem>
+<simpara><literal>&lt;2015-02-01</literal> will match any date previous to the one given</simpara>
+</listitem>
+<listitem>
+<simpara><literal>2015-02-01..2015-03-01</literal> will match dates within the given range, including the endpoints</simpara>
+</listitem>
+</itemizedlist>
+<simpara>For example, to find code written by the user tpope during July of 2012, you would write <literal>"user:tpope created:2012-07-01..2015-07-31"</literal> for the query parameter.
+That would be encoded in a URL like so:</simpara>
+<programlisting language="text" linenumbering="unnumbered">search/repositories?q=user%3Atpope+created%3A2012-07-01..2015-07-31</programlisting>
+<simpara>To constrain this search to only Python code, we could add ` language=python`,
+URL encoded as <literal>+language%3Apython</literal>, to the end of the URL.</simpara>
+<simpara>There are many other options.
+Check out <link xl:href="https://github.com/search/advanced">https://github.com/search/advanced</link> for a UI that can help you construct a query.</simpara>
+</section>
+<section xml:id="_sorting">
+<title>Sorting</title>
+<simpara><indexterm>
+<primary>search API</primary><secondary>sorting of results</secondary>
+</indexterm>
+<indexterm>
+<primary>sorting of results</primary>
+</indexterm><indexterm>
+<primary>sorting, search query results</primary>
+</indexterm>If search query operators can&#8217;t narrow down a result set to just the most important items, perhaps sorting them can.
+Search results are returned in a definite order, never at random.
+The default order is "best match," which sorts your results based on their search score, best score first.
+If you want to override this, you can pass <literal>stars</literal>, <literal>forks</literal>, or <literal>updated</literal> in the <literal>sort</literal> query parameter, as in <literal>search/repositories?q=foobar&amp;sort=stars</literal>.</simpara>
+<simpara>You can also reverse the sort order using the <literal>order</literal> parameter, like <literal>search/repositories?q=foobar&amp;sort=stars&amp;order=desc</literal>.
+The default is <literal>desc</literal> ("descending"), but <literal>asc</literal> is also accepted, and will reverse the order.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-08-python-search-asciidoc1</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-08-python-search-asciidoc1</primary>
+</indexterm></simpara>
+</section>
+</section>
+<section xml:id="_search_apis_in_detail">
+<title>Search APIs in Detail</title>
+<simpara>Now that we&#8217;ve covered how all these APIs behave the same, let&#8217;s discuss their specifics.
+The Search API is compartmentalized into four categories: repositories, code, issues, and users.
+The basic mechanism is the same for all four: send a GET request to the endpoint, and provide a URL-encoded search term as the <literal>q</literal> parameter.
+We&#8217;ll show an abridged response from each of the four, along with some discussion of what to expect.</simpara>
+<section xml:id="_repository_search">
+<title>Repository Search</title>
+<simpara><indexterm>
+<primary>repositories</primary><secondary>search API</secondary>
+</indexterm>
+<indexterm>
+<primary>search API</primary>
+</indexterm><indexterm>
+<primary>search API</primary><secondary>repository search</secondary>
+</indexterm>
+<indexterm>
+<primary>repository search</primary>
+</indexterm>The <literal>search/repositories</literal> endpoint looks in the repository metadata to match your query.
+This includes the project&#8217;s name and description by default, though you can also search the read me file by specifying <literal>in:readme</literal> in the query.
+Other qualifiers are documented at <link xl:href="https://developer.github.com/v3/search/#search-repositories">https://developer.github.com/v3/search/#search-repositories</link>.</simpara>
+<simpara>A query such as <literal>search/repositories?q=foobar</literal> might result in a response that looks something like this:</simpara>
+<programlisting language="json" linenumbering="unnumbered">{
+  "total_count": 824,
+  "incomplete_results": false,
+  "items": [
+    {
+      "id": 10869370,
+      "name": "foobar",
+      "full_name": "iwhitcomb/foobar",
+      "owner": {
+        "login": "iwhitcomb",
+        "id": 887528,
+        "avatar_url": "https://avatars.githubusercontent.com/u/887528?v=3",
+        …
+      },
+      "private": false,
+      "html_url": "https://github.com/iwhitcomb/foobar",
+      "description": "Drupal 8 Module Example",
+      "fork": false,
+      …
+      "score": 59.32314
+    },
+    …
+  ]
+}</programlisting>
+<simpara>Each item in <literal>items</literal> is the description of a repository.
+All sorts of useful information is included, such as a URL to the UI for this repository (<literal>html_url</literal>), the owner&#8217;s avatar (<literal>owner.avatar_url</literal>), and a URL suitable for cloning the repository using Git (<literal>git_url</literal>).</simpara>
+</section>
+<section xml:id="_code_search">
+<title>Code Search</title>
+<simpara><indexterm>
+<primary>code search</primary>
+</indexterm><indexterm>
+<primary>search API</primary><secondary>code search</secondary>
+</indexterm>
+<indexterm>
+<primary>code search</primary>
+</indexterm>The <literal>search/code</literal> endpoint is for searching the contents of a repository.
+You can try matching the contents of the files themselves, or their paths (using <literal>in:path</literal>).
+(For complete documentation on the other available qualifiers, check out <link xl:href="https://developer.github.com/v3/search/#search-code">https://developer.github.com/v3/search/#search-code</link>.)</simpara>
+<simpara>This API is subject to several limits that don&#8217;t affect the other search endpoints, because of the sheer amount of data the server must sort through to find matches.
+First, it requires that you provide a general search term (a phrase to match); specifying a query with <emphasis>only</emphasis> operators (like <literal>language:python</literal>) is valid with other APIs, but not here.
+Second, any wildcard characters in the query will be ignored.
+Third, files above a certain size will not be searched.
+Fourth, it only searches the default branch of any given project, which is usually <literal>master</literal>.
+Fifth, and possibly most importantly, you <emphasis>must</emphasis> specify a repository owner using the <code>user:<em>&#x3c;name&#x3e;</em></code> qualifier; you cannot search all repositories with one query.</simpara>
+<simpara>The JSON returned looks something like this:</simpara>
+<programlisting language="json" linenumbering="unnumbered">{
+  "total_count": 9246,
+  "incomplete_results": false,
+  "items": [
+    {
+      "name": "migrated_0000.js",
+      "path": "test/fixtures/ES6/class/migrated_0000.js",
+      "sha": "37bdd2221a71b58576da9d3c2dc0ef0998263652",
+      "url": "…",
+      "git_url": "…",
+      "html_url": "…",
+      "repository": {
+        "id": 2833537,
+        "name": "esprima",
+        "full_name": "jquery/esprima",
+        "owner": {
+          "login": "jquery",
+          "id": 70142,
+          "avatar_url": "https://avatars.githubusercontent.com/u/70142?v=3",
+          …
+        },
+        "private": false,
+        …
+      },
+      "score": 2.3529532
+    },
+    …
+  ]
+}</programlisting>
+<simpara>Each item has some data about the file that turned up, including its name and URLs for a couple of representations of it.
+Then there&#8217;s the blob of data about its repository, followed by a score, which is used for the default "best match" sorting.</simpara>
+</section>
+<section xml:id="_issue_search">
+<title>Issue Search</title>
+<simpara><indexterm>
+<primary>issue search</primary>
+</indexterm><indexterm>
+<primary>search API</primary><secondary>issue search</secondary>
+</indexterm>
+<indexterm>
+<primary>issue search</primary>
+</indexterm>Repositories contain more than just code.
+The <literal>search/issues</literal> endpoint looks for matches in the issues and pull requests attached to a project.
+This endpoint responds to a wide variety of search qualifiers, such as:</simpara>
+<variablelist>
+<varlistentry>
+<term><literal>type</literal></term>
+<listitem>
+<simpara>Either "pr" for pull requests, or "issue" for issues (the default is both).</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>team</literal></term>
+<listitem>
+<simpara>Match issues whose discussions mention a specific team (only works for organizations you belong to).</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><literal>no</literal></term>
+<listitem>
+<simpara>Match issues that are missing a piece of data (as in "no:label").</simpara>
+</listitem>
+</varlistentry>
+</variablelist>
+<simpara>There are many more; see <link xl:href="https://developer.github.com/v3/search/#search-issues">https://developer.github.com/v3/search/#search-issues</link> for complete documentation.</simpara>
+<simpara>The result of a call to this endpoint looks like this:</simpara>
+<programlisting language="json" linenumbering="unnumbered">{
+  "total_count": 1278397,
+  "incomplete_results": false,
+  "items": [
+    {
+      "url": "…",
+      "labels_url": "…",
+      "comments_url": "…",
+      "events_url": "…",
+      "html_url": "…",
+      "id": 69671218,
+      "number": 1,
+      "title": "Classes",
+      "user": {
+        "login": "reubeningber",
+        "id": 2552792,
+        "avatar_url": "…",
+        …
+      },
+      "labels": [
+        …
+      ],
+      "state": "open",
+      "locked": false,
+      "assignee": null,
+      "milestone": null,
+      "comments": 0,
+      "created_at": "2015-04-20T20:18:56Z",
+      "updated_at": "2015-04-20T20:18:56Z",
+      "closed_at": null,
+      "body": "There should be an option to add classes to the ul and li...",
+      "score": 22.575937
+    },
+  ]
+}</programlisting>
+<simpara>Again, each item in the list looks like the result of a call to the issued API.
+There are a lot of useful bits of data here, such as the issue&#8217;s title (<literal>title</literal>), labels (<literal>labels</literal>), and links to information about the pull-request data (<literal>pull_request.url</literal>), which won&#8217;t be present if the result isn&#8217;t a pull request.</simpara>
+</section>
+<section xml:id="_user_search">
+<title>User Search</title>
+<simpara><indexterm>
+<primary>search API</primary><secondary>user search</secondary>
+</indexterm>
+<indexterm>
+<primary>user search</primary>
+</indexterm><indexterm>
+<primary>user search</primary>
+</indexterm>All the other Search APIs are centered around repositories, but this endpoint searches a different namespace: GitHub users.
+By default, only a user&#8217;s login name and public email address are searched; the <literal>in</literal> qualifier can extend this to include the user&#8217;s full name as well, with <literal>in:fullname,login,email</literal>.
+There are several other useful qualifiers available; see <link xl:href="https://developer.github.com/v3/search/#search-users">https://developer.github.com/v3/search/#search-users</link> for complete documentation.</simpara>
+<simpara>Querying the <literal>search/users</literal> endpoint gives you this kind of response:</simpara>
+<programlisting language="json" linenumbering="unnumbered">{
+  "total_count": 26873,
+  "incomplete_results": false,
+  "items": [
+    {
+      "login": "ben",
+      "id": 39902,
+      "avatar_url": "…",
+      "gravatar_id": "",
+      "url": "…",
+      "html_url": "…",
+      …
+      "score": 98.24275
+    },
+    {
+      "login": "bengottlieb",
+      "id": 53162,
+      "avatar_url": "…",
+      "gravatar_id": "",
+      "url": "…",
+      "html_url": "…",
+      …
+      "score": 35.834213
+    },
+  ]
+}</programlisting>
+<simpara>The list of items in this case look like the results from a query of the <code>users/<em>&#x3c;name&#x3e;</em></code> endpoint.
+Useful items here are the user&#8217;s avatar (<literal>avatar_url</literal>), several links to other API endpoints (<literal>repos_url</literal>, <literal>url</literal>), and the type of result (user or organization, in <literal>type</literal>).</simpara>
+</section>
+</section>
+<section xml:id="_our_example_application">
+<title>Our Example Application</title>
+<simpara><indexterm>
+<primary>GUI search API application</primary><secondary>search API</secondary><tertiary>id=ix_chapter-08-python-search-asciidoc2</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-08-python-search-asciidoc2</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>search API</primary><secondary>example GUI application</secondary><tertiary>id=ix_chapter-08-python-search-asciidoc3</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-08-python-search-asciidoc3</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>Now that we know a bit about how this API behaves, let&#8217;s do something useful with it.</simpara>
+<simpara>Imagine that your development team uses GitHub to store their Git repositories, and that there are lots of little repositories for parts of the application that work together at runtime.
+This kind of situation ends up being fairly difficult to work with for your nontechnical colleagues; if they want to report an issue, they don&#8217;t know where to go, and they don&#8217;t know how to find issues that already exist.</simpara>
+<simpara>Search can make this possible, but doing a search across an entire organization&#8217;s repositories involves using the <code>user:<em>&#x3c;organization&#x3e;</em></code> operator, which is obtusely named, and kind of scary for nonprogrammers.
+Plus, the user would have to remember to add that option every single time they wanted to search for issues.</simpara>
+<simpara>The Search API can make this a bit easier.
+Let&#8217;s make a GUI application with just a single search box, which makes it dead simple for a nontechnical user to search all the issues in all the repositories in a single organization.
+It&#8217;ll end up looking a bit like Figures <a data-type="xref" data-xrefstyle="select:labelnumber" href="#github_search_app_windows">#github_search_app_windows</a>, <a data-type="xref" data-xrefstyle="select:labelnumber" href="#github_search_app_mac">#github_search_app_mac</a>, and <a data-type="xref" data-xrefstyle="select:labelnumber" href="#github_search_app_linux">#github_search_app_linux</a>.</simpara>
+<figure xml:id="github_search_app_windows" role="smallerseventy">
+<title>GitHub search application on Windows</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/btwg_04in01.png"/>
+</imageobject>
+<textobject><phrase>btwg 04in01</phrase></textobject>
+</mediaobject>
+</figure>
+<figure xml:id="github_search_app_mac" role="smallerseventy">
+<title>GitHub search application on Mac</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/btwg_04in02.png"/>
+</imageobject>
+<textobject><phrase>btwg 04in02</phrase></textobject>
+</mediaobject>
+</figure>
+<figure xml:id="github_search_app_linux" role="smallerseventy">
+<title>GitHub search application on Linux</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/btwg_04in03.png"/>
+</imageobject>
+<textobject><phrase>btwg 04in03</phrase></textobject>
+</mediaobject>
+</figure>
+<section xml:id="_user_flow">
+<title>User Flow</title>
+<simpara><indexterm>
+<primary>search API</primary><secondary>user flow</secondary>
+</indexterm>
+<indexterm>
+<primary>user flow</primary>
+</indexterm>That&#8217;s the overall goal, but let&#8217;s dig in to more detail about how the user experiences the application.</simpara>
+<simpara>The first thing we&#8217;ll do is require the user to log in with GitHub credentials.
+Why?
+Partly because the Search API is throttled pretty aggressively, and the rate limits are higher with authenticated access.
+But also because our user is going to need the ability to search issues in private repositories.
+To make this easier, our program will try to get GitHub credentials from Git&#8217;s credential store, but it&#8217;ll fall back to a login form, which looks like <xref linkend="search_login_ui"/>.</simpara>
+<figure xml:id="search_login_ui">
+<title>Login UI</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/btwg_0401.png"/>
+</imageobject>
+<textobject><phrase>btwg 0401</phrase></textobject>
+</mediaobject>
+</figure>
+<simpara>Once the user logs in, they&#8217;ll be shown a search box.
+Typing in a search query and hitting Enter will result in a scrollable list of search results, with titles and the first line of the description.
+Clicking a search result opens the issue in the user&#8217;s browser.</simpara>
+<simpara>That&#8217;s about it.
+This application only has two main screens from the user&#8217;s point of view.
+It&#8217;s a simple, focused tool to solve a very tightly defined problem, so the code shouldn&#8217;t be too hard.</simpara>
+</section>
+</section>
+<section xml:id="_python">
+<title>Python</title>
+<simpara><indexterm>
+<primary>GUI search API application</primary><secondary>Python as implementation language for</secondary><tertiary>id=ix_chapter-08-python-search-asciidoc4</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-08-python-search-asciidoc4</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>Python</primary><secondary>as implementation language for search API application</secondary><tertiary>id=ix_chapter-08-python-search-asciidoc5</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-08-python-search-asciidoc5</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>search API</primary><secondary>Python as implementation language for GUI application</secondary><tertiary>id=ix_chapter-08-python-search-asciidoc6</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-08-python-search-asciidoc6</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>Now that we know how the program should act, let&#8217;s decide how it should <emphasis>work</emphasis>.</simpara>
+<simpara>We&#8217;ll use Python for our implementation language, for several reasons.
+First, because we haven&#8217;t yet seen it in this book, and we like to expose you to a wide variety of languages.
+One of our goals is to help the reader explore technologies they might not have seen before.</simpara>
+<simpara>Secondly, there&#8217;s a Python library for building GUI applications that run without modification on Mac OS X, Linux, and Windows.
+Surprisingly, this is a fairly unique feature among modern high-level programming languages.
+If you want this capability elsewhere, you usually have to use a high-complexity framework, a lower-level language like C++, or both.</simpara>
+<simpara>Thirdly, this will help make it easy to distribute.
+There is a Python package that bundles an entire Python program and all of its dependencies into a single file (or <emphasis>.app</emphasis> bundle on OS X).
+So giving this program to a colleague is as easy as emailing her a ZIP file, which will help with our use case: a nontechnical user might not be totally comfortable clicking through an installer (or even have permissions to do so on their machine).</simpara>
+<simpara>Let&#8217;s take a quick look at the libraries we&#8217;ll be using in our application&#8217;s code.
+We&#8217;ll see them in action later on, but a quick overview will help you understand what each one is trying to do.
+As is unfortunately typical with Python development, installation methods vary from package to package, so we&#8217;ll also tell you how to get each one onto your machine.</simpara>
+<section xml:id="_agithub">
+<title>AGitHub</title>
+<simpara><indexterm>
+<primary>AGitHub library</primary>
+</indexterm><indexterm>
+<primary>Python</primary><secondary>AGitHub library</secondary>
+</indexterm>
+<indexterm>
+<primary>AGitHub library</primary>
+</indexterm>The first thing we should mention is the library we&#8217;ll use to talk to the GitHub API, which is called <literal>agithub</literal>.
+<literal>agithub</literal> is a very thin layer that converts GitHub&#8217;s REST API into method calls on objects, resulting in delightfully readable code.</simpara>
+<simpara><literal>agithub</literal> can be found at <link xl:href="https://github.com/jpaugh/agithub">https://github.com/jpaugh/agithub</link>, and the "installation" is simply to download a copy of the <emphasis>agithub.py</emphasis> source file and place it alongside your project files.</simpara>
+</section>
+<section xml:id="_wxpython">
+<title>WxPython</title>
+<simpara><indexterm>
+<primary>Python</primary><secondary>WxPython project</secondary>
+</indexterm>
+<indexterm>
+<primary>WxPython project</primary>
+</indexterm><indexterm>
+<primary>WxPython project</primary>
+</indexterm>WxPython is how we&#8217;ll create the graphical interface for our application.
+It&#8217;s an object-oriented Python layer over the top of a toolkit called WxWidgets, which is itself a common-code adapter for native UI toolkits.
+WxWidgets supports Linux, Mac, and Windows operating systems with native controls, so you can access all of those platforms with the same Python code.</simpara>
+<simpara>Information about the WxPython project can be found at <link xl:href="http://www.wxpython.org">http://www.wxpython.org</link>, and you&#8217;ll find a download link for your platform on the lefthand side of the page.
+The next version of WxPython (code-named "Phoenix") will be installable via PIP, but at the time of this writing Phoenix is still prerelease software, so it&#8217;s probably safer to use the stable version.</simpara>
+<note>
+<simpara><indexterm>
+<primary>Python</primary><secondary>2.7 vs. 3</secondary>
+</indexterm>
+<indexterm>
+<primary>2.7 vs. 3</primary>
+</indexterm>A bit of background on Python: it&#8217;s undergoing a transition.
+Currently there are two actively used versions: Python 2.7 and Python 3 (3.5 at the time of this writing).
+Most of the details are unimportant, but in order to follow along with this example, you&#8217;ll have to be running Python 2.7, because WxPython doesn&#8217;t currently support Python 3.
+Support for Python 3 is planned for the upcoming Phoenix release, so most of the following code is written in a "polyglot" fashion, so you shouldn&#8217;t run into any trouble running it under Python 3 if Phoenix has arrived by the time you read this.</simpara>
+</note>
+</section>
+<section xml:id="_pyinstaller">
+<title>PyInstaller</title>
+<simpara><indexterm>
+<primary>PyInstaller</primary>
+</indexterm><indexterm>
+<primary>Python</primary><secondary>PyInstaller</secondary>
+</indexterm>
+<indexterm>
+<primary>PyInstaller</primary>
+</indexterm>PyInstaller will be our distribution tool.
+Its main function is to read your Python code, analyze it to discover all its dependencies, then collect all these files (including the Python interpreter) and put them in one directory.
+It can even wrap all of that up in a single package that, when double-clicked, runs your program.
+It does all this without needing much input from you, and there are only a few configuration options.
+If you&#8217;ve written GUI applications before, you&#8217;ll know how hard each of these problems are.</simpara>
+<simpara>For information on this project, you can visit <link xl:href="http://pythonhosted.org/PyInstaller">http://pythonhosted.org/PyInstaller</link>.
+You can install it using Python&#8217;s package manager by running <literal>pip install pyinstaller</literal>.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-08-python-search-asciidoc6</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-08-python-search-asciidoc6</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-08-python-search-asciidoc5</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-08-python-search-asciidoc5</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-08-python-search-asciidoc4</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-08-python-search-asciidoc4</primary>
+</indexterm></simpara>
+</section>
+</section>
+<section xml:id="_the_code">
+<title>The Code</title>
+<simpara><indexterm>
+<primary>GUI search API application</primary><secondary>code for</secondary><tertiary>id=ix_chapter-08-python-search-asciidoc7</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-08-python-search-asciidoc7</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>Python</primary><secondary>and code for search API application</secondary><tertiary>id=ix_chapter-08-python-search-asciidoc8</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-08-python-search-asciidoc8</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>Alright, now you have an idea of which parts of the Python ecosystem will be helping us on our journey.
+Let&#8217;s get started looking at the code that brings them all together.
+We&#8217;ll start with this skeleton file:</simpara>
+<programlisting language="python" linenumbering="unnumbered">#!/usr/bin/env python <co xml:id="CO1-1"/>
+
+import os, subprocess
+import wx
+from agithub import Github <co xml:id="CO1-2"/>
+
+class SearchFrame(wx.Frame): <co xml:id="CO1-3"/>
+    pass
+
+if __name__ == '__main__': <co xml:id="CO1-4"/>
+    app = wx.App() <co xml:id="CO1-5"/>
+    SearchFrame(None)
+    app.MainLoop()</programlisting>
+<simpara>Let&#8217;s take a look at a few key things:</simpara>
+<calloutlist>
+<callout arearefs="CO1-1">
+<para>The "shebang" specifies that this is a Python 2.7 program.</para>
+</callout>
+<callout arearefs="CO1-2">
+<para>Here we import our handy libraries.
+We import WxPython (<literal>wx</literal>) whole cloth, but with <literal>agithub</literal> we only need the <literal>Github</literal> (note the capitalization) class.
+<literal>os</literal> and <literal>subprocess</literal> come from the Python standard library.</para>
+</callout>
+<callout arearefs="CO1-3">
+<para>This is the class for our main window.
+We&#8217;ll walk through the particulars later on when we discuss the real implementation.</para>
+</callout>
+<callout arearefs="CO1-4">
+<para>In Python, you create the main entry point of an application using this syntax.</para>
+</callout>
+<callout arearefs="CO1-5">
+<para>And this is how you write a "main" function in WxPython.
+We instantiate an <literal>App</literal> instance, create an instance of our top-level frame, and run the app&#8217;s main loop.</para>
+</callout>
+</calloutlist>
+<simpara>If you run this program right now, your command line will appear to hang, but it&#8217;s actually waiting for GUI input.
+This is because the wx library won&#8217;t create a "frame" window that has no contents.
+Let&#8217;s correct that, but first a quick diversion into Git internals to make our experience a bit nicer.</simpara>
+<section xml:id="_git_credential_helper">
+<title>Git Credential Helper</title>
+<simpara><indexterm>
+<primary>Git credential helper</primary>
+</indexterm><indexterm>
+<primary>GUI search API application</primary><secondary>Git credential helper</secondary>
+</indexterm>
+<indexterm>
+<primary>Git credential helper</primary>
+</indexterm><indexterm>
+<primary>Python</primary><secondary>and Git credential helper</secondary>
+</indexterm>
+<indexterm>
+<primary>and Git credential helper</primary>
+</indexterm><indexterm>
+<primary>search API</primary><secondary>Git credential helper</secondary>
+</indexterm>
+<indexterm>
+<primary>Git credential helper</primary>
+</indexterm>That&#8217;s how most of the UI code is going to be structured, but before we go any further, we should define a function to help us get the user&#8217;s GitHub credentials.
+We&#8217;ll be cheating a bit, by asking Git if it has the user&#8217;s login and password.</simpara>
+<simpara>We&#8217;ll leverage <indexterm>
+<primary>git credential fill command</primary>
+</indexterm>the <literal>git credential fill</literal> command.
+This is used internally by Git to avoid having to ask the user for their GitHub password every time they interact with a GitHub remote.
+The way it works is by accepting all the known facts about a connection as text lines through <literal>stdin</literal>, in the format <literal>&lt;key&gt;=&lt;value&gt;</literal>.
+Once the caller has supplied all the facts it knows, it can close the stdin stream (or supply an empty line), and Git will respond with all the facts <emphasis>it</emphasis> knows about this connection.
+With any luck, this will include the user&#8217;s login and password.
+The whole interaction looks a bit like this:</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ echo "host=github.com" | git credential fill <co xml:id="CO2-1"/>
+host=github.com
+username=ben <co xml:id="CO2-2"/>
+password=(redacted)</programlisting>
+<calloutlist>
+<callout arearefs="CO2-1">
+<para>This passes a single line to <literal>git credential</literal> and closes <literal>stdin</literal>, which Git will recognize as the end of input.</para>
+</callout>
+<callout arearefs="CO2-2">
+<para>Git responds with all the facts it knows about the connection.
+This includes the input values, as well as the username and password if Git knows them.</para>
+</callout>
+</calloutlist>
+<simpara>One other thing you should know about <literal>git-credential</literal> is that by default, if it doesn&#8217;t know anything about the host, it&#8217;ll ask the user at the terminal.
+That&#8217;s bad for a GUI app, so we&#8217;re going to be disabling that feature through the use of the <literal>GIT_ASKPASS</literal> environment variable.</simpara>
+<simpara>Here&#8217;s what our helper looks like:</simpara>
+<programlisting language="python" linenumbering="unnumbered">GITHUB_HOST = 'github.com'
+def git_credentials():
+    os.environ['GIT_ASKPASS'] = 'true' <co xml:id="CO3-1"/>
+    p = subprocess.Popen(['git', 'credential', 'fill'],
+                         stdout=subprocess.PIPE,
+                         stdin=subprocess.PIPE) <co xml:id="CO3-2"/>
+    stdout,stderr = p.communicate('host={}\n\n'.format(GITHUB_HOST)) <co xml:id="CO3-3"/>
+
+    creds = {}
+    for line in stdout.split('\n')[:-1]: <co xml:id="CO3-4"/>
+        k,v = line.split('=')
+        creds[k] = v
+    return creds <co xml:id="CO3-5"/></programlisting>
+<calloutlist>
+<callout arearefs="CO3-1">
+<para>Here we set <literal>GIT_ASKPASS</literal> to the string <literal>'true'</literal>, which is a UNIX program that always succeeds, which will in turn cause <literal>git-credential</literal> to stop trying to get credentials when it gets to the "ask the user" stage.</para>
+</callout>
+<callout arearefs="CO3-2">
+<para><literal>subprocess.Popen</literal> is the way you use a program with stdin and stdout in Python.
+The first argument is a list of arguments for the new program, and we also specify that we want stdin and stdout to be captured.</para>
+</callout>
+<callout arearefs="CO3-3">
+<para><literal>p.communicate</literal> does the work of writing to stdin and returning the contents of stdout.
+It also returns the contents of stderr, which we ignore in this program.</para>
+</callout>
+<callout arearefs="CO3-4">
+<para>Here we process the stdout contents by splitting each line at the = character and slurping it into a dictionary.</para>
+</callout>
+<callout arearefs="CO3-5">
+<para>So the return value from this call should be a dictionary with <literal>'username'</literal> and <literal>'password'</literal> values.
+Handy!</para>
+</callout>
+</calloutlist>
+</section>
+<section xml:id="_windowing_and_interface">
+<title>Windowing and Interface</title>
+<simpara><indexterm>
+<primary>GUI search API application</primary><secondary>windowing and interface</secondary><tertiary>id=ix_chapter-08-python-search-asciidoc9</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-08-python-search-asciidoc9</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>search API</primary><secondary>windowing and interface</secondary><tertiary>id=ix_chapter-08-python-search-asciidoc10</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-08-python-search-asciidoc10</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>Okay, so now we have something that can help us skip a login screen, but we don&#8217;t have a way of showing that login screen to the user.
+Let&#8217;s get closer to that goal by filling in the main frame&#8217;s implementation:</simpara>
+<programlisting language="python" linenumbering="unnumbered">class SearchFrame(wx.Frame):
+    def __init__(self, *args, **kwargs): <co xml:id="CO4-1"/>
+        kwargs.setdefault('size', (600,500))
+        wx.Frame.__init__(self, *args, **kwargs)
+
+        self.credentials = {}
+        self.orgs = []
+
+        self.create_controls()
+        self.do_layout()
+        self.SetTitle('GitHub Issue Search')
+
+        # Try to pre-load credentials from Git's cache
+        self.credentials = git_credentials()
+        if self.test_credentials():
+            self.switch_to_search_panel()
+
+        self.Show()</programlisting>
+<calloutlist>
+<callout arearefs="CO4-1">
+<para>There&#8217;s a bit of syntax here that might be confusing.
+The <literal><emphasis role="strong">args</literal> and <literal></emphasis>*kwargs</literal> entries here are ways of capturing multiple arguments into one parameter.
+For now, just know that we&#8217;re only capturing them here so we can pass them to the parent class constructor two lines down.</para>
+</callout>
+</calloutlist>
+<simpara>The <literal><emphasis>init</emphasis></literal> method is the constructor, so this is where we start when the main function calls <literal>SearchFrame()</literal>.
+Here&#8217;s what&#8217;s happening at a high level&#x2014;we&#8217;ll dig into the details in a bit:</simpara>
+<orderedlist numeration="arabic">
+<listitem>
+<simpara>Set up some layout dimensions and pass to the parent class&#8217;s constructor</simpara>
+</listitem>
+<listitem>
+<simpara>Create the UI controls</simpara>
+</listitem>
+<listitem>
+<simpara>Retrieve the credentials from the user using the credential helper we described earlier</simpara>
+</listitem>
+<listitem>
+<simpara>Change the title and display the application to the user</simpara>
+</listitem>
+</orderedlist>
+<simpara>Before we get to <emphasis>how</emphasis> all those things are done, let&#8217;s step back a bit and talk about this class&#8217;s job.
+It&#8217;s responsible for maintaining the top-level <emphasis>frame</emphasis> (a window with a title bar, a menu, and so on), and deciding what&#8217;s displayed in that frame.
+In this case, we want to show a login UI first, and when we get valid credentials (either from Git or the user), we&#8217;ll switch to a searching UI.</simpara>
+<simpara>Alright, enough background.
+<indexterm>
+<primary>credentials</primary>
+</indexterm>Let&#8217;s walk through the code for getting and checking credentials:</simpara>
+<programlisting language="python" linenumbering="unnumbered">    def login_accepted(self, username, password):
+        self.credentials['username'] = username
+        self.credentials['password'] = password
+        if self.test_credentials():
+            self.switch_to_search_panel()
+
+    def test_credentials(self):
+        if any(k not in self.credentials for k in ['username', 'password']):
+            return False
+        g = Github(self.credentials['username'], self.credentials['password'])
+        status,data = g.user.orgs.get() <co xml:id="CO5-1"/>
+        if status != 200:
+            print('bad credentials in store')
+            return False
+        self.orgs = [o['login'] for o in data] <co xml:id="CO5-2"/>
+        return True
+
+    def switch_to_search_panel(self):
+        self.login_panel.Destroy()
+        self.search_panel = SearchPanel(self,
+                                        orgs=self.orgs,
+                                        credentials=self.credentials)
+        self.sizer.Add(self.search_panel, 1, flag=wx.EXPAND | wx.ALL, border=10)
+        self.sizer.Layout()</programlisting>
+<calloutlist>
+<callout arearefs="CO5-1">
+<para>The <literal>agithub</literal> library always returns two values from every function call.
+Python lets us bind these directly to variables with this <literal>a,b = &lt;expr&gt;</literal> syntax.</para>
+</callout>
+<callout arearefs="CO5-2">
+<para><literal>agithub</literal> decodes the JSON from the API call into a Python dictionary.
+Here we&#8217;re only really interested in the names of the organization, so we use<indexterm>
+<primary>list comprehension</primary>
+</indexterm> a <emphasis>list comprehension</emphasis>, where we tell Python to only keep the value of the <literal>"login"</literal> field from each dictionary in the <literal>data</literal> list.</para>
+</callout>
+</calloutlist>
+<simpara>Each of these three methods comes in at a different point during our program&#8217;s execution.
+If our credentials are coming from Git, we proceed straight to <code>test_<span class="keep-together">credentials</span></code>; if they&#8217;re coming from the login panel (see <xref linkend="github_login_panel_section"/>), they go through the <literal>login_accepted</literal> callback first, which then calls <literal>test_credentials</literal>.</simpara>
+<simpara>Either way, what we do is try to fetch a list of the user&#8217;s organizations, to see if they work.
+Here you can see the usage pattern for <literal>agithub</literal>&#x2014;the URL path is mapped to object-property notation on an instance of the <literal>Github</literal> class, and the HTTP verb is mapped to a method call.
+The return values are a status code and the data, which has been decoded into a dictionary object.
+If it fails&#x2014;meaning the returned status is <span class="keep-together">not <code>200</code></span>&#x2014;we send the user to the login panel.
+If it succeeds, we call <literal>switch_to_search_panel</literal>.</simpara>
+<note>
+<simpara><indexterm>
+<primary>network calls, synchronous</primary>
+</indexterm><indexterm>
+<primary>synchronous network calls</primary>
+</indexterm>We&#8217;re doing a synchronous network call on the UI thread.
+This is usually a bad idea, because the UI will become unresponsive until the network call completes.
+Ideally we&#8217;d move this out onto another thread, and get the return value with a message.
+However, this would add length and complexity to a chapter already rife with both, so we&#8217;ve decided not to include this advanced topic here.
+We hope you&#8217;ll forgive us this small simplification; for this use case, the synchronous code will be just fine.</simpara>
+</note>
+<simpara>The last method handles the UI switch.
+The login panel is referenced by two things: the <literal>SearchFrame</literal> instance (the parent window), and the sizer that&#8217;s controlling its layout.
+Fortunately, calling <indexterm>
+<primary>Destroy() method</primary>
+</indexterm>the <literal>Destroy()</literal> method cleans both of those up, so we can then create the <literal>SearchPanel</literal> instance and add it to our sizer.
+Doing this requires a specific call to the sizer&#8217;s <literal>Layout()</literal> method; otherwise, the sizer won&#8217;t know that it needs to adjust the position and size of the new panel:</simpara>
+<programlisting language="python" linenumbering="unnumbered">    def create_controls(self):
+        # Set up a menu. This is mainly for "Cmd-Q" behavior on OSX
+        filemenu = wx.Menu()
+        filemenu.Append(wx.ID_EXIT, '&amp;Exit')
+        menuBar = wx.MenuBar()
+        menuBar.Append(filemenu, '&amp;File')
+        self.SetMenuBar(menuBar)
+
+        # Start with a login UI
+        self.login_panel = LoginPanel(self, onlogin=self.login_accepted)
+
+    def do_layout(self):
+        self.sizer = wx.BoxSizer(wx.VERTICAL)
+        self.sizer.Add(self.login_panel, 1, flag=wx.EXPAND | wx.ALL, border=10)
+        self.SetSizer(self.sizer)</programlisting>
+<simpara><literal>create_controls</literal> <indexterm>
+<primary>create&#95;controls method</primary>
+</indexterm>is fairly straightforward.
+It instantiates a menu that only contains File&#8594;Exit, and a login panel, whose implementation we&#8217;ll cover a bit later on.
+Note that when we create a visible control, we pass <literal>self</literal> as the first parameter to the constructor.
+That&#8217;s because the <literal>SearchFrame</literal> instance we&#8217;re constructing is the parent window of that control.</simpara>
+<simpara><indexterm>
+<primary>sizers</primary>
+</indexterm><indexterm>
+<primary>WxWidgets</primary>
+</indexterm><literal>do_layout</literal> uses a WxWidgets feature called <emphasis>sizers</emphasis> to do some automated layout.
+Sizers are a complex topic, but here&#8217;s all you need to know about this snippet:</simpara>
+<itemizedlist>
+<listitem>
+<simpara>A <literal>BoxSizer</literal> stacks widgets in a single direction, in this case vertically.</simpara>
+</listitem>
+<listitem>
+<simpara>The second parameter to <literal>sizer.Add</literal> is a scaling factor.
+If it&#8217;s zero, the widget you&#8217;re adding will always stay the same size if the parent window resizes; if it&#8217;s anything else, all the things the sizer is controlling will adjust to fill their container.
+There&#8217;s only one control in this sizer, but we still want it to take up the full area of the window, so we pass <literal>1</literal>.</simpara>
+</listitem>
+<listitem>
+<simpara>The <literal>border</literal> parameter tells the sizer how much area to leave around the widget as padding.</simpara>
+</listitem>
+<listitem>
+<simpara>The <literal>wx.EXPAND</literal> flag tells the sizer that we want the widget to expand in the direction the sizer isn&#8217;t stacking.
+In this case, we&#8217;re stacking vertically, but we also want this widget to expand horizontally.</simpara>
+</listitem>
+<listitem>
+<simpara>The <literal>wx.ALL</literal> flag specifies which edges of the widget should have the border area.</simpara>
+</listitem>
+</itemizedlist>
+<simpara>Let&#8217;s make sure we&#8217;re following good practices, and write some tests.
+There isn&#8217;t a lot here we can verify automatedly, but what there is should be covered:</simpara>
+<programlisting language="python" linenumbering="unnumbered">from nose.tools import eq_, ok_, raises <co xml:id="CO6-1"/>
+
+class TestApp:
+    def setUp(self): <co xml:id="CO6-2"/>
+        self.f = None
+        self.app = wx.App()
+
+    def tearDown(self):
+        if self.f:
+           self.f.Destroy()
+        self.app.Destroy()
+
+    def test_switching_panels(self): <co xml:id="CO6-3"/>
+        self.f = SearchFrame(None, id=-1)
+        # Sub-panels should exist, and be of the right type
+        ok_(isinstance(self.f.login_panel, LoginPanel))
+        ok_(isinstance(self.f.search_panel, SearchPanel))
+        # Already destroyed
+        raises(RuntimeError, lambda: self.f.login_panel.Destroy())
+        # Not already destroyed
+        ok_(self.f.search_panel.Destroy())</programlisting>
+<calloutlist>
+<callout arearefs="CO6-1">
+<para>Here we&#8217;re using a testing tool called Nose.
+Install it with <literal>pip install nose</literal>, and invoke it at the command line by typing <literal>nosetests app.py</literal>.
+It uses naming conventions to identify tests and fixtures, and is generally nice to work with.</para>
+</callout>
+<callout arearefs="CO6-2">
+<para>Nose will automatically find these <literal>setUp</literal> and <literal>tearDown</literal> methods, and call them before and after each test method is run.
+In this case, we&#8217;re just managing the frames we want to test, as well as an <literal>App</literal> instance for all of them to belong to.</para>
+</callout>
+<callout arearefs="CO6-3">
+<para>Here&#8217;s a test method that Nose will find and run.
+We ensure the subpanels are the right type, and that we&#8217;ve auto-transitioned to the SearchPanel by finding credentials in Git&#8217;s storage.</para>
+</callout>
+</calloutlist>
+<simpara>That&#8217;s it!
+Aside from managing a couple of fields, most of this code is managing the UI, which is almost exactly what we&#8217;d want from a UI class.
+Let&#8217;s write the first of the two panels we swap in and out.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-08-python-search-asciidoc10</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-08-python-search-asciidoc10</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-08-python-search-asciidoc9</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-08-python-search-asciidoc9</primary>
+</indexterm></simpara>
+</section>
+<section xml:id="github_login_panel_section">
+<title>GitHub Login</title>
+<simpara><indexterm>
+<primary>GitHub login (search API GUI application)</primary><secondary>id=ix_chapter-08-python-search-asciidoc11</secondary><tertiary>range=startofrange</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-08-python-search-asciidoc11</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>GUI search API application</primary><secondary>GitHub login</secondary><tertiary>id=ix_chapter-08-python-search-asciidoc12</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-08-python-search-asciidoc12</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>login</primary><secondary>in search API</secondary><tertiary>id=ix_chapter-08-python-search-asciidoc13</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-08-python-search-asciidoc13</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>search API</primary><secondary>GitHub login</secondary><tertiary>id=ix_chapter-08-python-search-asciidoc14</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-08-python-search-asciidoc14</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>The<indexterm>
+<primary>LoginPanel class</primary>
+</indexterm> <literal>LoginPanel</literal> class is similar in structure to the <literal>SearchFrame</literal> class, with a couple of key differences, which we&#8217;ll describe after the wall of code:</simpara>
+<programlisting language="python" linenumbering="unnumbered">class LoginPanel(wx.Panel):
+    def __init__(self, *args, **kwargs):
+        self.callback = kwargs.pop('onlogin', None)
+        wx.Panel.__init__(self, *args, **kwargs)
+
+        self.create_controls()
+        self.do_layout()
+
+    def create_controls(self):
+        self.userLabel = wx.StaticText(self, label='Username:')
+        self.userBox = wx.TextCtrl(self, style=wx.TE_PROCESS_ENTER)
+        self.passLabel = wx.StaticText(self, label='Password (or token):')
+        self.passBox = wx.TextCtrl(self, style=wx.TE_PROCESS_ENTER)
+        self.login = wx.Button(self, label='Login')
+        self.error = wx.StaticText(self, label='')
+        self.error.SetForegroundColour((200,0,0))
+
+        # Bind events
+        self.login.Bind(wx.EVT_BUTTON, self.do_login)
+        self.userBox.Bind(wx.EVT_TEXT_ENTER, self.do_login)
+        self.passBox.Bind(wx.EVT_TEXT_ENTER, self.do_login)
+
+    def do_layout(self):
+        # Grid arrangement for controls
+        grid = wx.GridBagSizer(3,3)
+        grid.Add(self.userLabel, pos=(0,0),
+                 flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
+        grid.Add(self.userBox, pos=(0,1),
+                 flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=5)
+        grid.Add(self.passLabel, pos=(1,0),
+                 flag=wx.TOP | wx.LEFT | wx.BOTTOM, border=5)
+        grid.Add(self.passBox, pos=(1,1),
+                 flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=5)
+        grid.Add(self.login, pos=(2,0), span=(1,2),
+                 flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=5)
+        grid.Add(self.error, pos=(3,0), span=(1,2),
+                 flag=wx.EXPAND | wx.LEFT | wx.RIGHT, border=5)
+        grid.AddGrowableCol(1)
+
+        # Center the grid vertically
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add((0,0), 1)
+        vbox.Add(grid, 0, wx.EXPAND)
+        vbox.Add((0,0), 2)
+        self.SetSizer(vbox)
+
+    def do_login(self, _):
+        u = self.userBox.GetValue()
+        p = self.passBox.GetValue()
+        g = Github(u, p)
+        status,data = g.issues.get()
+        if status != 200:
+            self.error.SetLabel('ERROR: ' + data['message'])
+        elif callable(self.callback):
+            self.callback(u, p)</programlisting>
+<simpara>There&#8217;s some structure that&#8217;s similar to the preceding code.
+We&#8217;ll start with the constructor.</simpara>
+<simpara>Recall that this panel is created with a keyword argument in <literal>SearchFrame&#8217;s <code><span class="keep-together">create</span>_controls</code> method, like `LoginPanel(self, onlogin=self.login_accepted)</literal>.
+In the constructor definition, we pull that callback out and store it for later.
+Afterward, we just call the two other construction functions and return.</simpara>
+<simpara><literal>create_controls</literal> <indexterm>
+<primary>create&#95;controls method</primary>
+</indexterm>has more to it than <literal>SearchFrame&#8217;s version, because this panel has more controls.
+Every static-text, text-input, and button control gets its own line of code.
+The `wx.TE_PROCESS_ENTER</literal> style tells the library we want an event to be triggered if the user presses the Enter key while the cursor is inside that text box.</simpara>
+<simpara>The next block binds control events to method calls.
+Every event in WxPython will call the handler with a single argument, an object that contains information about the event.
+That means we can use the same function to handle any number of different kinds of events, so we do&#x2014;the <literal>ENTER</literal> handlers for both text boxes and the <literal>BUTTON</literal> handler for the button all go through <literal>self.do_login</literal>.</simpara>
+<simpara><indexterm>
+<primary>do&#95;layout method</primary>
+</indexterm><indexterm>
+<primary>sizers</primary>
+</indexterm><literal>do_layout</literal> uses a different kind of sizer&#x2014;a <literal>GridBagSizer</literal>.
+Again, the topic of sizers is <emphasis>way</emphasis> outside the scope of this chapter, but just know that this kind arranges things in a grid, and you can allow some of the rows or columns to stretch to fill the container.
+Here we drop all of the controls into their positions with the <literal>pos=(r,c)</literal> notation (here "rows" come first, which isn&#8217;t like most coordinate systems), and cause one control to span two columns with the <literal>span</literal> parameter.
+The <literal>flags</literal> and <literal>border</literal> parameters mostly mean the same things as before, and the <literal>AddGrowableCol</literal> function tells the layout engine which parts of the grid should be allowed to stretch.</simpara>
+<simpara>Then we do something curious: we put the <literal>GridBagSizer</literal> <emphasis>into another sizer</emphasis>.
+Sizer nesting is a powerful feature, and allows almost any window layout to be possible&#x2014;although perhaps not easy or simple.
+The vertical box sizer also contains some bare tuples; this special form is called "adding a spacer."
+In this case, we sandwich the sizer with all the controls between two spacers with different weights, making it float about a third of the way down the window.
+The effect is like <xref linkend="search_resizing"/>.</simpara>
+<figure xml:id="search_resizing">
+<title>Resizing behavior of login UI</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/btwg_0402.png"/>
+</imageobject>
+<textobject><phrase>btwg 0402</phrase></textobject>
+</mediaobject>
+</figure>
+<simpara>Then comes the<indexterm>
+<primary>do&#95;login method</primary>
+</indexterm> <literal>do_login</literal> method, which tests out the given credentials, and if they work, passes them back through the callback set at construction time.
+If they don&#8217;t work, it sets the text of a label, whose foreground color has been set to a nice, alarming shade of red.</simpara>
+<simpara>Let&#8217;s make sure this behavior is tested at least a little bit.
+Again, there&#8217;s not much that it&#8217;s doing other than setting up WxPython stuff, but we can validate that a login error is displayed by adding this method to the test class:<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-08-python-search-asciidoc14</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-08-python-search-asciidoc14</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-08-python-search-asciidoc13</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-08-python-search-asciidoc13</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-08-python-search-asciidoc12</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-08-python-search-asciidoc12</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-08-python-search-asciidoc11</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-08-python-search-asciidoc11</primary>
+</indexterm></simpara>
+<programlisting language="python" linenumbering="unnumbered">    def test_login_panel(self):
+        self.f = wx.Frame(None)
+        lp = LoginPanel(self.f)
+        eq_(lp.error.GetLabelText(), '')
+        lp.do_login(None)
+        ok_(lp.error.GetLabelText().startswith('ERROR'))</programlisting>
+</section>
+<section xml:id="_github_search">
+<title>GitHub Search</title>
+<simpara><indexterm>
+<primary>GitHub search (search API GUI application)</primary><secondary>id=ix_chapter-08-python-search-asciidoc15</secondary><tertiary>range=startofrange</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-08-python-search-asciidoc15</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>GUI search API application</primary><secondary>GitHub search panel</secondary><tertiary>id=ix_chapter-08-python-search-asciidoc16</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-08-python-search-asciidoc16</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>search API</primary><secondary>GitHub search panel</secondary><tertiary>id=ix_chapter-08-python-search-asciidoc17</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-08-python-search-asciidoc17</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>Once the user has successfully logged in, we destroy the <literal>LoginPanel</literal> instance and show the <literal>SearchPanel</literal>:</simpara>
+<programlisting language="python" linenumbering="unnumbered">class SearchPanel(wx.Panel):
+    def __init__(self, *args, **kwargs):
+        self.orgs = kwargs.pop('orgs', [])
+        self.credentials = kwargs.pop('credentials', {}) <co xml:id="CO7-1"/>
+        wx.Panel.__init__(self, *args, **kwargs)
+
+        self.create_controls()
+        self.do_layout()
+
+    def create_controls(self):
+        self.results_panel = None
+        self.orgChoice = wx.Choice(self, choices=self.orgs, style=wx.CB_SORT)
+        self.searchTerm = wx.TextCtrl(self, style=wx.TE_PROCESS_ENTER)
+        self.searchTerm.SetFocus()
+        self.searchButton = wx.Button(self, label="Search")
+
+        # Bind events <co xml:id="CO7-2"/>
+        self.searchButton.Bind(wx.EVT_BUTTON, self.do_search)
+        self.searchTerm.Bind(wx.EVT_TEXT_ENTER, self.do_search)
+
+    def do_layout(self):
+        # Arrange choice, query box, and button horizontally
+        hbox = wx.BoxSizer(wx.HORIZONTAL)
+        hbox.Add(self.orgChoice, 0, wx.EXPAND)
+        hbox.Add(self.searchTerm, 1, wx.EXPAND | wx.LEFT, 5)
+        hbox.Add(self.searchButton, 0, wx.EXPAND | wx.LEFT, 5)
+
+        # Dock everything to the top, leaving room for the results
+        self.vbox = wx.BoxSizer(wx.VERTICAL)
+        self.vbox.Add(hbox, 0, wx.EXPAND) <co xml:id="CO7-3"/>
+        self.SetSizer(self.vbox)
+
+    def do_search(self, event):
+        term = self.searchTerm.GetValue()
+        org = self.orgChoice.GetString(self.orgChoice.GetCurrentSelection())
+        g = Github(self.credentials['username'], self.credentials['password'])
+        code,data = g.search.issues.get(q="user:{} {}".format(org, term)) <co xml:id="CO7-4"/>
+        if code != 200:
+            self.display_error(code, data)
+        else:
+            self.display_results(data['items'])
+
+    def display_results(self, results): <co xml:id="CO7-5"/>
+        if self.results_panel:
+            self.results_panel.Destroy()
+        self.results_panel = SearchResultsPanel(self, -1, results=results)
+        self.vbox.Add(self.results_panel, 1, wx.EXPAND | wx.TOP, 5)
+        self.vbox.Layout()
+
+    def display_error(self, code, data): <co xml:id="CO7-6"/>
+        if self.results_panel:
+            self.results_panel.Destroy()
+        if 'errors' in data:
+            str = ''.join('\n\n{}'.format(e['message']) for e in data['errors'])
+        else:
+            str = data['message']
+        self.results_panel = wx.StaticText(self, label=str)
+        self.results_panel.SetForegroundColour((200,0,0))
+        self.vbox.Add(self.results_panel, 1, wx.EXPAND | wx.TOP, 5)
+        self.vbox.Layout()
+        width = self.results_panel.GetSize().x
+        self.results_panel.Wrap(width)</programlisting>
+<simpara>There&#8217;s quite a bit here, but some of it is familiar.
+We&#8217;ll skip the usual walkthrough to point out a couple of interesting features:</simpara>
+<calloutlist>
+<callout arearefs="CO7-1">
+<para>When creating the panel, we pass in the user&#8217;s credentials and list of organizations as keyword arguments, so they show up in the <literal>kwargs</literal> dictionary.
+Here we use <literal>pop</literal> to make sure the parent class&#8217;s constructor doesn&#8217;t get confused by them.</para>
+</callout>
+<callout arearefs="CO7-2">
+<para>Here we capture both the search button&#8217;s "click" event, as well as the text box&#8217;s "enter key" event.
+Both should cause the search to be performed.</para>
+</callout>
+<callout arearefs="CO7-3">
+<para>When we add the search bar to the sizer, we use <literal>0</literal> as a scale factor.
+This means it shouldn&#8217;t expand to fit the available size, but keep its own size instead, to leave room to add a results panel later on.</para>
+</callout>
+<callout arearefs="CO7-4">
+<para>Here&#8217;s where the actual search is being done.
+We get the search term and organization, and send them to the <literal>agithub</literal> instance, which returns our results and an HTTP result code.</para>
+</callout>
+<callout arearefs="CO7-5">
+<para>We pass the search results into another class, then add it to the main sizer with parameters to fill the remaining available space.</para>
+</callout>
+<callout arearefs="CO7-6">
+<para>If an error is returned from the search call instead, we display it here.
+There&#8217;s some code to adjust the wrap width of the text, based on the laid-out width of the control.
+This isn&#8217;t a great approach, but doing it better is left as an exercise for the reader.</para>
+</callout>
+</calloutlist>
+<simpara>Again, there&#8217;s a fair amount of code here, but most of it should look familiar.
+Here&#8217;s the test code that covers the previous code:<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-08-python-search-asciidoc17</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-08-python-search-asciidoc17</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-08-python-search-asciidoc16</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-08-python-search-asciidoc16</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-08-python-search-asciidoc15</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-08-python-search-asciidoc15</primary>
+</indexterm></simpara>
+<programlisting language="python" linenumbering="unnumbered">    def test_search_panel(self):
+        self.f = wx.Frame(None)
+        sp = SearchPanel(self.f, orgs=['a', 'b', 'c'])
+        eq_(0, sp.orgChoice.GetCurrentSelection())
+        eq_('a', sp.orgChoice.GetString(0))
+        sp.display_error(400, {'errors': [{'message': 'xyz'}]})
+        ok_(isinstance(sp.results_panel, wx.StaticText))
+        eq_('xyz', sp.results_panel.GetLabelText().strip())</programlisting>
+</section>
+<section xml:id="_displaying_results">
+<title>Displaying Results</title>
+<simpara><indexterm>
+<primary>GUI search API application</primary><secondary>displaying results</secondary><tertiary>id=ix_chapter-08-python-search-asciidoc18</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-08-python-search-asciidoc18</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>search API</primary><secondary>displaying results</secondary><tertiary>id=ix_chapter-08-python-search-asciidoc19</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-08-python-search-asciidoc19</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>search results, displaying</primary><secondary>id=ix_chapter-08-python-search-asciidoc20</secondary><tertiary>range=startofrange</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-08-python-search-asciidoc20</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>So now we have our login panel, and a way for the user to enter a search query, but no way to display results.
+Let&#8217;s fix that.</simpara>
+<simpara>Whenever search results are retrieved, we create a new instance of <code>Search<span class="keep-together">Results</span><span class="keep-together">Panel</span></code>, which then creates a series of <literal>SearchResult</literal> instances.
+Let&#8217;s look at both of them together:</simpara>
+<programlisting language="python" linenumbering="unnumbered">class SearchResultsPanel(wx.ScrolledWindow): <co xml:id="CO8-1"/>
+    def __init__(self, *args, **kwargs):
+        results = kwargs.pop('results', [])
+        wx.PyScrolledWindow.__init__(self, *args, **kwargs)
+
+        # Layout search result controls inside scrollable area
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        if not results:
+            vbox.Add(wx.StaticText(self, label="(no results)"), 0, wx.EXPAND)
+        for r in results:
+            vbox.Add(SearchResult(self, result=r),
+                     flag=wx.TOP | wx.BOTTOM, border=8)
+        self.SetSizer(vbox)
+        self.SetScrollbars(0, 4, 0, 0)
+
+class SearchResult(wx.Panel):
+    def __init__(self, *args, **kwargs):
+        self.result = kwargs.pop('result', {})
+        wx.Panel.__init__(self, *args, **kwargs)
+
+        self.create_controls()
+        self.do_layout()
+
+    def create_controls(self): <co xml:id="CO8-2"/>
+        titlestr = self.result['title']
+        if self.result['state'] != 'open':
+            titlestr += ' ({})'.format(self.result['state'])
+        textstr = self.first_line(self.result['body'])
+        self.title = wx.StaticText(self, label=titlestr)
+        self.text = wx.StaticText(self, label=textstr)
+
+        # Adjust the title font
+        titleFont = wx.Font(16, wx.FONTFAMILY_DEFAULT,
+                            wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
+        self.title.SetFont(titleFont)
+
+        # Bind click and hover events on this whole control <co xml:id="CO8-3"/>
+        self.Bind(wx.EVT_LEFT_UP, self.on_click)
+        self.Bind(wx.EVT_ENTER_WINDOW, self.enter)
+        self.Bind(wx.EVT_LEAVE_WINDOW, self.leave)
+
+    def do_layout(self):
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(self.title, flag=wx.EXPAND | wx.BOTTOM, border=2)
+        vbox.Add(self.text, flag=wx.EXPAND)
+        self.SetSizer(vbox)
+
+    def enter(self, _):
+        self.title.SetForegroundColour(wx.BLUE)
+        self.text.SetForegroundColour(wx.BLUE)
+
+    def leave(self, _):
+        self.title.SetForegroundColour(wx.BLACK)
+        self.text.SetForegroundColour(wx.BLACK)
+
+    def on_click(self, event): <co xml:id="CO8-4"/>
+        import webbrowser
+        webbrowser.open(self.result['html_url'])
+
+    def first_line(self, body):
+        return body.split('\n')[0].strip() or '(no body)'</programlisting>
+<calloutlist>
+<callout arearefs="CO8-1">
+<para>The containing panel is simple enough that it only consists of a constructor.
+This class&#8217;s job is to contain the results and present them in a scroll window.</para>
+</callout>
+<callout arearefs="CO8-2">
+<para>A <literal>SearchResult</literal> is comprised of two static text controls, which contain the issue&#8217;s title and the first line of its body.</para>
+</callout>
+<callout arearefs="CO8-3">
+<para>We&#8217;re not only binding the click handler for this entire panel, but also the mouse-enter and mouse-leave events, so we can make it behave more like a link in a browser.</para>
+</callout>
+<callout arearefs="CO8-4">
+<para>Here&#8217;s how you open the default browser to a URL in Python.</para>
+</callout>
+</calloutlist>
+<simpara>So now you&#8217;ve seen the code for a simple WxPython application.
+Using this library tends to produce code of a certain style, which is kind of verbose.
+The positive side of this is that nothing is hidden; all the layout for your app is done right in the code, with no "magic," and the fact that it can run without modification on just about anybody&#8217;s computer is a huge plus.
+WxPython may lack some facilities of newer frameworks, but there&#8217;s nothing better for getting a basic cross-platform UI out the door quickly.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-08-python-search-asciidoc20</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-08-python-search-asciidoc20</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-08-python-search-asciidoc19</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-08-python-search-asciidoc19</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-08-python-search-asciidoc18</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-08-python-search-asciidoc18</primary>
+</indexterm></simpara>
+<simpara>That&#8217;s all of the code!
+If you&#8217;ve been following along and typing all this code into a file, you can run that file and do issue searches.
+However, our use case has a nontechnical user running this; let&#8217;s see what can be done to make it easier for them to get started.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-08-python-search-asciidoc8</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-08-python-search-asciidoc8</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-08-python-search-asciidoc7</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-08-python-search-asciidoc7</primary>
+</indexterm></simpara>
+</section>
+</section>
+<section xml:id="_packaging">
+<title>Packaging</title>
+<simpara><indexterm>
+<primary>GUI search API application</primary><secondary>packaging</secondary>
+</indexterm>
+<indexterm>
+<primary>packaging</primary>
+</indexterm><indexterm>
+<primary>PyInstaller</primary>
+</indexterm><indexterm>
+<primary>search API</primary><secondary>packaging</secondary>
+</indexterm>
+<indexterm>
+<primary>packaging</primary>
+</indexterm>What we&#8217;re not going to do is require anyone to install Python 2.7 and a bunch of packages.
+We&#8217;ll use PyInstaller to bundle our application into something that&#8217;s easy to distribute and run.</simpara>
+<simpara>Let&#8217;s assume you wrote all the preceding code into a file called <emphasis>search.py</emphasis>, and <em><span class="keep-together">agithub.py</span></em> is sitting in the same directory.
+Here&#8217;s how to tell PyInstaller to generate a single application for you:</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ pyinstaller -w search.py</programlisting>
+<simpara>That&#8217;s it!
+The <literal>-w</literal> flag tells PyInstaller to create a "windowed" build of your application, rather than the default console build.
+On OS X, this generates a <emphasis>search.app</emphasis> application bundle, and on Windows this generates a <emphasis>search.exe</emphasis> file.
+You can take either of these to a computer with no Python installed, and they&#8217;ll run perfectly.</simpara>
+<simpara>That&#8217;s because PyInstaller has copied everything necessary for your program to run, from the Python interpreter on up, inside that file.
+The one I just generated is 67 MB, which seems large for such a simple program, but that number is more reasonable when you consider what&#8217;s inside the package.</simpara>
+</section>
+<section xml:id="_summary">
+<title>Summary</title>
+<simpara>Whew!
+This chapter was quite a journey.
+Let&#8217;s take a breath, and look at what we&#8217;ve learned.</simpara>
+<simpara>The main bulk of the code in this chapter had to do with defining a graphical interface.
+Code for this task is always pretty verbose, because of the sheer complexity of the task.
+With WxPython in your tool belt, however, you can now write GUI applications using Python, with code that&#8217;s no harder to write than with other toolkits, and get the ability to run on every major platform for free.</simpara>
+<simpara>We saw how to ask Git for credentials to a Git server using <literal>git credential</literal>.
+This feature is quite capable, and includes the ability to write a custom credential storage backend, but we at least saw a peek into how it works.
+Using this knowledge, you can piggyback on your users' existing habits to avoid having to ask them for the same things over and over again.</simpara>
+<simpara>We also saw a rather nice HTTP API abstraction with <literal>agithub</literal>.
+We authenticated and queried the issue search API endpoint using what looked like object-method notation.
+<literal>agithub</literal> is a great example of how a library package can be both future-proof and idiomatic&#x2014;the library constructs a query URL by looking at the chain of properties and methods used in the call.
+This is a great jumping-off point for querying other REST APIs using the same pattern.</simpara>
+<simpara>Finally, the main thrust of this chapter was using the GitHub Search API.
+You&#8217;ve learned about its general behavior, the different categories of search, how to interpret and sort results, and ways of focusing a search to reduce the number of uninteresting results.
+Using this knowledge you should be able to find anything you&#8217;re looking for on GitHub or GitHub Enterprise.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-08-python-search-asciidoc3</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-08-python-search-asciidoc3</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-08-python-search-asciidoc2</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-08-python-search-asciidoc2</primary>
+</indexterm>
+You also know that the search UI on GitHub is just a thin layer over the Search API, so the same tricks and techniques will serve you whether you&#8217;re writing code or using a browser.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-08-python-search-asciidoc0</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-08-python-search-asciidoc0</primary>
+</indexterm></simpara>
+<simpara>Time to switch gears a bit.
+The next chapter introduces the Commit Status API, which is a way of annotating individual commits in a Git repository with a "good" or "bad" flag.
+We&#8217;ll be using what only a few years ago would have been a polarizing choice: C# and the CLR.</simpara>
+</section>
+</section>
+</article>

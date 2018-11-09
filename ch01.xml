@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?asciidoc-toc?>
+<?asciidoc-numbered?>
+<article xmlns="http://docbook.org/ns/docbook" xmlns:xl="http://www.w3.org/1999/xlink" version="5.0" xml:lang="en">
+<info>
+<title>Chapter Title</title>
+<date>2018-11-09</date>
+</info>
+<section xml:id="unique_chapter_id">
+<title>Chapter Title</title>
+<simpara>Chapter text begins here.</simpara>
+<section xml:id="_top_level_heading">
+<title>Top-Level Heading</title>
+<simpara>Within a chapter, the first and highest heading level uses three equals signs.</simpara>
+<section xml:id="_second_level_heading">
+<title>Second-Level Heading</title>
+<simpara>The second-level heading uses four equals signs.</simpara>
+<section xml:id="_third_level_heading">
+<title>Third-level heading</title>
+<simpara>The third-level heading uses five equals signs.</simpara>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.1/anchor.js"></script>
+// Add anchors on DOMContentLoaded
+<script>
+document.addEventListener("DOMContentLoaded", function(event) {
+  anchors.add();
+});
+</script>
+</section>
+</section>
+</section>
+</section>
+</article>

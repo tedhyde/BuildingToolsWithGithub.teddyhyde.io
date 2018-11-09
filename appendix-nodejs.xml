@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?asciidoc-toc?>
+<?asciidoc-numbered?>
+<article xmlns="http://docbook.org/ns/docbook" xmlns:xl="http://www.w3.org/1999/xlink" version="5.0" xml:lang="en">
+<info>
+<title>NodeJS</title>
+<date>2018-11-09</date>
+</info>
+<section xml:id="appendix_nodejs">
+<title>NodeJS</title>
+<simpara>NodeJS has gained immense popularity in the last few years. JavaScript
+is the language of client-side development on the web, and many people
+are excited about developing in the same language on the server side. One of
+the chapters in this book discusses Hubot, GitHub&#8217;s "devops" chatbot.
+Hubot is written in NodeJS. Fortunately, installing NodeJS is simple
+using NVM.</simpara>
+<simpara>NVM stands for "Node Version Manager" and is a direct correlate
+to RVM. To install it run these commands from a shell prompt:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ curl https://raw.github.com/creationix/nvm/master/install.sh | sh</programlisting>
+<section xml:id="_package_json">
+<title>package.json</title>
+<simpara>Much like Ruby has a Gemfile which indicates required libraries, so
+too does NodeJS have an equivalent file. In NodeJS, this file is
+called <literal>package.json</literal>.  To install all required libraries for any
+project, use the <literal>npm</literal> tool. Running without any arguments will
+install all libraries specified by the application if there is a
+<literal>package.json</literal> file included with the project.</simpara>
+</section>
+</section>
+</article>

@@ -1,0 +1,1478 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?asciidoc-toc?>
+<?asciidoc-numbered?>
+<article xmlns="http://docbook.org/ns/docbook" xmlns:xl="http://www.w3.org/1999/xlink" version="5.0" xml:lang="en">
+<info>
+<title>The Unclad GitHub API</title>
+<date>2018-11-09</date>
+</info>
+<section xml:id="introduction" role="pagenumrestart">
+<title>The Unclad GitHub API</title>
+<simpara><indexterm>
+<primary>GitHub API</primary><secondary>reading and writing data from</secondary><tertiary>id=ix_chapter-01-introduction-asciidoc0</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-01-introduction-asciidoc0</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>This chapter eases us into reading and writing data from the GitHub
+API. Successive chapters show you how to access information
+from the GitHub API using a variety of client libraries. These client
+libraries, by design, hide the nuts and bolts of the API from you,
+providing streamlined and idiomatic methods to view and modify data
+inside a Git repository hosted on GitHub. This chapter, however, gives
+you a naked viewpoint of the GitHub API and  documents the details of
+the raw HTTP requests and responses. It also discusses the different
+ways to access public and private data inside of GitHub and where
+limitations exist. And it gives you an overview of the options for
+accessing GitHub data when running inside a web browser context where
+network access is restrained.</simpara>
+<section xml:id="_curl">
+<title>cURL</title>
+<simpara><indexterm>
+<primary>cURL</primary>
+</indexterm><indexterm>
+<primary>GitHub API</primary><secondary>cURL and</secondary>
+</indexterm>
+<indexterm>
+<primary>cURL and</primary>
+</indexterm>There will be times when you want to quickly access information from
+the GitHub API without writing a formal program. Or, when you want to quickly
+get access to the raw HTTP request headers and content. Or, where you
+might even question the implementation of a client library and need
+confirmation it is doing the right thing from another vantage
+point. In these situations, cURL, a simple command-line HTTP tool, is
+the perfect fit. cURL, like the best Unix tools, is a small program
+with a very specific and purposefully limited set of features for
+accessing HTTP servers.</simpara>
+<simpara>cURL, like the HTTP protocol it speaks intimately, is stateless:
+we will explore solutions to this limitation in a later chapter, but
+note that cURL works best with one-off requests.</simpara>
+<note>
+<title>Installing cURL</title>
+<simpara><indexterm>
+<primary>cURL</primary><secondary>installing</secondary>
+</indexterm>
+<indexterm>
+<primary>installing</primary>
+</indexterm>cURL is usually installed on most OS X machines, and can easily be installed using Linux package managers (probably one of apt-get install curl or yum install curl). If you are using Windows or want to manually install it, go to <link xl:href="http://curl.haxx.se/download.html">http://curl.haxx.se/download.html</link>.</simpara>
+</note>
+<simpara>Let&#8217;s make a request. We&#8217;ll start with the most basic GitHub API
+endpoint found at <emphasis><link xl:href="https://api.github.com">https://api.github.com</link></emphasis>:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ curl https://api.github.com
+{
+  "current_user_url": "https://api.github.com/user",
+  "current_user_authorizations_html_url":
+  "https://github.com/settings/connections/applications{/client_id}",
+  "authorizations_url": "https://api.github.com/authorizations",
+  "code_search_url":
+  "https://api.github.com/search/code?q={query}{&amp;page,per_page,sort,order}",
+  "emails_url": "https://api.github.com/user/emails",
+  "emojis_url": "https://api.github.com/emojis",
+  ...
+}</programlisting>
+<simpara>We&#8217;ve abbreviated the response to make it more readable. A few salient
+things to notice: there are a lot of URLs pointing to secondary
+information, parameters are included in the URLs, and the
+response format is JSON.</simpara>
+<simpara>What can we learn from this API response?</simpara>
+</section>
+<section xml:id="_breadcrumbs_to_successive_api_paths">
+<title>Breadcrumbs to Successive API Paths</title>
+<simpara><indexterm>
+<primary>GitHub API</primary><secondary>as hypermedia API</secondary>
+</indexterm>
+<indexterm>
+<primary>as hypermedia API</primary>
+</indexterm>The GitHub API is a <indexterm>
+<primary>hypermedia API</primary>
+</indexterm>hypermedia API. Though a discussion on what constitutes
+hypermedia deserves an entire book of its own (check out O&#8217;Reilly&#8217;s
+<a class="orm:hideurl" href="http://shop.oreilly.com/product/0636920020530.do"><em>Building Hypermedia APIs with HTML5 and Node</em></a>), you can absorb much of what
+makes hypermedia interesting by just looking at a response. First, you can see from the API response that each response contains a map with directions for the next responses you might make. Not all clients use this information, of course, but one
+goal behind hypermedia APIs is that clients can dynamically adjust
+their endpoints without recoding the client code. If the thought of
+GitHub changing an API because clients <emphasis>should</emphasis> be written to handle
+new endpoints automatically sounds worrisome, don&#8217;t fret too much:
+GitHub is very dilligent about maintaining and supporting its API in a way that most companies would do well to emulate. But you should know
+that you can rely on having an API reference inside the API itself,
+rather than hosted externally in documentation, which very easily could
+turn out to be out of date with the API itself.</simpara>
+<simpara>These API maps are rich with data. For example, they are not just URLs
+to content, but also information about how to provide parameters to the
+URLs. Looking at the previous example, the <literal>code_search_url</literal> key
+references a URL that obviously allows you to search within code on
+GitHub, but also tells you how to structure the parameters passed to
+this URL. If you have an intelligent client who can follow this
+programmatic format, you could dynamically generate the query without
+involving a developer who can read API documentation. At least that is
+the dream hypermedia points us to; if you are skeptical, at least know that APIs such as GitHub encode documentation into themselves, and you can bet GitHub has test coverage to prove that this documentation matches the information delivered by the API endpoints. That&#8217;s a strong guarantee that is sadly missing from many other APIs.</simpara>
+<simpara>Now let&#8217;s briefly discuss the format of all GitHub API responses: JSON.</simpara>
+</section>
+<section xml:id="_the_javascript_object_notation_json_format">
+<title>The JavaScript Object Notation (JSON) Format</title>
+<simpara><indexterm>
+<primary>GitHub API</primary><secondary>JSON and</secondary><tertiary>id=ix_chapter-01-introduction-asciidoc1</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-01-introduction-asciidoc1</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>JSON (JavaScript Object Notation)</primary><secondary>id=ix_chapter-01-introduction-asciidoc2</secondary><tertiary>range=startofrange</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-01-introduction-asciidoc2</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>Every response you get back from the GitHub API will be in the JSON (JavaScript Object Notation)
+format. JSON is a "lightweight data interchange format" (read more on
+the <link xl:href="http://www.json.org/">JSON.org website</link>). There are other competing and effective
+formats, such as XML (Extensible Markup Language) or YAML (YAML
+Ain&#8217;t Markup Language), but JSON is quickly becoming the de facto
+standard for web services.</simpara>
+<simpara>A few of the reasons JSON is so popular:</simpara>
+<itemizedlist>
+<listitem>
+<simpara>JSON is readable. JSON has a nice balance of human readability when
+compared to serialization formats like XML.</simpara>
+</listitem>
+<listitem>
+<simpara>JSON can be used within JavaScript with very little modification
+(and cognitive processing on the part of the programmer). A data
+format that works equally well on both the client and server side
+was bound to be victorious, as JSON has been.</simpara>
+</listitem>
+</itemizedlist>
+<simpara>You might expect that a site like GitHub, originally built on the Ruby
+on Rails stack (and some of that code is still live), would support
+specifying an alternative format like XML, but XML is no longer
+supported. Long live JSON.</simpara>
+<simpara>JSON is very straightforward if you have used any other text-based
+interchange format. One note about JSON that is not always obvious or
+expected to people new to JSON is that the format only supports using
+double quotes, not single quotes.</simpara>
+<simpara>We are using a command-line tool, cURL, to retrieve data from the
+API. It would be handy to have a simple command-line tool that also
+processes that JSON. Let&#8217;s talk about one such tool next.</simpara>
+<section xml:id="_parsing_json_from_the_command_line">
+<title>Parsing JSON from the Command Line</title>
+<simpara><indexterm>
+<primary>command line</primary><secondary>parsing JSON from</secondary>
+</indexterm>
+<indexterm>
+<primary>parsing JSON from</primary>
+</indexterm>JSON is a text format, so you could use any command-line text processing tool, such
+as the venerable AWK, to process JSON responses. There is one fantastic JSON-specific parsing tool that complements cURL that is worth <indexterm>
+<primary>jq</primary><secondary>id=ix_chapter-01-introduction-asciidoc3</secondary><tertiary>range=startofrange</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-01-introduction-asciidoc3</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>knowing:
+<emphasis>jq</emphasis>. If you pipe JSON content (using the <literal>|</literal> character for most shells)
+into jq, you can then easily extract pieces of the JSON <indexterm>
+<primary>filters</primary>
+</indexterm>using <emphasis>filters</emphasis>.</simpara>
+<note>
+<title>Installing jq</title>
+<simpara>jq can be installed from source, using package managers like <literal>brew</literal> or
+<literal>apt-get</literal>, and there are binaries on the <link xl:href="http://stedolan.github.io/jq/download/">downloads page</link> for OS X,
+Linux, Windows, and Solaris.</simpara>
+</note>
+<simpara>Going deeper into the prior example, let&#8217;s pull out something
+interesting from the API map that we receive when we access
+<emphasis>api.github.com</emphasis>:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ curl https://api.github.com | jq '.current_user_url'
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  2004  100  2004    0     0   4496      0 --:--:-- --:--:-- --:--:--  4493
+"https://api.github.com/user"</programlisting>
+<simpara>What just happened? The jq tool parsed the JSON, and using the
+<literal>.current_user_url</literal> filter, it retrieved content from the JSON
+response. If you look at the response again, you&#8217;ll notice it has
+key/value pairs inside an associative array. It uses the
+<code><span class="keep-together">current</span>_user_url</code> as a key into that associative array and prints out the value there.</simpara>
+<simpara>You also will notice that cURL printed out transfer time
+information. cURL printed this information <indexterm>
+<primary>standard error</primary>
+</indexterm>to <emphasis>standard error</emphasis>, which
+is a shell convention used for messaging errors and an output stream
+that jq will correctly ignore (in other words, the JSON format stream
+will not be corrupted by error messages). If we want to
+restrict that information and clean up the request we should use <indexterm>
+<primary>&#8211;s switch</primary>
+</indexterm>the
+<literal>-s</literal> switch, which runs cURL in<indexterm>
+<primary>silent mode</primary>
+</indexterm> "silent" mode.</simpara>
+<simpara>It should be easy to understand how the jq filter is applied to the
+response JSON. For a more complicated request (for example, we might
+want to obtain a list of public repositories for a user), we can see
+the pattern for the jq pattern parameter emerging. Let&#8217;s get a more
+complicated set of information, a user&#8217;s list of repositories, and see
+how we can extract information from the response using jq:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ curl -s https://api.github.com/users/xrd/repos
+[
+  {
+    "id": 19551182,
+    "name": "a-gollum-test",
+    "full_name": "xrd/a-gollum-test",
+    "owner": {
+      "login": "xrd",
+      "id": 17064,
+      "avatar_url":
+      "https://avatars.githubusercontent.com/u/17064?v=3",
+     ...
+  }
+]
+$ curl -s https://api.github.com/users/xrd/repos | jq '.[0].owner.id'
+17064</programlisting>
+<simpara>This response is different structurally: instead of an associative
+array, we now have an array (multiple items). To get the first one, we
+specify a numeric index, and then key into the successive associative
+arrays inside of it to reach the desired content: the owner id.</simpara>
+<simpara>jq is a great tool for checking the validity of JSON. As mentioned
+before, JSON key/values are stored only with double quotes, not single
+quotes. You can verify that JSON is valid and satisfies this
+requirement using jq:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ echo '{ "a" : "b" }' | jq '.'
+{
+  "a": "b"
+}
+$ echo "{ 'no' : 'bueno' }" | jq "."
+parse error: Invalid numeric literal at line 1, column 7</programlisting>
+<simpara>The first JSON we pass into jq works, while the second, because it
+uses invalid single-quote characters, fails with an error. jq filters
+are strings passed as arguments, and the shell that provides the
+string to jq does not care if you use single quotes or
+double quotes, as you can see in the preceding code. The echo command, if you didn&#8217;t
+already know, prints out whatever string you provide to it; when we
+combine this with the pipe character we can easily provide that string
+to jq through standard input.</simpara>
+<simpara>jq is a powerful tool for quickly retrieving content from an arbitray
+JSON request. jq has many other powerful features, documented at
+<emphasis><link xl:href="https://stedolan.github.io/jq/">https://stedolan.github.io/jq/</link></emphasis>.</simpara>
+<simpara>We now know how to retrieve some interesting information from the
+GitHub API and parse out bits of information from that response, all
+in a single line. But there will be times when you incorrectly
+specify parameters to cURL or the API, and the data is not what you
+expect. Now we&#8217;ll learn about how to debug the cURL tool and the API
+service itself to provide more context when things go<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-01-introduction-asciidoc3</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-01-introduction-asciidoc3</primary>
+</indexterm> wrong.</simpara>
+</section>
+<section xml:id="_debugging_switches_for_curl">
+<title>Debugging Switches for cURL</title>
+<simpara><indexterm>
+<primary>cURL</primary><secondary>debugging switches for</secondary><tertiary>id=ix_chapter-01-introduction-asciidoc4</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-01-introduction-asciidoc4</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>debugging, cURL switches for</primary><secondary>id=ix_chapter-01-introduction-asciidoc5</secondary><tertiary>range=startofrange</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-01-introduction-asciidoc5</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>switches, cURL</primary><secondary>id=ix_chapter-01-introduction-asciidoc6</secondary><tertiary>range=startofrange</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-01-introduction-asciidoc6</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>As mentioned, cURL is a great tool when you are verifying that a
+response is what you expect it to be. The response body is important,
+but often you&#8217;ll want access to the headers as well. cURL makes
+getting these easy with the <literal>-i</literal> and <literal>-v</literal> switches. The <code><span class="keep-together">-i</span></code> switch<indexterm>
+<primary>&#8211;i switch</primary>
+</indexterm>
+prints out request headers, and<indexterm>
+<primary>&#8211;v switch</primary>
+</indexterm> the <literal>-v</literal> switch prints out both
+request and response headers (the <literal>&gt;</literal> character indicates request
+data, and the <literal>&lt;</literal> character indicates response data):</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ curl -i https://api.github.com
+HTTP/1.1 200 OK
+Server: GitHub.com
+Date: Wed, 03 Jun 2015 19:39:03 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 2004
+Status: 200 OK
+X-RateLimit-Limit: 60
+...
+{
+  "current_user_url": "https://api.github.com/user",
+  ...
+}
+$ curl -v https://api.github.com
+* Rebuilt URL to: https://api.github.com/
+* Hostname was NOT found in DNS cache
+*   Trying 192.30.252.137...
+* Connected to api.github.com (192.30.252.137) port 443 (#0)
+* successfully set certificate verify locations:
+*   CAfile: none
+  CApath: /etc/ssl/certs
+* SSLv3, TLS handshake, Client hello (1):
+* SSLv3, TLS handshake, Server hello (2):
+...
+* CN=DigiCert SHA2 High Assurance Server CA
+*        SSL certificate verify ok.
+&gt; GET / HTTP/1.1
+&gt; User-Agent: curl/7.35.0
+&gt; Host: api.github.com
+&gt; Accept: */*
+&gt;
+&lt; HTTP/1.1 200 OK
+* Server GitHub.com is not blacklisted
+...</programlisting>
+<simpara>With the <literal>-v</literal> switch you get everything: DNS lookups, information on
+the SSL chain, and the full request and response information.</simpara>
+<note>
+<simpara>Be aware that if you print out headers, a tool like jq will get
+confused because you are no longer providing it with pure JSON.</simpara>
+</note>
+<simpara>This section shows us that there is interesting information not only
+in the body (the JSON data) but also in the headers. It is important
+to understand what headers are here and which ones are
+important. The HTTP specification requires a lot of these headers, and we can often ignore those, but there are a few that are
+vital when you start making more than just a few isolated requests<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-01-introduction-asciidoc6</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-01-introduction-asciidoc6</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-01-introduction-asciidoc5</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-01-introduction-asciidoc5</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-01-introduction-asciidoc4</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-01-introduction-asciidoc4</primary>
+</indexterm>.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-01-introduction-asciidoc2</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-01-introduction-asciidoc2</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-01-introduction-asciidoc1</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-01-introduction-asciidoc1</primary>
+</indexterm></simpara>
+</section>
+</section>
+<section xml:id="_important_headers">
+<title>Important Headers</title>
+<simpara><indexterm>
+<primary>GitHub API</primary><secondary>important headers</secondary>
+</indexterm>
+<indexterm>
+<primary>important headers</primary>
+</indexterm><indexterm>
+<primary>headers</primary><secondary>in GitHub API responses</secondary>
+</indexterm>
+<indexterm>
+<primary>in GitHub API responses</primary>
+</indexterm>Three headers are present in every GitHub API response that tell you
+about the GitHub API <indexterm>
+<primary>rate limits</primary><secondary>headers for</secondary>
+</indexterm>
+<indexterm>
+<primary>headers for</primary>
+</indexterm>rate limits.  They are <indexterm>
+<primary>X&#8211;RateLimit&#8211;Limit</primary>
+</indexterm><indexterm>
+<primary>X&#8211;RateLimit&#8211;Remaining</primary>
+</indexterm><indexterm>
+<primary>X&#8211;RateLimit&#8211;Reset</primary>
+</indexterm>X-RateLimit-Limit,
+X-RateLimit-Remaining, and X-RateLimit-Reset.   These limits are
+explained in detail in <xref linkend="developer-api-rates"/>.</simpara>
+<simpara>The <indexterm>
+<primary>X&#8211;GitHub&#8211;Media&#8211;Type header</primary>
+</indexterm>X-GitHub-Media-Type header contains information that will come in
+handy when you are starting to retrieve text or blob content from the
+API. When you make a request to the GitHub API you can specify the
+format you want to work with by sending an Accept header with your request.</simpara>
+<simpara>Now, let&#8217;s use a response to build another response.</simpara>
+</section>
+<section xml:id="_following_a_hypermedia_api">
+<title>Following a Hypermedia API</title>
+<simpara><indexterm>
+<primary>GitHub API</primary><secondary>following a Hypermedia API</secondary>
+</indexterm>
+<indexterm>
+<primary>following a Hypermedia API</primary>
+</indexterm><indexterm>
+<primary>Hypermedia API</primary><secondary>following</secondary>
+</indexterm>
+<indexterm>
+<primary>following</primary>
+</indexterm>We&#8217;ll use the "map" of the API by hitting the base endpoint, and then
+use the response to manually generate another request:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ curl -i https://api.github.com/
+HTTP/1.1 200 OK
+Server: GitHub.com
+Date: Sat, 25 Apr 2015 05:36:16 GMT
+...
+{
+  "current_user_url": "https://api.github.com/user",
+  ...
+  "organization_url": "https://api.github.com/orgs/{org}",
+  ...
+}</programlisting>
+<simpara>We can use the organizational URL and substitute "github" in the placeholder:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ curl https://api.github.com/orgs/github
+{
+  "login": "github",
+  "id": 9919,
+  "url": "https://api.github.com/orgs/github",
+  ...
+  "description": "GitHub, the company.",
+  "name": "GitHub",
+  "company": null,
+  "blog": "https://github.com/about",
+  "location": "San Francisco, CA",
+  "email": "support@github.com",
+  ...
+  "created_at": "2008-05-11T04:37:31Z",
+  "updated_at": "2015-04-25T05:17:01Z",
+  "type": "Organization"
+}</programlisting>
+<simpara>This information allows us to do some forensics on GitHub itself. We
+get the company blog <link xl:href="https://github.com/about">https://github.com/about</link>. We see that GitHub
+is located in San Francisco, and we see that the creation date of the
+organization is May 11th, 2008. Reviewing the blog, we see a <link xl:href="https://github.com/blog/40-we-launched">blog post
+from April</link> that indicates GitHub launched as a company a month earlier. Perhaps organizations were
+not added to the GitHub site features until a month after the company launched?</simpara>
+<simpara>So far all of our requests have retrieved publicly available
+information. But the GitHub API has a much richer set of information
+that is available only once we authenticate and access private
+information and publicly inaccessible services. For example, if you
+are using the API to write data into GitHub, you need to know about
+authentication.</simpara>
+</section>
+<section xml:id="authentication">
+<title>Authentication</title>
+<simpara><indexterm>
+<primary>authentication</primary><secondary>GitHub API</secondary><tertiary>id=ix_chapter-01-introduction-asciidoc7</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-01-introduction-asciidoc7</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>GitHub API</primary><secondary>authentication</secondary><tertiary>id=ix_chapter-01-introduction-asciidoc8</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-01-introduction-asciidoc8</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>There are two ways to authenticate when making a request to the GitHub
+API: username and passwords (HTTP Basic) and OAuth tokens.</simpara>
+<section xml:id="_username_and_password_authentication">
+<title>Username and Password Authentication</title>
+<simpara><indexterm>
+<primary>authentication</primary><secondary>username and password</secondary>
+</indexterm>
+<indexterm>
+<primary>username and password</primary>
+</indexterm><indexterm>
+<primary>password authentication</primary>
+</indexterm><indexterm>
+<primary>username authentication</primary>
+</indexterm>You can access protected content inside GitHub using a username and
+password combination. Username a<indexterm>
+<primary>HTTP Basic authentication</primary>
+</indexterm>uthentication works by using the HTTP
+Basic authentication supported by the <literal>-u</literal> flag in cURL. HTTP Basic
+Authentication is synonymous with username and password authentication:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ curl -u xrd https://api.github.com/rate_limit
+Enter host password for user 'xrd': xxxxxxxx
+{
+  "rate": {
+    "limit": 5000,
+    "remaining": 4995,
+    "reset": 1376251941
+  }
+}</programlisting>
+<simpara>This cURL command authenticates into the GitHub API and then
+retrieves  information about our own specific rate limits for our user
+account, protected information only available as a logged-in user.</simpara>
+<section xml:id="_benefits_of_username_authentication">
+<title>Benefits of username authentication</title>
+<simpara><indexterm>
+<primary>username authentication</primary><secondary>benefits of</secondary>
+</indexterm>
+<indexterm>
+<primary>benefits of</primary>
+</indexterm>Almost any client library you use will support HTTP Basic
+authentication. All the GitHub API clients we looked at support
+username and passwords. And, writing your own specific client is easy
+as this is a core feature of the HTTP standard, so if you use any
+standard HTTP library when building your own client, you will be able
+to access content inside the GitHub API.</simpara>
+</section>
+<section xml:id="_downsides_to_username_authentication">
+<title>Downsides to username authentication</title>
+<simpara><indexterm>
+<primary>username authentication</primary><secondary>downsides to</secondary>
+</indexterm>
+<indexterm>
+<primary>downsides to</primary>
+</indexterm>There are many reasons username and password authentication is the
+wrong way to manage your GitHub API access:</simpara>
+<itemizedlist>
+<listitem>
+<simpara>HTTP Basic is an old protocol that never anticipated the
+granularity of web services. It is not possible to specify only
+certain features of a web service if you ask users to authenticate
+with username/passwords.</simpara>
+</listitem>
+<listitem>
+<simpara>If you use a username and password to access GitHub API content from
+your cell phone, and then access API content from your laptop, you
+have no way to block access to one without blocking the other.</simpara>
+</listitem>
+<listitem>
+<simpara>HTTP Basic authentication does not support extensions to the
+authentication flow. Many modern services now support two-factor
+authentication and there is no way to inject this into the process
+without changing the HTTP clients (web browsers, for example) or at
+least the flow they expect (making the browser repeat the request).</simpara>
+</listitem>
+</itemizedlist>
+<simpara>All of these problems are solved (or at least supported) with OAuth
+flows. Given all these concerns, the only time you will want to use
+username and password authentication is when convenience trumps all
+other considerations.</simpara>
+</section>
+</section>
+<section xml:id="_oauth">
+<title>OAuth</title>
+<simpara><indexterm>
+<primary>authentication</primary><secondary>OAuth for</secondary><tertiary>id=ix_chapter-01-introduction-asciidoc9</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-01-introduction-asciidoc9</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>OAuth</primary><secondary>id=ix_chapter-01-introduction-asciidoc10</secondary><tertiary>range=startofrange</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-01-introduction-asciidoc10</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>OAuth</primary><secondary>tokens</secondary><tertiary>id=ix_chapter-01-introduction-asciidoc11</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-01-introduction-asciidoc11</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>tokens, OAuth</primary><secondary>id=ix_chapter-01-introduction-asciidoc12</secondary><tertiary>range=startofrange</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-01-introduction-asciidoc12</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>OAuth is an authentication mechanism where tokens are tied to
+functionality or clients. In other words, you can specify what
+features of a service you want to permit an OAuth token to carry with
+it, and you can issue multiple tokens and tie those to specific
+clients: a cell phone app, a laptop, a smart watch, or even an
+Internet of Things toaster. And, importantly, you can revoke tokens
+without impacting other tokens.</simpara>
+<simpara>The main downside to OAuth tokens is that they introduce a level of
+complexity that you may not be familiar with if you have only used
+HTTP Basic. HTTP Basic requests generally only require adding an extra
+header to the HTTP request, or an extra flag to a client tool like cURL.</simpara>
+<simpara><indexterm>
+<primary>OAuth</primary><secondary>scopes</secondary><tertiary>id=ix_chapter-01-introduction-asciidoc13</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-01-introduction-asciidoc13</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>scopes</primary><secondary>OAuth and</secondary><tertiary>id=ix_chapter-01-introduction-asciidoc14</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-01-introduction-asciidoc14</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>OAuth solves the problems just described by linking tokens to scopes
+(specified subsets of functionality inside a web service) and
+issuing as many tokens as you need to multiple clients.</simpara>
+<section xml:id="_scopes_specified_actions_tied_to_authentication_tokens">
+<title>Scopes: specified actions tied to authentication tokens</title>
+<simpara><indexterm>
+<primary>OAuth</primary><secondary>tokens</secondary>
+</indexterm>
+<indexterm>
+<primary>tokens</primary>
+</indexterm><indexterm>
+<primary>scopes</primary><secondary>and OAuth tokens</secondary>
+</indexterm>
+<indexterm>
+<primary>and OAuth tokens</primary>
+</indexterm><indexterm>
+<primary>tokens, OAuth</primary>
+</indexterm>When you generate an OAuth token, you specify the access rights you
+require. Though our examples create the token using HTTP Basic, once
+you have the token, you no longer need to use HTTP Basic in successive
+requests. If this token is properly issued, the OAuth token will have
+permissions to read and write to public repositories owned by that user.</simpara>
+<simpara>The following cURL command uses HTTP Basic to initiate the token
+request process:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ curl -u username -d '{"scopes":["public_repo"], "note": "A new authorization"}' \
+https://api.github.com/authorizations
+{
+  "id": 1234567,
+  "url": "https://api.github.com/authorizations/1234567",
+  "app": {
+    "name": "My app",
+    "url": "https://developer.github.com/v3/oauth_authorizations/",
+    "client_id": "00000000000000000000"
+  },
+  "token": "abcdef87654321
+  ...
+}</programlisting>
+<simpara>The JSON response, upon success, has a token you can extract and use
+for applications that need access to the GitHub API.</simpara>
+<simpara>If you are using two-factor authentication, this flow requires
+additional steps, all of which are documented within <xref linkend="Hubot"/>.</simpara>
+<simpara>To use this token, you specify the token inside an authorization
+header:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ curl -H "Authorization: token abcdef87654321" ...</programlisting>
+<simpara>Scopes clarify how a service or application will use data inside the
+GitHub API. This makes it easy to audit how you are using the
+information if this was a token issued for your own personal use. But,
+most importantly, this provides valuable clarity and protection for
+those times when a third-party application wants to access your
+information: you can be assured the application is limited in what
+data it can access, and you can revoke access easily.</simpara>
+</section>
+<section xml:id="_scope_limitations">
+<title>Scope limitations</title>
+<simpara><indexterm>
+<primary>scopes</primary><secondary>limitations of</secondary>
+</indexterm>
+<indexterm>
+<primary>limitations of</primary>
+</indexterm>There is one major limitation of scopes to be aware of: you cannot do
+fine-grained access to certain repositories only. If you provide
+access to any of your private repositories, you are providing access
+to all repositories.</simpara>
+<simpara>It is likely that GitHub will change the way scopes work and address
+some of these issues. The great thing about the way OAuth works is
+that to support these changes you will simply need to request a new
+token with the scope modified, but otherwise, the application
+authentication flow will be unchaged.</simpara>
+<warning>
+<simpara>Be very careful about the scopes you request when building a service
+or application. Users are (rightly) paranoid about the data they are
+handing over to you, and will evaluate your application based on the scopes
+requested. If they don&#8217;t think you need that scope, be sure to remove
+it from the list you provide to GitHub when authorizing and consider
+escalation to a higher scope after you have developed some trust with
+your users.</simpara>
+</warning>
+</section>
+<section xml:id="_scope_escalation">
+<title>Scope escalation</title>
+<simpara><indexterm>
+<primary>scopes</primary><secondary>escalation</secondary>
+</indexterm>
+<indexterm>
+<primary>escalation</primary>
+</indexterm>You can ask for scope at one point that is very limited, and then
+later ask for a greater scope. For example, when a user first accesses
+your application, you could only get the user scope to create a user
+object inside your service, and only when your application needs
+repository information for a user, then request to escalate
+privileges. At this point the user will need to approve or disapprove
+your request, but asking for everything upfront (before you have a
+relationship with the user) often results in a user abandoning the login.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-01-introduction-asciidoc14</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-01-introduction-asciidoc14</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-01-introduction-asciidoc13</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-01-introduction-asciidoc13</primary>
+</indexterm></simpara>
+<simpara>Now let&#8217;s get into the specifics of authentication using OAuth.</simpara>
+</section>
+<section xml:id="_simplified_oauth_flow">
+<title>Simplified OAuth flow</title>
+<simpara><indexterm>
+<primary>OAuth</primary><secondary>simplified flow</secondary>
+</indexterm>
+<indexterm>
+<primary>simplified flow</primary>
+</indexterm><indexterm>
+<primary>OAuth2</primary>
+</indexterm>OAuth has many variants, but GitHub uses OAuth2. OAuth2 specifies a
+flow where:</simpara>
+<orderedlist numeration="arabic">
+<listitem>
+<simpara>The application requests access</simpara>
+</listitem>
+<listitem>
+<simpara>The service provider (GitHub) requests authentication: username and
+password usually</simpara>
+</listitem>
+<listitem>
+<simpara>If two-factor authentication is enabled, ask for the OTP (one-time password) code</simpara>
+</listitem>
+<listitem>
+<simpara>GitHub responds with a token inside a JSON payload</simpara>
+</listitem>
+<listitem>
+<simpara>The application uses the OAuth token to make requests of the API</simpara>
+</listitem>
+</orderedlist>
+<simpara>A real-world flow is described in full in <xref linkend="Hubot"/>.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-01-introduction-asciidoc12</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-01-introduction-asciidoc12</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-01-introduction-asciidoc11</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-01-introduction-asciidoc11</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-01-introduction-asciidoc10</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-01-introduction-asciidoc10</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-01-introduction-asciidoc9</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-01-introduction-asciidoc9</primary>
+</indexterm></simpara>
+<simpara>Now let&#8217;s look at the variety of HTTP status codes GitHub uses to
+communicate feedback when using the API.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-01-introduction-asciidoc8</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-01-introduction-asciidoc8</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-01-introduction-asciidoc7</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-01-introduction-asciidoc7</primary>
+</indexterm></simpara>
+</section>
+</section>
+</section>
+<section xml:id="_status_codes">
+<title>Status Codes</title>
+<simpara><indexterm>
+<primary>GitHub API</primary><secondary>status codes</secondary><tertiary>id=ix_chapter-01-introduction-asciidoc15</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-01-introduction-asciidoc15</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>HTTP status codes</primary><secondary>id=ix_chapter-01-introduction-asciidoc16</secondary><tertiary>range=startofrange</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-01-introduction-asciidoc16</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>status codes</primary><secondary>id=ix_chapter-01-introduction-asciidoc17</secondary><tertiary>range=startofrange</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-01-introduction-asciidoc17</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>The GitHub API uses HTTP status codes to tell you definitive
+information about how your request was processed. If you are using a
+basic client like cURL, it will be important to validate the status
+code before you look at any of the data retrieved. If you are writing
+your own API client, pay close attention to the status code before
+anything else. If you are new to the GitHub API, it is worth reviewing
+the response codes thoroughly until you are familiar with the
+various conditions that can cause errors when making a request.</simpara>
+<section xml:id="_success_200_or_201">
+<title>Success (200 or 201)</title>
+<simpara><indexterm>
+<primary>200 status code</primary>
+</indexterm><indexterm>
+<primary>201 status code</primary>
+</indexterm>If you have worked with any HTTP clients whatsoever, you know that the
+HTTP status code "200" means success. GitHub will respond with a 200
+status code when your request destination URL and associated
+parameters are correct. If your request creates content on the server,
+then you will get a 201 status code, indicating successful creation on
+the server.</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ curl -s -i https://api.github.com | grep Status
+Status: 200 OK</programlisting>
+</section>
+<section xml:id="_naughty_json_400">
+<title>Naughty JSON (400)</title>
+<simpara><indexterm>
+<primary>400 status code</primary>
+</indexterm><indexterm>
+<primary>status codes</primary><secondary>invalid payload (400)</secondary>
+</indexterm>
+<indexterm>
+<primary>invalid payload (400)</primary>
+</indexterm>If your payload (the JSON you send to a request) is invalid, the
+GitHub API will respond with a 400 error, as shown here:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ curl -i -u xrd -d 'yaml: true' -X POST https://api.github.com/gists
+Enter host password for user 'xrd':
+HTTP/1.1 400 Bad Request
+Server: GitHub.com
+Date: Thu, 04 Jun 2015 20:33:49 GMT
+Content-Type: application/json; charset=utf-8
+Content-Length: 148
+Status: 400 Bad Request
+...
+
+{
+  "message": "Problems parsing JSON",
+  "documentation_url":
+  "https://developer.github.com/v3/oauth_authorizations/#create...authorization"
+}</programlisting>
+<simpara>Here we attempt to generate a new gist by using the endpoint described
+at the <link xl:href="https://developer.github.com/v3/gists/#create-a-gist">Gist API documentation</link>. We&#8217;ll discuss gists in more detail in a later chapter. This issue fails because we
+are not using JSON (this looks like it could be YAML, which we will discuss
+in <xref linkend="Jekyll"/>). The payload is sent using the <literal>-d</literal>
+switch. GitHub responds with advice on where to find the documentation
+for the correct format at the <literal>documentation_url</literal> key inside the JSON
+response.  Notice that we use the <literal>-X POST</literal> switch and value to tell
+cURL to make a POST request to GitHub.</simpara>
+</section>
+<section xml:id="_improper_json_422">
+<title>Improper JSON (422)</title>
+<simpara><indexterm>
+<primary>422 status code</primary>
+</indexterm><indexterm>
+<primary>fields, invalid</primary>
+</indexterm><indexterm>
+<primary>status codes</primary><secondary>improper JSON (422)</secondary>
+</indexterm>
+<indexterm>
+<primary>improper JSON (422)</primary>
+</indexterm>If any of the fields in your request are invalid, GitHub will respond
+with a 422 error. Let&#8217;s attempt to fix the previous request. The
+documentation indicates the JSON payload should look like this:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">{
+  "description": "the description for this gist",
+  "public": true,
+  "files": {
+    "file1.txt": {
+      "content": "String file contents"
+    }
+  }
+}</programlisting>
+<simpara>What happens if the JSON is valid, but the fields are incorrect?</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ curl -i -u chris@burningon.com -d '{ "a" : "b" }' -X POST
+https://api.github.com/gists
+Enter host password for user 'chris@burningon.com':
+HTTP/1.1 422 Unprocessable Entity
+...
+
+{
+  "message": "Invalid request.\n\n\"files\" wasn't supplied.",
+  "documentation_url": "https://developer.github.com/v3"
+}</programlisting>
+<simpara>There are two important things to note: first, we get a 422 error,
+which indicates the JSON was valid, but the fields were incorrect. We
+also get a response that indicates why: we are missing the <literal>files</literal>
+key inside the request payload.</simpara>
+</section>
+<section xml:id="_successful_creation_201">
+<title>Successful Creation (201)</title>
+<simpara><indexterm>
+<primary>201 status code</primary>
+</indexterm><indexterm>
+<primary>status codes</primary><secondary>successful creation (201)</secondary>
+</indexterm>
+<indexterm>
+<primary>successful creation (201)</primary>
+</indexterm>We&#8217;ve seen what happens when the JSON is invalid, but what happens
+when the JSON is valid for our request?</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ curl -i -u xrd \
+-d '{"description":"A","public":true,"files":{"a.txt":{"content":"B"}}} \
+https://api.github.com/gists
+Enter host password for user 'xrd':
+HTTP/1.1 201 Created
+...
+
+{
+  "url": "https://api.github.com/gists/4a86ed1ca6f289d0f6a4",
+  "forks_url":
+  "https://api.github.com/gists/4a86ed1ca6f289d0f6a4/forks",
+  "commits_url":
+  "https://api.github.com/gists/4a86ed1ca6f289d0f6a4/commits",
+  "id": "4a86ed1ca6f289d0f6a4",
+  "git_pull_url": "https://gist.github.com/4a86ed1ca6f289d0f6a4.git",
+  ...
+}</programlisting>
+<simpara>Success! We created a gist and got a 201 status code indicating things
+worked properly. To make our command more readable we used the
+backslash character to allow parameters to span across lines. Also,
+notice the JSON does not require whitespace, which we have completely
+removed from the string passed to the <literal>-d</literal> switch (in order to save
+space and make this command a little bit more readable).</simpara>
+</section>
+<section xml:id="_nothing_has_changed_304">
+<title>Nothing Has Changed (304)</title>
+<simpara><indexterm>
+<primary>304 status code</primary>
+</indexterm><indexterm>
+<primary>status codes</primary><secondary>no change (304)</secondary>
+</indexterm>
+<indexterm>
+<primary>no change (304)</primary>
+</indexterm>304s are like 200s in that they say to the client: yes, your request
+succeeded. They give a little bit of extra information, however, in
+that they tell the client that the data has not changed since the last
+time the same request was made. This is valuable information if you
+are concerned about your usage limits (and in most cases you will
+be). We have not yet explained how rate limits work, so let&#8217;s discuss
+that and then return to demonstrate triggering a 304 response code by using
+conditional headers.</simpara>
+</section>
+<section xml:id="developer-api-rates">
+<title>GitHub API Rate Limits</title>
+<simpara><indexterm>
+<primary>GitHub API</primary><secondary>rate limits</secondary>
+</indexterm>
+<indexterm>
+<primary>rate limits</primary>
+</indexterm><indexterm>
+<primary>rate limits</primary><secondary>and authenticated requests</secondary>
+</indexterm>
+<indexterm>
+<primary>and authenticated requests</primary>
+</indexterm>GitHub tries to limit the rate at which users can make requests to the
+API.  Anonymous requests (requests that haven&#8217;t authenticated with
+either a username/password or OAuth information) are limited to 60
+requests an hour. If you are developing a system to integrate with the
+GitHub API on behalf of users, clearly 60 requests per hour isn&#8217;t
+going to be sufficient.</simpara>
+<simpara>This rate limit is increased to 5000 requests per hour if you are
+making an authenticated request to the GitHub API, and while this rate
+is two orders of magnitude larger than the anonymous rate limit, it
+still presents problems if you intend to use your own GitHub
+credentials when making requests on behalf of many users.</simpara>
+<simpara>For this reason, if your website or service uses the GitHub API to
+request information from the GitHub API, you should consider using
+OAuth and make requests to the GitHub API using your user&#8217;s shared
+authentication information. If you use a token connected to another
+user&#8217;s GitHub account, the rate limits count against that user, and
+not your user account.</simpara>
+<note>
+<simpara>There are actually two rate limits: <indexterm>
+<primary>core rate limits</primary>
+</indexterm><indexterm>
+<primary>search rate limits</primary>
+</indexterm>the <emphasis>core</emphasis> rate limit and the
+<emphasis>search</emphasis> rate limit.  The rate limits explained in the previous
+paragraphs were for the core rate limit.  For search,
+requests are limited to 20 requests per minute for authenticated user
+requests and 5 requests per minute for anonymous requests. The
+assumption here is that search is a more infrastructure-intensive
+request to satisfy and that tighter limits are placed on its usage.</simpara>
+</note>
+<simpara>Note that GitHub tracks anonymous requests by IP address. This means
+that if you are behind a firewall with other users making anonymous
+requests, all those requests will be grouped together.</simpara>
+</section>
+<section xml:id="_reading_your_rate_limits">
+<title>Reading Your Rate Limits</title>
+<simpara><indexterm>
+<primary>rate limits</primary><secondary>reading</secondary>
+</indexterm>
+<indexterm>
+<primary>reading</primary>
+</indexterm>Reading your rate limit is straightforward&#x2014;just make a GET request to
+/rate_limit.  This will return a JSON document that tells you the
+limit you are subject to, the number of requests you have remaining,
+and the timestamp (in seconds since 1970).  Note that this timestamp
+is in the Coordinated Universal Time (UTC) time zone.</simpara>
+<simpara><indexterm>
+<primary>cURL</primary><secondary>and rate limit retrieval</secondary>
+</indexterm>
+<indexterm>
+<primary>and rate limit retrieval</primary>
+</indexterm>The following command listing uses cURL to retrieve the rate limit
+for an anonymous request. This response is abbreviated to save space
+in this book, but you&#8217;ll notice that the quota information is supplied
+twice: once in the HTTP response headers and again in the JSON
+response.  The rate limit headers are returned with every request to
+the GitHub API, so there is little need to make a direct call to the
+<span class="keep-together">/rate_limit</span> API:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ curl https://api.github.com/rate_limit
+{
+  "resources": {
+    "core": {
+      "limit": 60,
+      "remaining": 48,
+      "reset": 1433398160
+    },
+    "search": {
+      "limit": 10,
+      "remaining": 10,
+      "reset": 1433395543
+    }
+  },
+  "rate": {
+    "limit": 60,
+    "remaining": 48,
+    "reset": 1433398160
+  }
+}</programlisting>
+<simpara>Sixty requests over the course of an hour isn&#8217;t very much, and if
+you plan on doing anything interesting, you will likely exceed this
+limit quickly. If you are hitting up against the 60 requests per
+minute limit, you will likely want to investigate making authenticated
+requests to the GitHub API. We&#8217;ll show that when we discuss
+authenticated requests.</simpara>
+<simpara>Calls to the /rate_limit API are not deducted from your rate
+limits. And, remember, rate limits are reset after 24 hours.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-01-introduction-asciidoc17</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-01-introduction-asciidoc17</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-01-introduction-asciidoc16</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-01-introduction-asciidoc16</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-01-introduction-asciidoc15</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-01-introduction-asciidoc15</primary>
+</indexterm></simpara>
+</section>
+</section>
+<section xml:id="_conditional_requests_to_avoid_rate_limitations">
+<title>Conditional Requests to Avoid Rate Limitations</title>
+<simpara><indexterm>
+<primary>conditional requests</primary>
+</indexterm><indexterm>
+<primary>GitHub API</primary><secondary>conditional requests to avoid rate limitations</secondary>
+</indexterm>
+<indexterm>
+<primary>conditional requests to avoid rate limitations</primary>
+</indexterm><indexterm>
+<primary>rate limits</primary><secondary>conditional requests to avoid</secondary>
+</indexterm>
+<indexterm>
+<primary>conditional requests to avoid</primary>
+</indexterm>If you are querying the GitHub APIs to obtain activity data for a user
+or a repository, there&#8217;s a good chance that many of your requests
+won&#8217;t return much activity.  If you check for new activity once every
+few minutes, there will be time periods over which no activity has
+occurred.  These constant polls still use up requests
+in your rate limit even though there&#8217;s no new activity to be
+delivered.</simpara>
+<simpara><indexterm>
+<primary>conditional HTTP headers</primary>
+</indexterm><indexterm>
+<primary>If&#8211;Modified&#8211;Since header</primary>
+</indexterm><indexterm>
+<primary>If&#8211;None&#8211;Match header</primary>
+</indexterm>In these cases, you can send the conditional HTTP headers
+<literal>If-Modified-Since</literal> and <literal>If-None-Match</literal> to tell GitHub to return an HTTP
+304 response code telling you that nothing has been modified.  When
+you send a request with a conditional header and the GitHub API responds
+with an HTTP 304 response code, this request is not deducted from your
+rate limit.</simpara>
+<simpara>The following command listing is an example of passing in the
+If-Modified-Since HTTP header to the GitHub API. Here we&#8217;ve
+specified that we&#8217;re only interested in receiving content if the
+Twitter Bootstrap repositories have been altered after 7:49 PM GMT on
+Sunday, August 11, 2013.  The GitHub API responds with an HTTP 304
+response code that also tells us that the last time this repository
+changed was a minute earlier than our cutoff date:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ curl -i https://api.github.com/repos/twbs/bootstrap \
+          -H "If-Modified-Since: Sun, 11 Aug 2013 19:48:59 GMT"
+HTTP/1.1 304 Not Modified
+Server: GitHub.com
+Date: Sun, 11 Aug 2013 20:11:26 GMT
+Status: 304 Not Modified
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 46
+X-RateLimit-Reset: 1376255215
+Cache-Control: public, max-age=60, s-maxage=60
+Last-Modified: Sun, 11 Aug 2013 19:48:39 GMT</programlisting>
+<simpara><indexterm>
+<primary>caching</primary><secondary>tags</secondary>
+</indexterm>
+<indexterm>
+<primary>tags</primary>
+</indexterm><indexterm>
+<primary>HTTP caching tags</primary>
+</indexterm>The GitHub API also understands HTTP caching tags. An <indexterm>
+<primary>Entity Tag</primary>
+</indexterm><indexterm>
+<primary>ETag</primary>
+</indexterm>ETag, or Entity Tag, is an HTTP
+header that is used to control whether or not content you have
+previously cached is the most recent version.  Here&#8217;s how your systems
+would use an ETag:</simpara>
+<itemizedlist>
+<listitem>
+<simpara>Your server requests information from an HTTP server.</simpara>
+</listitem>
+<listitem>
+<simpara>Server returns an ETag header for a version of a content item.</simpara>
+</listitem>
+<listitem>
+<simpara>Your server includes this ETag in all subsequent requests:</simpara>
+<itemizedlist>
+<listitem>
+<simpara>If the server has a newer version it returns new content + a new
+ETag.</simpara>
+</listitem>
+<listitem>
+<simpara>If the server doesn&#8217;t have a newer version it returns an HTTP 304.</simpara>
+</listitem>
+</itemizedlist>
+</listitem>
+</itemizedlist>
+<simpara>The following command listing demonstrates two commands.  The first
+cURL call to the GitHub API generates an ETag value, and the second
+value passes this ETag value as an If-None-Match header.  You&#8217;ll note
+that the second response is an HTTP 304, which tells the caller that
+there is no new content available:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ curl -i https://api.github.com/repos/twbs/bootstrap
+HTTP/1.1 200 OK
+Cache-Control: public, max-age=60, s-maxage=60
+Last-Modified: Sun, 11 Aug 2013 20:25:37 GMT
+ETag: "462c74009317cf64560b8e395b9d0cdd"
+
+{
+  "id": 2126244,
+  "name": "bootstrap",
+  "full_name": "twbs/bootstrap",
+  ....
+}
+
+$ curl -i https://api.github.com/repos/twbs/bootstrap \
+          -H 'If-None-Match: "462c74009317cf64560b8e395b9d0cdd"'
+
+HTTP/1.1 304 Not Modified
+Status: 304 Not Modified
+Cache-Control: public, max-age=60, s-maxage=60
+Last-Modified: Sun, 11 Aug 2013 20:25:37 GMT
+ETag: "462c74009317cf64560b8e395b9d0cdd"</programlisting>
+<simpara>Use of conditional request headers is encouraged to conserve resources
+and make sure that the infrastructure that supports GitHub&#8217;s API isn&#8217;t
+asked to generate content unnecessarily.</simpara>
+<simpara>At this point we have been accessing the GitHub API from a cURL
+client, and as long as our network permits it, we can do whatever we
+want. The GitHub API is accessible in other situations as well, like
+from within a browser context, and certain restrictions apply there,
+so let&#8217;s discuss that next.</simpara>
+</section>
+<section xml:id="_accessing_content_from_the_web">
+<title>Accessing Content from the Web</title>
+<simpara><indexterm>
+<primary>GitHub API</primary><secondary>accessing content from Web</secondary><tertiary>id=ix_chapter-01-introduction-asciidoc18</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-01-introduction-asciidoc18</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>Web content</primary><secondary>accessing</secondary><tertiary>id=ix_chapter-01-introduction-asciidoc19</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-01-introduction-asciidoc19</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>If you are using the GitHub API from a server-side program or the
+command line then you are free to issue any network calls as long as
+your network permits it. If you are attempting to access the GitHub
+API from within a browser using JavaScript and the<indexterm>
+<primary>XHR (XmlHttpRequest)</primary>
+</indexterm> XHR
+(XmlHttpRequest) object, then you should be aware of limitations
+imposed by the browser&#8217;s same-origin policy. In a nutshell, you are
+not able to access domains from JavaScript using standard XHR requests
+outside of the domain from which you retrieved the original
+page. There are two options for getting around this restriction, one
+clever (JSON-P) and one fully supported but slightly more onerous (CORS).</simpara>
+<section xml:id="_json_p">
+<title>JSON-P</title>
+<simpara><indexterm>
+<primary>GitHub API</primary><secondary>and JSON&#8211;P</secondary>
+</indexterm>
+<indexterm>
+<primary>and JSON&#8211;P</primary>
+</indexterm><indexterm>
+<primary>JSON&#8211;P</primary>
+</indexterm><indexterm>
+<primary>Web content</primary><secondary>accessing with JSON&#8211;P</secondary>
+</indexterm>
+<indexterm>
+<primary>accessing with JSON&#8211;P</primary>
+</indexterm>JSON-P is a browser hack, more or less, that allows retrieval of
+information from servers outside of the same-origin policy. JSON-P
+works because <literal>&lt;script&gt;</literal> tags are not checked against the same-origin
+policy; in other words, your page can include references to content on
+servers other than the one from which the page originated. With JSON-P, you load
+a JavaScript file that resolves to a specially encoded data payload
+wrapped in a callback function you implement. The GitHub API supports
+this syntax: you request a script with a parameter on the URL
+indicating what callback you want the script to execute once loaded.</simpara>
+<simpara>We can simulate this request in cURL:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ curl https://api.github.com/?callback=myCallback
+/**/myCallback({
+  "meta": {
+    "X-RateLimit-Limit": "60",
+    "X-RateLimit-Remaining": "52",
+    "X-RateLimit-Reset": "1433461950",
+    "Cache-Control": "public, max-age=60, s-maxage=60",
+    "Vary": "Accept",
+    "ETag": "\"a5c656a9399ccd6b44e2f9a4291c8289\"",
+    "X-GitHub-Media-Type": "github.v3",
+    "status": 200
+  },
+  "data": {
+    "current_user_url": "https://api.github.com/user",
+    "current_user_authorizations_html_url":
+    "https://github.com/settings/connections/applications{/client_id}",
+    "authorizations_url": "https://api.github.com/authorizations",
+    ...
+  }
+ })</programlisting>
+<simpara>If you used the same URL we used in the preceding code inside a script tag on a
+web page (<literal>&lt;script src="https://api.github.com/?callback=myCallback" type= "text/javascript"&gt;&lt;/script&gt;</literal>), your browser would load the
+content displayed in the preceding code, and then a JavaScript function you defined
+called <literal>myCallback</literal> would be executed with the data shown. This
+function could be implemented like this inside your web page:</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">&lt;script&gt;
+function myCallback( payload ) {
+  if( 200 == payload.status ) {
+    document.getElementById("success").innerHTML =
+      payload.data.current_user_url;
+  } else {
+    document.getElementById("error").innerHTML =
+      "An error occurred";
+  }
+}
+&lt;/script&gt;</programlisting>
+<simpara>This example demonstrates taking the <literal>current_user_url</literal> from the data inside
+the payload and putting it into a DIV, one that might look like <code>&#x3c;div id="success"&#x3e; <span class="keep-together">&#x3c;/div&#x3e;</span></code>.</simpara>
+<simpara>Because JSON-P works via &lt;script&gt; tags, only GET requests to the API
+are supported. If you only need read-only access to the API, JSON-P
+can fulfill that need in many cases, and it is easy to configure.</simpara>
+<simpara>If JSON-P seems too limiting or hackish, CORS is a more complicated
+but official way to access external services from within a web page.</simpara>
+</section>
+<section xml:id="_cors_support">
+<title>CORS Support</title>
+<simpara><indexterm>
+<primary>CORS</primary>
+</indexterm><indexterm>
+<primary>GitHub API</primary><secondary>CORS support</secondary>
+</indexterm>
+<indexterm>
+<primary>CORS support</primary>
+</indexterm><indexterm>
+<primary>Web content</primary><secondary>CORS requests</secondary>
+</indexterm>
+<indexterm>
+<primary>CORS requests</primary>
+</indexterm>CORS is the W3C (a web standards body) approved way to access content
+from a different domain than the original host. CORS requires that the
+server be properly configured in advance; the server must indicate
+when queried that it allows cross-domain requests. If the server
+effectively says "yes, you can access my content from a different
+domain," then CORS requests are permitted. The HTML5Rocks website has a
+<link xl:href="http://www.html5rocks.com/en/tutorials/cors/">great tutorial explaining many details of CORS</link>.</simpara>
+<simpara>Because XHR using CORS allows the same type of XHR requests you get
+from the same domain origin, you can make requests beyond GET to the
+GitHub API: POST, DELETE, and UPDATE. Between JSON-P and CORS you have two options for accessing content
+from the GitHub API inside of web browsers. The choice is between
+the simplicity of JSON-P and the power and extra configuration of CORS.</simpara>
+<simpara>We can prove using cURL that the GitHub API server is responding correctly for
+CORS requests. In this case we only care about the headers, so we use
+the <literal>-I</literal> switch, which tells cURL to make a HEAD request, telling the
+server not to respond with body content:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">curl -I https://api.github.com
+HTTP/1.1 200 OK
+Server: GitHub.com
+...
+X-Frame-Options: deny
+Content-Security-Policy: default-src 'none'
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: ETag, Link, X-GitHub-OTP,
+X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset,
+X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval
+Access-Control-Allow-Origin: *
+X-GitHub-Request-Id: C0F1CF9E:07AD:3C493B:557107C7
+Strict-Transport-Security: max-age=31536000; includeSubdomains;
+preload</programlisting>
+<simpara>We can see the Access-Control-Allow-Credentials header is set to
+true. It depends on the browser implementation, but some JavaScript
+host browsers will automatically make a <emphasis>preflight</emphasis> request to verify
+this header is set to true (and that other headers, like the
+Access-Control-Allow-Origin, are set correctly and permit requests
+from that origin to proceed). Other JavaScript host browsers will need
+you to make that request. Once the browser has used the headers to
+confirm that CORS is permitted, you can make XHR requests to the
+GitHub API domain as you would any other XHR request going into the
+same domain.</simpara>
+<simpara>We&#8217;ve covered much of the details of connecting and dissecting the
+GitHub API, but there are a few other options to know about when using
+it. One of them is that you can use the GitHub API service to provide
+rendered content when you need it.</simpara>
+</section>
+<section xml:id="_specifying_response_content_format">
+<title>Specifying Response Content Format</title>
+<simpara><indexterm>
+<primary>Web content</primary><secondary>response format specification</secondary>
+</indexterm>
+<indexterm>
+<primary>response format specification</primary>
+</indexterm>When you send a request to the GitHub API, you have some ability to
+specify the format of the response you expect.  For example, if you
+are requesting content that contains text from a commit&#8217;s comment
+thread, you can use the Accept header to ask for the raw Markdown or
+for the HTML this Markdown generates.  You also have the ability to
+specify this version of the GitHub API you are using.  At this point,
+you can specify either version 3 or beta of the API.</simpara>
+<section xml:id="_retrieving_formatted_content">
+<title>Retrieving formatted content</title>
+<simpara><indexterm>
+<primary>Web content</primary><secondary>retrieving formatted content</secondary>
+</indexterm>
+<indexterm>
+<primary>retrieving formatted content</primary>
+</indexterm>The Accept header you send with a request can affect the format of
+text returned by the GitHub API.  As an example, let&#8217;s assume you
+wanted to read the body of a GitHub Issue. An issue&#8217;s body is stored
+in Markdown and will be sent back in the request by default. If we
+wanted to render the response as HTML instead of Markdown, we could do
+this by sending a different Accept header, as the following cURL
+commands demonstrate:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ URL='https://api.github.com/repos/rails/rails/issues/11819'
+$ curl -s $URL | jq '.body'
+"Hi, \r\n\r\nI have a problem with strong...." <co xml:id="CO1-1"/>
+$ curl -s $URL | jq '.body_html'
+null <co xml:id="CO1-2"/>
+$ curl -s $URL \
+-H "Accept: application/vnd.github.html+json" | jq '.body_html'
+"&lt;p&gt;Hi, &lt;/p&gt;\n\n&lt;p&gt;I have a problem with..." <co xml:id="CO1-3"/></programlisting>
+<calloutlist>
+<callout arearefs="CO1-1">
+<para>Without specifying an extra header, we get the internal
+representation of the data, sent as Markdown.</para>
+</callout>
+<callout arearefs="CO1-2">
+<para>Note that if we don&#8217;t request the HTML representation, we
+don&#8217;t see it in the JSON by default.</para>
+</callout>
+<callout arearefs="CO1-3">
+<para>If we use a customized Accept header like in
+the third instance, then our JSON is populated with a rendered version
+of the body in HTML.</para>
+</callout>
+</calloutlist>
+<simpara>Besides "raw" and "html" there are two other format options that
+influence how Markdown content is delivered via the GitHub API.  If
+you specify<indexterm>
+<primary>text format</primary>
+</indexterm> "text" as a format, the issue body would have been
+returned as plaintext.  If you specify<indexterm>
+<primary>full format</primary>
+</indexterm> "full" then the content will
+be rendered multiple times including the raw Markdown, rendered HTML,
+and rendered plaintext.</simpara>
+<simpara>In addition to controlling the format of text content, you can also
+retrieve GitHub blobs either as raw binary or as a BASE64-encoded
+text.  When retrieving commits, you can also specify that the content
+be returned either as a diff or as a patch.  For more information
+about these fine-grained controls for formatting, see the GitHub API
+documentation.</simpara>
+<note>
+<simpara>The GitHub team has already provided very thorough documentation on
+their API with examples using cURL. Bookmark this URL:
+<link xl:href="https://developer.github.com/v3/">https://developer.github.com/v3/</link>. You&#8217;ll use it often. Do note that
+this URL is tied, obviously, to the current API "version 3," so this
+URL will change when a new version is released.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-01-introduction-asciidoc19</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-01-introduction-asciidoc19</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-01-introduction-asciidoc18</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-01-introduction-asciidoc18</primary>
+</indexterm></simpara>
+</note>
+</section>
+</section>
+</section>
+<section xml:id="_summary">
+<title>Summary</title>
+<simpara>In this chapter we learned how to access the GitHub API from the
+simplest client available: the command-line cURL HTTP tool. We also
+explored the API by looking at the JSON and played with a command-line
+tool (jq) that when paired with cURL gives us the ability to quickly
+find information in the often large body of data the GitHub API
+provides. We learned about the different authentication schemes
+supported by GitHub, and also learned about the possibilities and
+trade-offs when accessing the GitHub API from within a browser context.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-01-introduction-asciidoc0</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-01-introduction-asciidoc0</primary>
+</indexterm></simpara>
+<simpara>In the next chapter we will look at gists and the Gist API. We&#8217;ll use
+Ruby to build a gist display program, and host all source files for
+the application as a gist itself.</simpara>
+</section>
+</section>
+</article>

@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?asciidoc-toc?>
+<?asciidoc-numbered?>
+<article xmlns="http://docbook.org/ns/docbook" xmlns:xl="http://www.w3.org/1999/xlink" version="5.0" xml:lang="en">
+<info>
+<title>GitHub Enterprise</title>
+<date>2018-11-09</date>
+</info>
+<appendix xml:id="appendix_b">
+<title>GitHub Enterprise</title>
+<simpara><indexterm>
+<primary>GitHub Enterprise</primary><secondary>id=ix_appendix-enterprise-asciidoc0</secondary><tertiary>range=startofrange</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_appendix-enterprise-asciidoc0</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>Most people understandably equate GitHub (the company) with GitHub.com (the website), but it&#8217;s interesting to note that they&#8217;re not one and the same.</simpara>
+<simpara>The GitHub website, as important as it is to modern open and closed source software development, is not the only product that GitHub (the company) produces.
+The single largest other product from that team is called GitHub Enterprise, and it&#8217;s a version of the GitHub software that can be deployed inside a corporate firewall&#x2014;like having your own private GitHub.com.</simpara>
+<simpara>The two products are very similar from a user&#8217;s point of view, but there are some important differences.
+It can sometimes be hard to imagine the kinds of difficulties that Enterprise is designed to solve, but keep in mind that it&#8217;s for large teams.</simpara>
+<section xml:id="_installation">
+<title>Installation</title>
+<simpara><indexterm>
+<primary>GitHub Enterprise</primary><secondary>installation</secondary>
+</indexterm>
+<indexterm>
+<primary>installation</primary>
+</indexterm>Using GitHub Enterprise isn&#8217;t as easy as signing up for an account.
+You&#8217;re responsible for all the infrastructure and maintenance, including installation, updates, system maintenance, keeping the machine running, and so on.
+However, if your company is considering Enterprise, it&#8217;s likely you already have specialists who are already doing this for other services.</simpara>
+<simpara>The GitHub team has also made it pretty easy for them.
+The software comes as a pre-packaged virtual machine in a variety of formats, so you&#8217;ll likely find something that fits into your infrastructure.
+Once the machine is running, most of the configuration can be done with a web interface, but there are some tricky bits like network configuration and port forwarding that aren&#8217;t easy for the layperson to get right.</simpara>
+</section>
+<section xml:id="_administration">
+<title>Administration</title>
+<simpara><indexterm>
+<primary>GitHub Enterprise</primary><secondary>administration</secondary>
+</indexterm>
+<indexterm>
+<primary>administration</primary>
+</indexterm>Since you&#8217;re in control of the environment in which Enterprise runs, you now have a lot of concerns that the typical GitHub.com user does not.
+GitHub Enterprise has an administration interface for dealing with these issues, which doesn&#8217;t exist on GitHub.com.
+It allows management of things like system resources, reports, search, and many others.</simpara>
+<simpara>Also, while GitHub.com has its own user system, GitHub Enterprise can optionally plug in to your organization&#8217;s existing authentication system.
+This allows a company&#8217;s IT organization to manage user identities in one single place, rather than having to duplicate a lot of effort when a new team member hires on.
+It also eases the initial transition, when perhaps thousands of people will need new accounts.
+Several systems are supported, including LDAP and SAML, as well as plain old email and password.</simpara>
+</section>
+<section xml:id="_endpoints">
+<title>Endpoints</title>
+<simpara><indexterm>
+<primary>GitHub Enterprise</primary><secondary>endpoints</secondary>
+</indexterm>
+<indexterm>
+<primary>endpoints</primary>
+</indexterm>The complete GitHub API is also available on an Enterprise instance;
+you just need to send your requests to <link xl:href="https://&lt;hostname&gt;/api/v3">https://&lt;hostname&gt;/api/v3</link>
+instead of <link xl:href="https://api.github.com/">https://api.github.com/</link>. You can imagine that some users
+have accounts on both an Enterprise instance as well as GitHub.com,
+and many applications have started supporting this scenario.</simpara>
+</section>
+<section xml:id="_full_hostnames_versus_mount_points">
+<title>Full Hostnames Versus Mount Points</title>
+<simpara><indexterm>
+<primary>GitHub Enterprise</primary><secondary>full hostnames vs. mount points</secondary>
+</indexterm>
+<indexterm>
+<primary>full hostnames vs. mount points</primary>
+</indexterm>One of the main differences between GitHub.com and an Enterprise setup
+is often in the way that hostnames are set up. GitHub.com has several
+hostnames for various content served. An incomplete list includes:</simpara>
+<variablelist>
+<varlistentry>
+<term><emphasis>github.io</emphasis></term>
+<listitem>
+<simpara>Hosting Jekyll blogs for users and project pages</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><emphasis>gist.github.com</emphasis></term>
+<listitem>
+<simpara>Hosting gists</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><emphasis>raw.githubusercontent.com</emphasis></term>
+<listitem>
+<simpara>Hosting raw pages (unprocessed files)</simpara>
+</listitem>
+</varlistentry>
+</variablelist>
+<simpara>For a variety of reasons, Enterprise GitHub installations often don&#8217;t
+retain the same mapping. An Enterprise installation might look like:</simpara>
+<variablelist>
+<varlistentry>
+<term><emphasis>github.bigdevcorp.example.com/pages/xrd/somerepo</emphasis></term>
+<listitem>
+<simpara> Hosting gh-pages sites
+<emphasis>github.bigdevcorp.example.com/gists</emphasis>:
+ Hosting gists</simpara>
+</listitem>
+</varlistentry>
+</variablelist>
+<simpara>As you can see, Enterprise installations often map the subdomains to a
+subdirectory rather than a different hostname. This simplifies the setup
+of the Enterprise installation. But it means that some tools require
+reconfiguration.</simpara>
+<simpara>For the command-line <link xl:href="https://github.com/defunkt/gist">Gist tool</link>, you need to export an environment
+variable that specifies the Gist URL:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ export GITHUB_URL=http://github.bigdevcorp.example.com/</programlisting>
+<simpara>For the command-line <link xl:href="https://github.com/github/hub">Hub tool</link>, you need to use a different
+variable&#x2014;<code>GITHUB_HOST</code>:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ GITHUB_HOST=github.bigdevcorp.example.com hub clone myproject</programlisting>
+</section>
+<section xml:id="_command_line_client_tools_curl">
+<title>Command-Line Client Tools: cURL</title>
+<simpara><indexterm>
+<primary>cURL</primary><secondary>and GitHub Enterprise</secondary>
+</indexterm>
+<indexterm>
+<primary>and GitHub Enterprise</primary>
+</indexterm><indexterm>
+<primary>GitHub Enterprise</primary><secondary>and cURL</secondary>
+</indexterm>
+<indexterm>
+<primary>and cURL</primary>
+</indexterm>We show in <xref linkend="introduction"/> how to use cURL to make a request against
+the API on the main GitHub.com site. If you wanted to do this against
+an Enterprise site, your request would look a little different:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ curl -i https://github.bigdevcorp.example.com/api/v3/search/repositories?q=@ben</programlisting>
+</section>
+<section xml:id="_example_request_using_a_client_library">
+<title>Example Request Using a Client Library</title>
+<simpara><indexterm>
+<primary>GitHub Enterprise</primary><secondary>example request using a client library</secondary>
+</indexterm>
+<indexterm>
+<primary>example request using a client library</primary>
+</indexterm>If you use a client library, most provide a way
+to configure the library to use a different endpoint, as is required
+when you are using an Enterprise GitHub instance.</simpara>
+<simpara>This book documents connecting to GitHub using five different
+languages: Ruby, Java, JavaScript, Python, and C#. Here are examples in
+each language. With these snippets in hand, any example in the book
+can be converted to work against a GitHub Enterprise server.</simpara>
+<section xml:id="_ruby_client_configuration">
+<title>Ruby Client Configuration</title>
+<simpara><indexterm>
+<primary>GitHub Enterprise</primary><secondary>Ruby client configuration</secondary>
+</indexterm>
+<indexterm>
+<primary>Ruby client configuration</primary>
+</indexterm><indexterm>
+<primary>Octokit</primary><secondary>and GitHub Enterprise client configuration</secondary>
+</indexterm>
+<indexterm>
+<primary>and GitHub Enterprise client configuration</primary>
+</indexterm><indexterm>
+<primary>Ruby</primary><secondary>client configuration with GitHub Enterprise</secondary>
+</indexterm>
+<indexterm>
+<primary>client configuration with GitHub Enterprise</primary>
+</indexterm>For the Octokit Ruby library, use code like this:</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">github = Github.new
+           basic_auth: 'login:password',
+           endpoint: 'https://github.bigdevcorp.example.com/api/v3/'
+puts github.repos.list</programlisting>
+</section>
+<section xml:id="_java">
+<title>Java</title>
+<simpara><indexterm>
+<primary>GitHub Enterprise</primary><secondary>and Java</secondary>
+</indexterm>
+<indexterm>
+<primary>and Java</primary>
+</indexterm><indexterm>
+<primary>Java</primary><secondary>and GitHub Enterprise</secondary>
+</indexterm>
+<indexterm>
+<primary>and GitHub Enterprise</primary>
+</indexterm>For the EGit Java library, this code specifies an Enterprise endpoint:</simpara>
+<programlisting language="java" linenumbering="unnumbered">GitHubClient client = new GitHubClient("github.bigcorpdev.example.com");
+UserService us = new UserService(client);
+us.getUser("internaluser");</programlisting>
+<simpara>When you create a new GitHub-backed service object of any type, you
+parameterize the service constructor with the customized client
+object.</simpara>
+<simpara>Also, note that this library is specifically configured for version 3 (v3) of the
+API (you cannot specify another version). If you need to use a newer
+version of the API, you will need to make sure you are using the
+correct version of the EGit libraries. And, unfortunately, there is no
+way to use an older version of the API with this Java client if you
+have an outdated Enterprise server that for some reason cannot be
+upgraded.</simpara>
+</section>
+<section xml:id="_javascript">
+<title>JavaScript</title>
+<simpara><indexterm>
+<primary>GitHub Enterprise</primary><secondary>and JavaScript library</secondary>
+</indexterm>
+<indexterm>
+<primary>and JavaScript library</primary>
+</indexterm><indexterm>
+<primary>JavaScript</primary><secondary>GitHub Enterprise and</secondary>
+</indexterm>
+<indexterm>
+<primary>GitHub Enterprise and</primary>
+</indexterm>The JavaScript library we write about in this book (GitHub.js) uses the
+following syntax to specify a GitHub Enterprise backend:</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">var github = new Github({
+  apiUrl: "https://github.bigdevcorp.example.com/api/v3"
+  ...
+});</programlisting>
+</section>
+<section xml:id="_python">
+<title>Python</title>
+<simpara><indexterm>
+<primary>GitHub Enterprise</primary><secondary>and Python</secondary>
+</indexterm>
+<indexterm>
+<primary>and Python</primary>
+</indexterm><indexterm>
+<primary>Python</primary><secondary>and GitHub Enterprise</secondary>
+</indexterm>
+<indexterm>
+<primary>and GitHub Enterprise</primary>
+</indexterm>The agithub client we use in <xref linkend="python_search_api"/> does not permit
+parameterizing an Enterprise endpoint when creating the GitHub
+client. To use an Enterprise endpoint you need to define a new class
+that overrides the built-in <literal>agithub.Github</literal> and then use that new
+client in place of the built-in one:</simpara>
+<programlisting language="py" linenumbering="unnumbered">class GitHubEnterprise(agithub.API):
+    def __init__(self, api_url, *args, **kwargs):
+        props = ConnectionProperties(
+                    api_url = api_url,
+                    secure_http = True,
+                    extra_headers = {
+                        'accept' :    'application/vnd.github.v3+json'
+                        }
+                    )
+
+        self.setClient(Client(*args, **kwargs))
+        self.setConnectionProperties(props)
+
+g = GitHubEnterprise('github.mycorp.com', 'myusername', 'mypassword')</programlisting>
+</section>
+<section xml:id="_c">
+<title>C#</title>
+<simpara><indexterm>
+<primary>C&#35;</primary>
+</indexterm><indexterm>
+<primary>GitHub Enterprise</primary><secondary>and C&#35;</secondary>
+</indexterm>
+<indexterm>
+<primary>and C&#35;</primary>
+</indexterm>The default behavior of the Octokit library is to connect to
+GitHub.com, but it&#8217;s relatively straightforward to give it another API
+host instead. Simply replace the instantiation of the <literal>GitHubClient</literal>
+object with something like this:</simpara>
+<programlisting language="csharp" linenumbering="unnumbered">var ghe = new Uri("https://github.myenterprise.com/");
+var client = new GitHubClient(new ProductHeaderValue("my-cool-app"), ghe);</programlisting>
+</section>
+</section>
+<section xml:id="_management_api">
+<title>Management API</title>
+<simpara><indexterm>
+<primary>GitHub Enterprise</primary><secondary>and Management Console API</secondary>
+</indexterm>
+<indexterm>
+<primary>and Management Console API</primary>
+</indexterm><indexterm>
+<primary>Management Console API</primary>
+</indexterm>Enterprise servers have a special additional API section that isn&#8217;t
+available on GitHub.com, called the Management Console API. It allows
+you to do things like check settings, maintain SSH keys, manage your
+license, and so on. Nearly anything you can do from the web management
+console, you can do through the API (so you can script management
+tasks when desirable).</simpara>
+</section>
+<section xml:id="_documentation">
+<title>Documentation</title>
+<simpara><indexterm>
+<primary>GitHub Enterprise</primary><secondary>documentation</secondary>
+</indexterm>
+<indexterm>
+<primary>documentation</primary>
+</indexterm>Documentation for the Enterprise API is available at <link xl:href="https://developer.github.com/v3/enterprise">https://developer.github.com/v3/enterprise</link>.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_appendix-enterprise-asciidoc0</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_appendix-enterprise-asciidoc0</primary>
+</indexterm></simpara>
+</section>
+</appendix>
+</article>

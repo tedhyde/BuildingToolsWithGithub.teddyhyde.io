@@ -1,0 +1,2260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?asciidoc-toc?>
+<?asciidoc-numbered?>
+<article xmlns="http://docbook.org/ns/docbook" xmlns:xl="http://www.w3.org/1999/xlink" version="5.0" xml:lang="en">
+<info>
+<title>JavaScript and the Git Data API</title>
+<date>2018-11-09</date>
+</info>
+<section xml:id="JavaScript">
+<title>JavaScript and the Git Data API</title>
+<simpara><indexterm>
+<primary>JavaScript</primary><secondary>id=ix_chapter-04-javascript-asciidoc0</secondary><tertiary>range=startofrange</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-04-javascript-asciidoc0</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>Applications utilizing the GitHub API will typically reside inside a
+server. You are not limited, however, to accessing
+the API from within server-side programming languages exclusively.
+The GitHub API works perfectly well from within a web browser context
+as well, and the UI to your application comes for free if you know a
+little HTML. In this chapter we discuss how to use the unofficial
+JavaScript client library to access the GitHub API and build a single-page application (SPA), which we host entirely on GitHub.</simpara>
+<simpara>The main weakness of JavaScript has always been testability. Mainly
+due to the asynchronous nature of JavaScript, writing tests has never
+been easy; polling for changes when a callback returns was until
+recently the best way to test nonlinear code. But recent
+toolkits like AngularJS and promise-based libraries have made testing
+not only easy, but elegant as well. Building applications on top of
+third-party services makes testing even more important than it already
+was, and we&#8217;ll make sure to add testing to our application to verify
+the functionality works as we expect.</simpara>
+<simpara>JavaScript should be generally accessible to most people who know other
+imperative programming languages. <indexterm>
+<primary>callback</primary>
+</indexterm>There is one feature, however, that
+can be challenging: the callback function. In JavaScript, functions
+are first-class objects, meaning they can be passed as arguments to
+other functions and stored as the value of a variable. You will find
+callbacks everywhere in JavaScript programming. Callbacks make
+debugging and understanding JavaScript code more challenging at
+times. As we stated earlier, writing code that includes tests makes
+understanding the entire picture easier, and we will do that in this
+chapter to further explain sections where necessary function callbacks
+may initially look confusing.</simpara>
+<section xml:id="_building_a_coffee_shop_database_on_github">
+<title>Building a Coffee Shop Database on GitHub</title>
+<simpara><indexterm>
+<primary>coffee shop database app</primary><secondary>id=ix_chapter-04-javascript-asciidoc1</secondary><tertiary>range=startofrange</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-04-javascript-asciidoc1</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>Like many software developers, I suffer from an almost disturbing
+obsession with coffee. Perhaps it is really my family that suffers:
+when we travel to a new city, I drag my wife and children through
+questionable neighborhoods just to find the perfect brew and
+complementary gluten-free desserts.</simpara>
+<simpara><indexterm>
+<primary>Google Maps</primary>
+</indexterm>Google Maps is a great help on these quests, in that it will find me a
+coffee shop and reviews, but the granularity of information about that
+coffee shop is often poor and limited in scope. Do they offer rice
+milk as a dairy-free alternative?  What special details should I know
+when considering a place? Many guidance and mapping applications
+exist, but if they don&#8217;t fit my own personalized informational niche,
+I might miss a unique experience. With such a pressing and dire
+problem in front of us, let&#8217;s use the GitHub API to solve it.</simpara>
+<simpara>We&#8217;ll build a coffee shop single-page web app that allows anyone to add
+information on coffee shops, information that is flexible and
+dynamic, and search and filter through that information about a coffee
+shop. All files, such as the HTML, images, and JavaScript will be
+hosted on GitHub. And we&#8217;ll be using the GitHub API to allow
+contributors to add data to our database, a database we will
+also host on GitHub. And as GitHub developers write code with tests,
+we will write tests to validate our JavaScript code as well as the
+expectations we have of the GitHub API.</simpara>
+<simpara>More specifically, we&#8217;ll use these technologies:</simpara>
+<itemizedlist>
+<listitem>
+<simpara><link xl:href="https://github.com/michael/github">An (unofficial) GitHub API JavaScript library</link></simpara>
+</listitem>
+<listitem>
+<simpara><link xl:href="http://angularjs.org">AngularJS</link>, a "superpowered framework" for writing JS applications that
+are testable</simpara>
+</listitem>
+<listitem>
+<simpara><link xl:href="http://getbootstrap.com">Bootstrap</link>, a CSS library that simplifies building beautiful webapps</simpara>
+</listitem>
+</itemizedlist>
+<simpara>You don&#8217;t need to know these technologies in advance of working on this chapter.</simpara>
+</section>
+<section xml:id="_set_up">
+<title>Set Up</title>
+<simpara><indexterm>
+<primary>coffee shop database app</primary><secondary>setup</secondary><tertiary>id=ix_chapter-04-javascript-asciidoc2</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-04-javascript-asciidoc2</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>To create our app, let&#8217;s first create our main web page and push it into our repository:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ mkdir coffeete.ch
+$ cd coffeete.ch
+$ git init
+$ git checkout -b gh-pages
+$ printf "&lt;html&gt;\n&lt;body&gt;Hello from CoffeeTe.ch&lt;/body&gt;\n&lt;/html&gt;\n" &gt; index.html
+$ git commit -m "Add starting point index.html" -a
+$ git config push.default gh-pages</programlisting>
+<simpara>Notice that we created a new repository, and then created and entered
+the gh-pages branch. We&#8217;ll do all our work there. And by using the
+git config command, we specified that we want the default push branch
+to be gh-pages. This allows us to use <literal>git push</literal> to push our branch up
+instead of the longer <literal>git push origin gh-pages</literal>.</simpara>
+<section xml:id="_mapping_hostnames">
+<title>Mapping Hostnames</title>
+<simpara><indexterm>
+<primary>coffee shop database app</primary><secondary>mapping hostnames</secondary>
+</indexterm>
+<indexterm>
+<primary>mapping hostnames</primary>
+</indexterm><indexterm>
+<primary>hostnames, mapping</primary>
+</indexterm>Once we publish these files into GitHub inside a repository we can connect the repository to a
+real hostname. There are two steps to take to do this:</simpara>
+<itemizedlist>
+<listitem>
+<simpara>Add a CNAME file that tells GitHub under which server name this service should resolve.</simpara>
+</listitem>
+<listitem>
+<simpara>Set up DNS records so that the hostname maps to the correct IP
+address at GitHub.</simpara>
+</listitem>
+</itemizedlist>
+<simpara>Imagine you have the hostname <emphasis>myspecialhostname.com</emphasis>. If you map this
+repository to a subdomain called <emphasis>coffeetech</emphasis>, then you would do
+something like this:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ echo 'coffeetech.myspecialhostname.com' &gt; CNAME
+$ git commit -m "Added CNAME mapping" -a
+$ git push</programlisting>
+<simpara>Remember that you need to wait about 10 minutes before GitHub
+regenerates its database to establish the connection between your
+gh-pages site and the mapping on their frontend servers. This is only
+the first time you connect a repository to a hostname; you will see
+subsequent changes almost instantaneously.</simpara>
+<note>
+<simpara>Generally it takes several hours to even a few days to propagate DNS
+settings out into the wild, so make sure you choose and set up a
+hostname far in advance if your site has to be live by a certain point.</simpara>
+</note>
+<simpara>Now we can install the libraries needed for this application.</simpara>
+</section>
+<section xml:id="_adding_the_support_libraries">
+<title>Adding the Support Libraries</title>
+<simpara><indexterm>
+<primary>AngularJS</primary>
+</indexterm><indexterm>
+<primary>Bootstrap</primary>
+</indexterm><indexterm>
+<primary>coffee shop database app</primary><secondary>support libraries for</secondary>
+</indexterm>
+<indexterm>
+<primary>support libraries for</primary>
+</indexterm><indexterm>
+<primary>GitHub.js library</primary>
+</indexterm>As we mentioned, we will use the GitHub.js library, AngularJS, and
+Bootstrap. Let&#8217;s add those to our project now. Using whatever editor
+you prefer, edit the <emphasis>index.html</emphasis> file to look like this:</simpara>
+<programlisting language="html" linenumbering="unnumbered">&lt;html&gt;
+&lt;head&gt;
+&lt;title&gt;CoffeeTe.ch&lt;/title&gt;
+&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt; <co xml:id="CO1-1"/>
+&lt;link rel="stylesheet" type="text/css" href="bootstrap.min.css"&gt;&lt;/link&gt;
+&lt;/head&gt;
+&lt;body ng-app&gt; <co xml:id="CO1-2"/>
+&lt;div class="container"&gt;
+{{'Welcome to Coffeete.ch'}} <co xml:id="CO1-3"/>
+&lt;/div&gt;
+&lt;script src="angular.js"&gt;&lt;/script&gt;
+&lt;script src="github.js"&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</programlisting>
+<simpara>I am assuming you have a firm grasp on most HTML concepts, but a few
+of the advanced topics are included here:</simpara>
+<calloutlist>
+<callout arearefs="CO1-1">
+<para>The <literal>meta</literal> tag makes our page work well with mobile browsers and
+enables the responsive features of Bootstrap.</para>
+</callout>
+<callout arearefs="CO1-2">
+<para>The <literal>ng-app</literal> attribute in the body tag tells AngularJS to initialize
+and compile our page from the body tag downward.</para>
+</callout>
+<callout arearefs="CO1-3">
+<para>The <literal>{{ }}</literal> (double brackets) are an AngularJS two-way data binding
+directive. You&#8217;ll see two-way data binding in action very soon if it
+is not already familiar. Adding this code here sanity checks whether
+AngularJS is working for us; if we see "Welcome to Coffeete.ch"
+without the braces then we know AngularJS is loading and working
+properly. If we see the braces, then there is some error in our
+setup to resolve. Two-way data binding solves a significant pain point when building JS apps:
+marshalling data back and forth between network events, into HTML
+and out of HTML forms. AngularJS does all this heavy lifting for
+you. In a moment we&#8217;ll show how to use two-way data binding as it was
+intended by defining a variable on the AngularJS scope. We then
+access the variable using the same <literal>{{ }}</literal> data binding directives.</para>
+</callout>
+</calloutlist>
+<simpara>Then, download the necessary files locally using these commands. We
+include AngularJS, GitHub.js, and Bootstrap CSS:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ wget https://ajax.googleapis.com/ajax/libs/angularjs/1.2.10/angular.js
+$ wget https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css
+$ wget https://github.com/michael/github/raw/master/github.js</programlisting>
+<simpara>Now we are ready to use the GitHub library inside our SPA.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-04-javascript-asciidoc2</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-04-javascript-asciidoc2</primary>
+</indexterm></simpara>
+</section>
+</section>
+<section xml:id="_an_angularjs_application_using_github_js">
+<title>An AngularJS Application Using GitHub.js</title>
+<simpara><indexterm>
+<primary>AngularJS</primary><secondary>application using GitHub.js</secondary><tertiary>id=ix_chapter-04-javascript-asciidoc3</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-04-javascript-asciidoc3</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>coffee shop database app</primary><secondary>AngularJS application using GitHub.js</secondary><tertiary>id=ix_chapter-04-javascript-asciidoc4</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-04-javascript-asciidoc4</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>GitHub.js library</primary><secondary>id=ix_chapter-04-javascript-asciidoc5</secondary><tertiary>range=startofrange</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-04-javascript-asciidoc5</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>Now let&#8217;s implement a <emphasis>coffeetech.js</emphasis> file, which is where we will
+build our single-page application functionality. Create a new file called
+<emphasis>coffeetech.js</emphasis> in the root of your repository:</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">var mod = angular.module( 'coffeetech', [] ) <co xml:id="CO2-1"/>
+mod.controller( 'GithubCtrl', function( $scope ) { <co xml:id="CO2-2"/>
+  var github = new Github({} ); <co xml:id="CO2-3"/>
+  var repo = github.getRepo( "gollum", "gollum" ); <co xml:id="CO2-4"/>
+  repo.show( function(err, repo) { <co xml:id="CO2-5"/>
+    $scope.repo = repo;
+    $scope.$apply(); <co xml:id="CO2-6"/>
+  });
+})</programlisting>
+<calloutlist>
+<callout arearefs="CO2-1">
+<para>Define a module named "coffeetech." Save a reference to the
+module we will use next in defining a controller, a smaller
+bundle of functions. Modules are an AngularJS feature for grouping
+related functionality, and we will keep all our code for this
+application inside this module.</para>
+</callout>
+<callout arearefs="CO2-2">
+<para>We define a controller called <literal>GithubCtrl</literal> that bundles up
+functions and data. When we use the controller syntax, we name the
+controller, and then define a function with at least a single
+parameter: the scope object. I think of scope as the "world" available
+to the controller. The controller knows only of data and functions
+defined on its scope, and AngularJS does its magic as long as your
+functions or variables are defined on the scope.</para>
+</callout>
+<callout arearefs="CO2-3">
+<para>We create a new <literal>Github()</literal> object using the constructor. This
+constructor can take user credentials, but for now, we can just
+create it without those since we are accessing a public repository.</para>
+</callout>
+<callout arearefs="CO2-4">
+<para>Once we have our <literal>github</literal> object, we call the method <literal>getRepo()</literal>
+with an owner and a name. This returns our repository object.</para>
+</callout>
+<callout arearefs="CO2-5">
+<para>To actually load the data for this repository object, we call the <literal>show</literal>
+method and pass it a callback that uses the two parameters <literal>err</literal>
+and <literal>repo</literal> to handle errors or otherwise provide us with details of
+the repository specified. In this case we are using the Gollum wiki
+public repository to display some sample data.</para>
+</callout>
+<callout arearefs="CO2-6">
+<para>Once we have loaded the repository data, we need to call <literal>$apply</literal>
+to tell AngularJS a change has occurred to data stored within the
+scope variable. As we mentioned before, AngularJS knows only about
+functions and data defined on its scope. The <literal>show</literal> function is
+defined on the GitHub object, and any changes are not tracked by
+AngularJS, so we need to use <literal>$apply()</literal>.</para>
+</callout>
+</calloutlist>
+<simpara>GitHub.js handles making the proper request to GitHub for us, and
+AngularJS handles putting the results into our web page. To modify our
+HTML to use this data, we change <emphasis>index.html</emphasis> to look like the following:</simpara>
+<programlisting language="html" linenumbering="unnumbered">&lt;html&gt;
+&lt;head&gt;
+&lt;title&gt;CoffeeTe.ch&lt;/title&gt;
+&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+&lt;link rel="stylesheet" type="text/css" href="bootstrap.min.css"&gt;&lt;/link&gt;
+&lt;/head&gt;
+&lt;body ng-app="coffeetech"&gt; <co xml:id="CO3-1"/>
+&lt;div class="container" ng-controller="GithubCtrl"&gt;
+{{ repo }} <co xml:id="CO3-2"/>
+&lt;/div&gt;
+&lt;script src="angular.js"&gt;&lt;/script&gt;
+&lt;script src="github.js"&gt;&lt;/script&gt;
+&lt;script src="coffeetech.js"&gt;&lt;/script&gt; <co xml:id="CO3-3"/>
+&lt;/body&gt;
+&lt;/html&gt;</programlisting>
+<calloutlist>
+<callout arearefs="CO3-1">
+<para>Change the <literal>ng-app</literal> reference to use the module we
+defined in our <emphasis>coffeetech.js</emphasis> file.</para>
+</callout>
+<callout arearefs="CO3-2">
+<para>Remove our data binding to the <literal>Welcome to CoffeeTech</literal> string
+and replace it with a binding to the variable <literal>repo</literal> (by default
+AngularJS will filter complex objects and convert them to JSON).</para>
+</callout>
+<callout arearefs="CO3-3">
+<para>Add a reference to our <emphasis>coffeetech.js</emphasis> file beneath our other JS
+references.</para>
+</callout>
+</calloutlist>
+<simpara>If you load this up in your browser, you will see something like <xref linkend="the_whole_messy_json"/>.</simpara>
+<figure xml:id="the_whole_messy_json">
+<title>The whole messy JSON</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/btwg_09in01.png"/>
+</imageobject>
+<textobject><phrase>btwg 09in01</phrase></textobject>
+</mediaobject>
+</figure>
+<simpara>That is a lot of data. AngularJS&#8217;s JSON filter pretty-printed
+it for us, but this is a bit too much. Let&#8217;s change the HTML to reduce
+some noise:</simpara>
+<programlisting language="html" linenumbering="unnumbered">&lt;html&gt;
+&lt;head&gt;
+&lt;title&gt;CoffeeTe.ch&lt;/title&gt;
+&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+&lt;link rel="stylesheet" type="text/css" href="bootstrap.min.css"&gt;&lt;/link&gt;
+&lt;/head&gt;
+&lt;body ng-app="coffeetech"&gt;
+&lt;div class="container" ng-controller="GithubCtrl"&gt;
+&lt;div&gt;Subscriber count: {{ repo.subscribers_count }}&lt;/div&gt;
+&lt;div&gt;Network count: {{ repo.network_count }}&lt;/div&gt;
+&lt;/div&gt;
+&lt;script
+src="angular.js"&gt;&lt;/script&gt;
+&lt;script src="github.js"&gt;&lt;/script&gt;
+&lt;script src="coffeetech.js"&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</programlisting>
+<simpara>We can filter this information by modifying the HTML to show just a
+few vital pieces of information from the repository JSON. Let&#8217;s
+display the <literal>subscriber_count</literal> and the <literal>network_count</literal>. Now we see
+something more palatable (<xref linkend="pulling_out_what_we_want"/>).</simpara>
+<figure xml:id="pulling_out_what_we_want">
+<title>Pulling out what we want</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/btwg_09in02.png"/>
+</imageobject>
+<textobject><phrase>btwg 09in02</phrase></textobject>
+</mediaobject>
+</figure>
+<simpara>We&#8217;ve just extracted the subscriber and network count from the Gollum
+repository hosted on GitHub using the GitHub API and placed it into
+our single-page app.</simpara>
+<section xml:id="_visualize_application_data_structure">
+<title>Visualize Application Data Structure</title>
+<simpara><indexterm>
+<primary>coffee shop database app</primary><secondary>application database structure visualization</secondary>
+</indexterm>
+<indexterm>
+<primary>application database structure visualization</primary>
+</indexterm>We are going to be building a coffee shop database. We want to use Git
+as our datastore, but Git and its associated tools (either command-line tools or GitHub) don&#8217;t offer the same features as
+a standard relational database. So, we need to think and plan how we
+will structure our data inside our repository to make it easily searchable.</simpara>
+<simpara>This application allows us to search coffee shops. These coffee shops
+will be, for the most part, in larger cities. If we keep all the data
+stored as JSON files named after the city, we can keep data located in
+a file named after the city, and then either use geolocation on the
+client side to retrieve a set of the data, or ask the user to choose
+their city manually.</simpara>
+<simpara>If we look at the <link xl:href="https://github.com/michael/github">GitHub.js JavaScript documentation on GitHub</link>
+we can see that there are some
+options for us to pull content from a repository. We&#8217;ll store a data
+file in JSON named after the city inside our repository and retrieve
+this from that repository. It looks like the calls we need to use are
+<literal>github.getRepo( username, reponame )</literal>, and once we have retrieved the
+repository, <literal>repo.contents( branch, path, callback )</literal>.</simpara>
+<simpara>Now that we have a barebones application let&#8217;s pause and make sure we
+are building something we can refactor and maintain long term. This
+means adding tests to our project.</simpara>
+</section>
+<section xml:id="_making_our_app_testable">
+<title>Making Our App Testable</title>
+<simpara><indexterm>
+<primary>coffee shop database app</primary><secondary>testability of app</secondary>
+</indexterm>
+<indexterm>
+<primary>testability of app</primary>
+</indexterm><indexterm>
+<primary>testing</primary><secondary>coffee shop database app</secondary>
+</indexterm>
+<indexterm>
+<primary>coffee shop database app</primary>
+</indexterm>Testing not only builds better code by making us think
+clearly about how our code will be used from the outside, but makes it
+easier for an outsider (meaning other team members) to use our code.
+Testing facilitates "social coding."</simpara>
+<simpara>We&#8217;ll use a JavaScript testing tool called<indexterm>
+<primary>Karma</primary>
+</indexterm> "Karma." Karma simplifies
+writing JavaScript unit tests. We need to first install the tool, then
+write a test or two. Karma can easily be installed using npm
+(installation of which is documented in <xref linkend="appendix"/>):</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ npm install karma -g
+$ wget https://ajax.googleapis.com/ajax/libs/angularjs/1.2.7/angular-mocks.js</programlisting>
+<simpara>The <emphasis>angular-mocks.js</emphasis> file makes it easy to mock out Angular
+dependencies in our tests.</simpara>
+<simpara>Then, create a file called <emphasis>karma.config.js</emphasis> and enter the following contents:</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">module.exports = function(config) {
+  config.set({
+    basePath: '',
+    frameworks: ['jasmine'],
+    files: [ <co xml:id="CO4-1"/>
+        'angular.js',
+        'fixtures-*.js',
+        'angular-mocks.js',
+        'firebase-mock.js',
+        'github.js',
+        '*.js'
+    ],
+    reporters: ['progress'],
+    port: 9876,
+    colors: true,
+    logLevel: config.LOG_INFO,
+    autoWatch: true,
+    browsers: ['Chrome'], <co xml:id="CO4-2"/>
+    captureTimeout: 60000,
+    singleRun: false
+  });
+};</programlisting>
+<simpara>This is more or less a default Karma configuration file.</simpara>
+<calloutlist>
+<callout arearefs="CO4-1">
+<para>The <literal>files</literal> section specifying the load order of our JavaScript
+implementations and the test scripts. You can see a few of the files we&#8217;ve
+added specified directly and wildcards to cover the remaining
+files.</para>
+</callout>
+<callout arearefs="CO4-2">
+<para>Note also that we&#8217;ve specified Chrome as our test browser (so
+you should have it installed), which is a safe bet because it works on
+just about any desktop platform you might be running. Know that
+you can always choose Safari or Firefox if you want Karma to test
+inside those as well. Karma will start a new instance of each browser
+specified and run your tests inside a test harness in those browsers.</para>
+</callout>
+</calloutlist>
+<simpara>To write the test, let&#8217;s clarify what we want our code to do:</simpara>
+<itemizedlist>
+<listitem>
+<simpara>When a user first visits the application, we should use the
+geolocation features of their browser to determine their location.</simpara>
+</listitem>
+<listitem>
+<simpara>Pull a file from our repository that contains general latitude and
+longitude locations of different cities.</simpara>
+</listitem>
+<listitem>
+<simpara>Iterate over the list of cities and see if we are within 25 miles of
+any of the cities. If so, set the current city to the first match.</simpara>
+</listitem>
+<listitem>
+<simpara>If we found a city, load the JSON data file from GitHub.</simpara>
+</listitem>
+</itemizedlist>
+<simpara>Concretely, let&#8217;s assert that we load the list of cities and have two
+of them, then we load a matching city named "Portland," a city that
+has three shops available.</simpara>
+<simpara>We&#8217;ll use an <literal>ng-init</literal> directive, which is the mechanism to tell
+AngularJS we want to call the function specified when the controller
+has finished loading. We&#8217;ll call this function <literal>init</literal> so let&#8217;s test it.</simpara>
+<simpara><indexterm>
+<primary>AngularJS</primary><secondary>Jasmine test framework for</secondary>
+</indexterm>
+<indexterm>
+<primary>Jasmine test framework for</primary>
+</indexterm><indexterm>
+<primary>Jasmine</primary><secondary>test framework for coffee shop database app</secondary>
+</indexterm>
+<indexterm>
+<primary>test framework for coffee shop database app</primary>
+</indexterm>First, we will write the setup code for an AngularJS test written
+using the Jasmine test framework. Jasmine is a "behavior-driven
+JavaScript" library that provides functions to group and create
+expectation-based tests. Within the Jasmine framework are "matchers"
+that allow for the most common assertions (comparing a variety of
+expected types to the resultant types from function calls) and the
+ability to define your own custom matchers. Jasmine also gives you the
+ability to "spy" on functions, which is another way of saying Jasmine
+can intercept function calls to validate that those calls were made in
+the way you anticipate. It is easiest to explain the power of Jasmine
+by showing the elegance of the tests themselves, so let&#8217;s do that now:</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">describe( "GithubCtrl", function() {
+    var scope = undefined; <co xml:id="CO5-1"/>
+    var ctrl = undefined;
+    var gh  = undefined;
+    var repo = undefined;
+    var geo = undefined;
+
+    beforeEach( module( "coffeetech" ) ); <co xml:id="CO5-2"/>
+
+    beforeEach( inject( function ($controller, $rootScope ) { <co xml:id="CO5-3"/>
+            generateMockGeolocationSupport(); <co xml:id="CO5-4"/>
+            generateMockRepositorySupport();
+            scope = $rootScope.$new(); <co xml:id="CO5-5"/>
+            ctrl = $controller( "GithubCtrl",
+         { $scope: scope, Github: gh, Geo: geo } ); <co xml:id="CO5-6"/>
+        } )
+    );
+...</programlisting>
+<calloutlist>
+<callout arearefs="CO5-1">
+<para>We declare our variables at the top of the function. If we did not
+do this, JavaScript would silently define them inside the functions
+the first time the variable is used. Then our variables would be
+different inside our setup code and the actual tests.</para>
+</callout>
+<callout arearefs="CO5-2">
+<para>We load our <literal>coffeetech</literal> module into our tests using the <literal>module</literal>
+method inside a <literal>beforeEach</literal> call, code that is executed before our
+tests run.</para>
+</callout>
+<callout arearefs="CO5-3">
+<para><literal>inject</literal> is the AngularJS way to provide our before functions with
+the <code><span class="keep-together">$controller</span></code> and <literal>$rootScope</literal> objects, which we use to set up our tests.</para>
+</callout>
+<callout arearefs="CO5-4">
+<para>We will be creating two functions that generate the mock objects
+required for our tests. We&#8217;ll discuss these two functions in a bit.</para>
+</callout>
+<callout arearefs="CO5-5">
+<para>scope is the AngularJS convention for the object into which all
+functionality and state is stored. We create a new scope using the
+AngularJS utility function <literal>$rootScope.$new()</literal> and store a
+reference to this scope so we can test functionality we&#8217;ve implemented
+in our actual code.</para>
+</callout>
+<callout arearefs="CO5-6">
+<para>We pass in the mocked objects (created by the mocked function
+calls) as well as the scope object and instantiate a controller
+object. This controller uses the scope to define functions and data,
+and since we have a reference to it, we can call those functions and
+inspect that data and assert our implementation is correct.</para>
+</callout>
+</calloutlist>
+<simpara>Now, let&#8217;s write an actual test:</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">    describe( "#init", function() { <co xml:id="CO6-1"/>
+        it( "should initialize, grabbing current city", function() { <co xml:id="CO6-2"/>
+            scope.init(); <co xml:id="CO6-3"/>
+            expect( geo.getCurrentPosition ).toHaveBeenCalled(); <co xml:id="CO6-4"/>
+            expect( gh.getRepo ).toHaveBeenCalled();
+            expect( repo.read ).toHaveBeenCalled();
+            expect( scope.cities.length ).toEqual( 2 ); <co xml:id="CO6-5"/>
+            expect( scope.city.name ).toEqual( "portland" );
+            expect( scope.shops.length ).toEqual( 3 );
+        });
+    });
+});</programlisting>
+<calloutlist>
+<callout arearefs="CO6-1">
+<para>Describe functions are used to group tests defined inside <literal>it</literal>
+functions. Since we are testing the <literal>init</literal> function, it seems logical
+to use an identifier called <literal>#init</literal>.</para>
+</callout>
+<callout arearefs="CO6-2">
+<para><literal>describe</literal> blocks group tests while <literal>it</literal> blocks actually specify
+code that is run as a test.</para>
+</callout>
+<callout arearefs="CO6-3">
+<para>Our controller code begins with an <literal>init</literal> call, so we mimic that
+inside our test to set up the controller state.</para>
+</callout>
+<callout arearefs="CO6-4">
+<para>We assert that our code uses the various interfaces we defined on
+our injected objects: <literal>getCurrentPosition</literal> on the geo object, and <literal>read</literal>
+on the repository object.</para>
+</callout>
+<callout arearefs="CO6-5">
+<para>Then we assert that the data is properly loaded. Our test verifies that
+there are two cities, that a default city has been loaded and the name
+of the default city is equal to the string "portland". In addition,
+the test verifies there are three shops loaded for the default
+city. Behind the scenes in our implementation we will load these via
+JSON, but all we care about is that the interface and data matches our
+expectations.</para>
+</callout>
+</calloutlist>
+<simpara>This syntax initially can look confusing if you have never written
+Jasmine tests for JavaScript, but it actually solves a lot of problems
+in an elegant way. Most importantly, Jasmine provides a<indexterm>
+<primary>spyOn function</primary>
+</indexterm> <literal>spyOn</literal>
+function that will intercept a call to it, and then allow you to
+assert that it was called. Any place in our tests you see
+<literal>toHaveBeenCalled()</literal> is an assertion that <literal>spyOn</literal> provides to us
+proving that a call was made.</simpara>
+<simpara>Now we can implement the two mocking functions vital for the test. Put
+them in between the <literal>beforeEach( module( "coffeetech" ) )</literal> line and
+the <code><span class="keep-together">before</span>Each( inject( ... ) )</code> functions to provide proper
+visibility to Karma:</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">...
+beforeEach( module( "coffeetech" ) );
+
+function generateMockGeolocationSupport( lat, lng ) { <co xml:id="CO7-1"/>
+    response = ( lat &amp;&amp; lng ) ?
+        { coords: { lat: lat, lng: lng } } :
+  { coords: CITIES[0] };
+    geo = { getCurrentPosition: function( success, failure ) { <co xml:id="CO7-2"/>
+        success( response );
+    } };
+    spyOn( geo, "getCurrentPosition" ).andCallThrough(); <co xml:id="CO7-3"/>
+}
+
+function generateMockRepositorySupport() { <co xml:id="CO7-4"/>
+    repo = { read: function( branch, filename, cb ) { <co xml:id="CO7-5"/>
+        cb( undefined,
+      JSON.stringify( filename == "cities.json" ?
+              CITIES : PORTLAND ) );
+    } };
+    spyOn( repo, "read" ).andCallThrough();
+
+    gh = new Github({});
+    spyOn( gh, "getRepo" ).andCallFake( function() { <co xml:id="CO7-6"/>
+        return repo;
+    } );
+}
+
+beforeEach( inject( function ($controller, $rootScope ) {
+...</programlisting>
+<calloutlist>
+<callout arearefs="CO7-1">
+<para>We first implement the <literal>generateMockLocation</literal> function.</para>
+</callout>
+<callout arearefs="CO7-2">
+<para>Mock location involves creating a geo object that has a single
+function <code>get<span class="keep-together">Current</span>Position</code>, which is a function that calls back into
+a success callback function provided. This exactly matches the native
+browser support for Geolocation, which has the same function defined.</para>
+</callout>
+<callout arearefs="CO7-3">
+<para>We then <literal>spyOn</literal> the function so we can assert that it was called
+in our actual tests.</para>
+</callout>
+<callout arearefs="CO7-4">
+<para>Next, we implement <literal>generateMockRepositorySupport</literal>.</para>
+</callout>
+<callout arearefs="CO7-5">
+<para>Again, we implement a mock object: this one to provide a method called
+<literal>read</literal>. This function matches the function of the same name contained
+in the API provided by the JavaScript GitHub.js library. Just like in
+the previous mock, we <literal>spyOn</literal> the function so we can validate it was
+called. However, this is not the "top-level" repository object&#x2014;this
+is the object returned from the call to <literal>getRepo</literal>. We will take this
+mock object and return it from the <literal>getRepo</literal> call.</para>
+</callout>
+<callout arearefs="CO7-6">
+<para>We spy on the <literal>getRepo</literal> call, and then return our next mock
+object, the repository object. This object is used to retrieve the
+actual information using the <literal>read</literal> call.</para>
+</callout>
+</calloutlist>
+<simpara>Now that we have a set of tests, run the test suite from the command
+line and watch them fail:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ karma start karma.conf.js
+Chrome 32.0.1700 (Mac OS X 10.9.1) GithubCtrl #init should initialize,
+          grabbing current city FAILED
+  Error: [$injector:modulerr] Failed to instantiate module...:
+  Error: [$injector:nomod] Module 'coffeetech' is not available!
+    You either misspelled the module name or forgot to load it.
+    If registering a module ensure that you specify the
+    dependencies as the second argument.
+...</programlisting>
+<simpara>We now need to provide some test fixtures.</simpara>
+</section>
+<section xml:id="_test_data">
+<title>Test Data</title>
+<simpara><indexterm>
+<primary>coffee shop database app</primary><secondary>test data for</secondary>
+</indexterm>
+<indexterm>
+<primary>test data for</primary>
+</indexterm>We need to build our support fixtures, data files that have test data. Add the
+<emphasis>fixtures-cities.js</emphasis> file into the same directory as your other code:</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">var CITIES = [{
+    name: "portland",
+    latitude: 45,
+    longitude: 45
+}, {
+    name: "seattle",
+    latitude: 47.662613,
+    longitude: -122.323837
+}]</programlisting>
+<simpara>And the <emphasis>fixtures-portland.js</emphasis> file:</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">var PORTLAND = [{
+    "name": "Very Good Coffee Shop",
+    "latitude": 45.52292,
+    "longitude": -122.643074
+}, {
+    "name": "Very Bad Coffee Shop",
+    "latitude": 45.522181,
+    "longitude": -122.63709
+}, {
+    "name": "Mediocre Coffee Shop",
+    "latitude": 45.520437,
+    "longitude": -122.67846
+}]</programlisting>
+</section>
+<section xml:id="_coffeetech_js">
+<title>CoffeeTech.js</title>
+<simpara><indexterm>
+<primary>coffee shop database app</primary><secondary>and coffeetech.js. file</secondary><tertiary>id=ix_chapter-04-javascript-asciidoc6</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-04-javascript-asciidoc6</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>Then, add the <emphasis>coffeetech.js</emphasis> file. We&#8217;ll focus just on the setup code
+and the changes to the <literal>init</literal> function for now:</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">var mod = angular.module( 'coffeetech', [] );
+
+mod.factory( 'Github', function() {  // <co xml:id="CO8-1"/>
+    return new Github({});
+});
+
+mod.factory( 'Geo', [ '$window', function( $window ) {  // <co xml:id="CO8-2"/>
+    return $window.navigator.geolocation;
+} ] );
+
+mod.factory( 'Prompt', [ '$window', function( $window ) {
+    return $window.prompt;
+} ] );
+
+mod.controller( 'GithubCtrl', [ '$scope', 'Github', 'Geo', 'Prompt',  // <co xml:id="CO8-3"/>
+        function( $scope, ghs, Geo, Prompt ) {
+    $scope.messages = []
+
+    $scope.init = function() { // <co xml:id="CO8-4"/>
+        $scope.getCurrentLocation( function( position ) {
+            $scope.latitude = position.coords.latitude;
+            $scope.longitude = position.coords.longitude;
+            $scope.repo = ghs.getRepo( "xrd", "spa.coffeete.ch" );  // <co xml:id="CO8-5"/>
+            $scope.repo.read( "gh-pages", "cities.json",
+	      function(err, data) {  // <co xml:id="CO8-6"/>
+                $scope.cities = JSON.parse( data );  // <co xml:id="CO8-7"/>
+                // Determine our current city
+                $scope.detectCurrentCity();  // <co xml:id="CO8-8"/>
+
+                // If we have a city, get it
+                if( $scope.city ) {
+                    $scope.retrieveCity();
+                }
+
+                $scope.$apply(); // <co xml:id="CO8-9"/>
+            });
+        });
+...</programlisting>
+<calloutlist>
+<callout arearefs="CO8-1">
+<para>We extract the GitHub library into an AngularJS factory. This
+allows us to inject our mocked GitHub object inside our tests; if we
+had placed the GitHub instance-creation code inside our controller,
+we would not have been able to easily mock it out in our tests.</para>
+</callout>
+<callout arearefs="CO8-2">
+<para>We extract the geolocation support into an AngularJS factory. As
+we did with the GitHub library mock, we can now inject a fake one into
+our tests.</para>
+</callout>
+<callout arearefs="CO8-3">
+<para>Our new controller "injects" the various objects we need. We have
+extracted the GitHub API object and a Geo object into dependencies,
+and this syntax finds the proper objects and provides them to our
+controller. You&#8217;ll also notice a slightly different syntax for
+creating the controller: <literal>controller( "CtrlName", [ 'dependency1',
+'dependency2', function( dependency1, dependency2 ) {} ] );</literal>. This
+style works even if JavaScript minification were to occur; the
+previous incarnation we saw would not have survived this process
+because AngularJS would not have known the dependency name after
+it had been mangled by a minimizer.</para>
+</callout>
+<callout arearefs="CO8-4">
+<para>We extract the functionality into a function called <literal>init</literal>, which
+we can explicitly call from within our tests.</para>
+</callout>
+<callout arearefs="CO8-5">
+<para>Set the username and load the repository. If you are putting this into
+your own repository, modify this appropriately, but you can use these
+arguments until you do post this into your own repository.</para>
+</callout>
+<callout arearefs="CO8-6">
+<para>We use the <literal>read</literal> method to pull file contents from the
+repository. Notice that we use the <literal>gh-pages</literal> branch since we are storing our
+single-page app and all the data there.</para>
+</callout>
+<callout arearefs="CO8-7">
+<para>Once our data is returned to us, it is simply a string. We need to
+reconstitute this data to a JavaScript object using the <literal>JSON.parse</literal> method.</para>
+</callout>
+<callout arearefs="CO8-8">
+<para>After we retrieve our data from the repository, we can use the
+data inside the cities array to determine our current city.</para>
+</callout>
+<callout arearefs="CO8-9">
+<para>Since we are calling outside of AngularJS and returning inside a
+callback, we need to call <literal>scope.$apply()</literal> like we showed in prior examples<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-04-javascript-asciidoc6</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-04-javascript-asciidoc6</primary>
+</indexterm>.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-04-javascript-asciidoc5</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-04-javascript-asciidoc5</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-04-javascript-asciidoc4</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-04-javascript-asciidoc4</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-04-javascript-asciidoc3</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-04-javascript-asciidoc3</primary>
+</indexterm></para>
+</callout>
+</calloutlist>
+<simpara>We are now ready to write our geocoding implementation.</simpara>
+</section>
+</section>
+<section xml:id="_geocoding_support">
+<title>Geocoding Support</title>
+<simpara><indexterm>
+<primary>coffee shop database app</primary><secondary>geocoding support</secondary><tertiary>id=ix_chapter-04-javascript-asciidoc7</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-04-javascript-asciidoc7</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>geocoding</primary><secondary>id=ix_chapter-04-javascript-asciidoc8</secondary><tertiary>range=startofrange</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-04-javascript-asciidoc8</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>We&#8217;ll build functions
+to retrieve the data for a city from the GitHub API, find the location
+of the user using their browser&#8217;s Geolocation feature, use the user&#8217;s
+current location to determine what cities they are close to, implement
+a distance calculation function, load the city once close proximity
+cities are determined, and finally, add a function to query the user
+for their GitHub credentials and annotation data.</simpara>
+<simpara>First, we can implement the city-loading functions:</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">$scope.retrieveCity = function() { <co xml:id="CO9-1"/>
+    $scope.repo.read( "gh-pages", $scope.city.name + ".json",
+      function(err, data) {
+        $scope.shops = JSON.parse( data );
+        $scope.$apply();
+    });
+}
+
+$scope.loadCity = function( city ) { <co xml:id="CO9-2"/>
+    $scope.repo.read( "gh-pages", city + ".json", function(err, data) {
+        $scope.shops = JSON.parse( data );
+        $scope.$apply();
+    });
+...</programlisting>
+<calloutlist>
+<callout arearefs="CO9-1">
+<para><literal>retrieveCity</literal> retrieves a list of shops in the same way we
+retrieved the list of cities by reading from the repository
+object. After loading the data into the scope, we need to call
+<literal>$apply()</literal> to notify Angular.</para>
+</callout>
+<callout arearefs="CO9-2">
+<para><literal>loadCity</literal> uses the city name to load city data.</para>
+</callout>
+</calloutlist>
+<simpara>Next, we can implement the functionality to calculate distances between the current user and available cities:</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">$scope.getCurrentLocation = function( cb ) { <co xml:id="CO10-1"/>
+    if( undefined != Geo ) {
+        Geo.getCurrentPosition( cb, $scope.geolocationError );
+    } else {
+        console.error('not supported');
+    }
+};
+
+$scope.geolocationError = function( error ) { <co xml:id="CO10-2"/>
+    console.log( "Inside failure" );
+};
+
+$scope.detectCurrentCity = function() {  <co xml:id="CO10-3"/>
+    // Calculate the distance from our current position and use
+    // this to determine which city we are closest to and within
+    // 25 miles
+    for( var i = 0; i &lt; $scope.cities.length; i++ ) {
+        var dist = $scope.calculateDistance( $scope.latitude, <co xml:id="CO10-4"/>
+                                             $scope.longitude,
+                                             $scope.cities[i].latitude,
+                                             $scope.cities[i].longitude );
+        if( dist &lt; 25 ) {
+            $scope.city = $scope.cities[i];
+            break;
+        }
+    }
+}
+
+toRad = function(Value) { <co xml:id="CO10-5"/>
+    return Value * Math.PI / 180;
+};
+
+$scope.calculateDistance = function( latitude1,   <co xml:id="CO10-6"/>
+                                     longitude1,
+                                     latitude2,
+                                     longitude2 ) {
+    R = 6371;
+    dLatitude = toRad(latitude2 - latitude1);
+    dLongitude = toRad(longitude2 - longitude1);
+    latitude1 = toRad(latitude1);
+    latitude2 = toRad(latitude2);
+    a = Math.sin(dLatitude / 2) * Math.sin(dLatitude / 2) +
+        Math.sin(dLongitude / 2) * Math.sin(dLongitude / 2) *
+        Math.cos(latitude1) * Math.cos(latitude2);
+    c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    d = R * c;
+    return d;
+...</programlisting>
+<calloutlist>
+<callout arearefs="CO10-1">
+<para>We build a <literal>getCurrentLocation</literal> function we will call within
+our code. We use the injected <literal>Geo</literal> object that has our
+<literal>getCurrentPosition</literal> function (which inside our tests will be the
+mocked function, and inside our real code just layers an abstraction
+on top of the native browser interface).</para>
+</callout>
+<callout arearefs="CO10-2">
+<para>We need to provide an error callback to the <literal>getCurrentPosition</literal>
+call, so we implement that, which logs it to the console.</para>
+</callout>
+<callout arearefs="CO10-3">
+<para>Then we build <literal>detectCurrentCity</literal>; we will look over the list
+of cities and see if we are in one.</para>
+</callout>
+<callout arearefs="CO10-4">
+<para>We iterate over the list of cities and calculate whether they are
+within 25 miles of our current location. Each city is stored with its
+own latitude and longitude data. When we find a city, we store that in
+the scope as the official current city and exit the loop.</para>
+</callout>
+<callout arearefs="CO10-5">
+<para>To calculate distance, we need to build a radian conversion
+function.</para>
+</callout>
+<callout arearefs="CO10-6">
+<para>Finally, we build our distance calculation function.</para>
+</callout>
+</calloutlist>
+<simpara>At first glance, the calculate distance function looks confusing, no?
+This was code I developed after reading a post on geocoding using a
+stored procedure within the PostgreSQL database, and I converted the
+code to JavaScript. Unless you are a geocoding geek, how do we know
+this works as advertised? Well, let&#8217;s write some tests to prove it.
+Add these lines to the bottom of your <emphasis>coffeetech.spec.js</emphasis>, just within
+the last <literal>});</literal> closing braces:</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">    describe( "#calculateDistance", function() {
+        it( "should find distance between two points", function() {
+            expect( parseInt(
+          scope.calculateDistance( 14.599512,
+           120.98422,
+           10.315699,
+           123.885437 ) * 0.61371 ) ).
+      toEqual( 354 );
+        });
+    });</programlisting>
+<simpara>To build this test, I searched for "distance between Manila" and
+Google autocompleted my search to "Cebu." It says they are 338 miles
+apart. I then grabbed latitude and longitudes for those cities and
+built the preceding test. I expected my test to fail as my coordinates
+were going to be off by a few miles here or there. But the test
+showed that our distance was 571. Hmm, perhaps we calculated in kilometers, not miles?
+Indeed, I had forgotten this algorithm actually calculated the
+distance in kilometers, not miles. So, we need to multiply the result
+by 0.621371 to get the value in miles, which ends up being close
+enough to what Google reports the distance to be.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-04-javascript-asciidoc8</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-04-javascript-asciidoc8</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-04-javascript-asciidoc7</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-04-javascript-asciidoc7</primary>
+</indexterm></simpara>
+<section xml:id="_city_data">
+<title>City Data</title>
+<simpara><indexterm>
+<primary>coffee shop database app</primary><secondary>city data for</secondary>
+</indexterm>
+<indexterm>
+<primary>city data for</primary>
+</indexterm>Let&#8217;s seed our application with some starting data and write out the <emphasis>cities.json</emphasis> file:</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">[
+  {
+    "longitude": -122.67620699999999,
+    "latitude": 45.523452,
+    "name": "portland"
+  },
+  {
+    "longitude": -122.323837,
+    "latitude": 47.662613,
+    "name": "seattle"
+  }
+]</programlisting>
+<simpara>Now that we have our geocoding implementation complete and sample data
+in place, we can move on to acquiring credentials from the user.</simpara>
+</section>
+</section>
+<section xml:id="_adding_login">
+<title>Adding Login</title>
+<simpara><indexterm>
+<primary>coffee shop database app</primary><secondary>login for</secondary>
+</indexterm>
+<indexterm>
+<primary>login for</primary>
+</indexterm><indexterm>
+<primary>login</primary><secondary>for coffee shop database app</secondary>
+</indexterm>
+<indexterm>
+<primary>for coffee shop database app</primary>
+</indexterm>If we want people to fork a repository on GitHub, we need to have them
+log in to GitHub. So, we need to ask for credentials:</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">...
+
+$scope.annotate = function() {
+    user = Prompt( "Enter your github username" )
+    password = Prompt( "Enter your github password" )
+    data = Prompt( "Enter data to add" );
+};
+
+...</programlisting>
+<simpara>We can now expose the new data inside the <emphasis>index.html</emphasis> file like so
+(omitting the obvious from the HTML):</simpara>
+<programlisting language="html" linenumbering="unnumbered">&lt;body ng-app="coffeetech"&gt;
+
+&lt;div class="container" ng-controller="GithubCtrl" ng-init="init()"&gt;
+
+&lt;h1&gt;CoffeeTe.ch&lt;/h1&gt;
+
+&lt;h3 ng-show="city"&gt;Current city: {{city.name}}&lt;/h3&gt;
+
+&lt;div class="row"&gt;
+&lt;div class="col-md-6"&gt;&lt;h4&gt;Shop Name&lt;/h4&gt; &lt;/div&gt;
+&lt;div class="col-md-6"&gt;&lt;h4&gt;Lat/Lng&lt;/h4&gt; &lt;/div&gt;
+&lt;/div&gt;
+&lt;div class="row" ng-repeat="shop in shops"&gt; <co xml:id="CO11-1"/>
+&lt;div class="col-md-6"&gt;   <co xml:id="CO11-2"/>
+{{ shop.name }}  <co xml:id="CO11-3"/>
+&lt;/div&gt;
+&lt;div class="col-md-6"&gt; {{ shop.latitude }} / {{ shop.longitude }} &lt;/div&gt;
+&lt;/div&gt;
+&lt;/div&gt;</programlisting>
+<calloutlist>
+<callout arearefs="CO11-1">
+<para><literal>ng-repeat</literal> is an AngularJS directive that iterates over an array
+of items. Here we use it to iterate over the items in our
+<emphasis>portland.json</emphasis> file and insert a snippet of HTML with our data
+interpolated from each item in the iteration.</para>
+</callout>
+<callout arearefs="CO11-2">
+<para><indexterm>
+<primary>Bootstrap</primary>
+</indexterm>Bootstrap makes it easy to establish structure in our HTML. The
+<literal>col-md-6</literal> class tells Bootstrap to build a column sized at 50% of our 12-column layout (the default for Bootstrap layouts). We set up two
+adjacent columns this way. And if we are inside a mobile device, it
+properly stacks these columns.</para>
+</callout>
+<callout arearefs="CO11-3">
+<para>Using AngularJS two-way data binding we insert the name of the
+shop.</para>
+</callout>
+</calloutlist>
+<section xml:id="_errors_already">
+<title>Errors Already?</title>
+<simpara><indexterm>
+<primary>coffee shop database app</primary><secondary>error handling</secondary><tertiary>id=ix_chapter-04-javascript-asciidoc9</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-04-javascript-asciidoc9</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>error handling</primary><secondary>id=ix_chapter-04-javascript-asciidoc10</secondary><tertiary>range=startofrange</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-04-javascript-asciidoc10</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>If you run this in your browser, you will not see the shops for our city
+displayed. Something is broken, so
+let&#8217;s investigate. I recommend using the Chrome browser to
+debug this, but you can use any browser and set of developer tools you
+like. For Chrome, right-clicking the
+page anywhere and selecting "Inspect Element" at the bottom (or by
+the keyboard shortcut "F12" or "Ctrl-Shift-I" on Windows or Linux or "Cmd-Opt-I" on Mac) will bring up
+the developer console. Then select the
+console window. Refresh the browser window, and you&#8217;ll see this in the
+console:</simpara>
+<programlisting language="text" linenumbering="unnumbered">Uncaught TypeError: Cannot call method 'select' of undefined</programlisting>
+<simpara>If you click the link to the right for GitHub.js, you&#8217;ll see something like <xref linkend="an_unexpected_error"/>.</simpara>
+<figure xml:id="an_unexpected_error">
+<title>An unexpected error</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/btwg_09in03.png"/>
+</imageobject>
+<textobject><phrase>btwg 09in03</phrase></textobject>
+</mediaobject>
+</figure>
+<simpara>You see at the point of error that we are calling <literal>select</literal> on the tree. select appears to be a method defined on an underscore character. If
+you use JavaScript frequently, you&#8217;ll recognize that the underscore
+variable comes from the Underscore library, and <literal>select</literal> is a method
+that detects the first matching instance inside an array. Under the
+hood, the GitHub.js library is pulling the entire tree from the
+repository, then iterating over each item in the tree, then selecting
+the item from the tree that matches the name of the file we have
+requested. This is an important performance implication to consider;
+the GitHub API does not provide a way to directly request content by
+the path name. Instead, you pull a list of files and then request the
+file by the SHA hash, a two-step process that makes two (potentially
+lengthy) calls to the API.</simpara>
+<simpara>How do we fix the error telling us <literal>select</literal> is undefined? Did we forget
+to include underscore.js? Reviewing the documentation on GitHub.js, we
+see that it states underscore.js and base64.js are required. We forgot
+to include them. Oops! To include these, run these commands from the
+console:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ wget http://underscorejs.org/underscore-min.js
+$ wget https://raw.github.com/dankogai/js-base64/master/base64.js</programlisting>
+<simpara>Then, add the libraries to your <emphasis>index.html</emphasis> so that the JavaScript
+includes look like this:<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-04-javascript-asciidoc10</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-04-javascript-asciidoc10</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-04-javascript-asciidoc9</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-04-javascript-asciidoc9</primary>
+</indexterm></simpara>
+<programlisting language="html" linenumbering="unnumbered">...
+
+&lt;script src="angular.js"&gt;&lt;/script&gt;
+&lt;script src="underscore-min.js"&gt;&lt;/script&gt;
+&lt;script src="base64.min.js"&gt;&lt;/script&gt;
+&lt;script src="github.js"&gt;&lt;/script&gt;
+&lt;script src="coffeetech.js"&gt;&lt;/script&gt;
+...</programlisting>
+<simpara>Now we can build out some faked data and start envisioning the
+structure of our data that will eventually come from our users.</simpara>
+</section>
+</section>
+<section xml:id="_displaying_soon_to_be_user_reported_data">
+<title>Displaying (Soon-to-Be) User-Reported Data</title>
+<simpara><indexterm>
+<primary>coffee shop database app</primary><secondary>displaying data</secondary><tertiary>id=ix_chapter-04-javascript-asciidoc11</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-04-javascript-asciidoc11</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>So far we have built a database of cities and coffee shops in those
+cities. <indexterm>
+<primary>Google Maps</primary>
+</indexterm>Google Maps or Apple Maps already provide this information.
+If we layer additional information on top of this data (like quirky
+information about the coffee shop), however, then we might have something that
+someone might find useful once they have found the coffee shop on their
+favorite mapping application.</simpara>
+<simpara>So, to start, let&#8217;s add some fake data to our coffee shop
+information. Add a file called <emphasis>portland.json</emphasis> that looks like
+this:</simpara>
+<programlisting language="json" linenumbering="unnumbered">[
+   {
+      "information" : [
+         "offers gluten free desserts",
+         "free wifi",
+         "accepts dogs"
+      ],
+      "longitude" : -122.643074,
+      "latitude" : 45.52292,
+      "name" : "Very Good Coffee Shop"
+   },
+   {
+      "latitude" : 45.522181,
+      "name" : "Very Bad Coffee Shop",
+      "longitude" : -122.63709
+   },
+   {
+      "name" : "Mediocre Coffee Shop",
+      "latitude" : 45.520437,
+      "longitude" : -122.67846
+   }
+]</programlisting>
+<simpara>Notice that we added an array called <literal>information</literal> to our data set.
+We&#8217;ll use this to allow simple search. Add the search feature to our
+<emphasis>index.html</emphasis>:</simpara>
+<programlisting language="html" linenumbering="unnumbered">...
+
+&lt;div class="container" ng-controller="GithubCtrl" ng-init="init()"&gt;
+
+&lt;h1&gt;CoffeeTe.ch&lt;/h1&gt;
+
+&lt;input style="width: 20em;" ng-model="search"
+       placeholder="Enter search parameters..."/&gt; <co xml:id="CO12-1"/>
+
+&lt;h3 ng-show="city"&gt;Current city: {{city.name}}&lt;/h3&gt;
+
+&lt;div class="row="&gt;
+&lt;div class="col-md-6"&gt;&lt;h4&gt;Shop Name&lt;/h4&gt; &lt;/div&gt;
+&lt;div class="col-md-6"&gt;&lt;h4&gt;Lat/Lng&lt;/h4&gt; &lt;/div&gt;
+&lt;/div&gt;
+&lt;div class="row" ng-repeat="shop in shops | filter:search"&gt; <co xml:id="CO12-2"/>
+&lt;div class="col-md-6"&gt;
+{{ shop.name }}
+
+&lt;div ng-show="search"&gt; <co xml:id="CO12-3"/>
+&lt;span ng-repeat="info in city.information"&gt;
+&lt;span class="label label-default"&gt;city.data&lt;/span&gt;
+&lt;/span&gt;
+&lt;/div&gt;
+
+&lt;/div&gt;
+&lt;div class="col-md-6"&gt;
+&lt;a target="_map" <co xml:id="CO12-4"/>
+   href="http://maps.google.com/?q={{shop.latitude}},{{shop.longitude}}"&gt;
+   Open in map ({{shop.latitude}},{{shop.longitude}})
+&lt;/a&gt;
+&lt;/div&gt;
+...</programlisting>
+<calloutlist>
+<callout arearefs="CO12-1">
+<para>We add a search box that binds to the <literal>search</literal> model in our scope.</para>
+</callout>
+<callout arearefs="CO12-2">
+<para>We add a filter on the data to display that searches through all
+data inside each item in our <literal>shops</literal> array.</para>
+</callout>
+<callout arearefs="CO12-3">
+<para>If we are searching (the model variable <literal>search</literal> is defined) then
+we show the extra information.</para>
+</callout>
+<callout arearefs="CO12-4">
+<para><indexterm>
+<primary>Google Maps</primary>
+</indexterm>We alter our lat/lng information to point to a Google Maps page.</para>
+</callout>
+</calloutlist>
+<simpara>Now if we type the word &#x201c;gluten&#x201d; in our search box, we filter out
+anything except shops that match that, and we see the information
+pieces formatted as labels underneath the shop name (<xref linkend="filtering_coffeeshops_using_the_term_gluten"/>).</simpara>
+<figure xml:id="filtering_coffeeshops_using_the_term_gluten">
+<title>Filtering coffee shops using the term gluten</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/btwg_09in04.png"/>
+</imageobject>
+<textobject><phrase>btwg 09in04</phrase></textobject>
+</mediaobject>
+</figure>
+<section xml:id="_user_contributed_data">
+<title>User-Contributed Data</title>
+<simpara><indexterm>
+<primary>coffee shop database app</primary><secondary>user&#8211;contributed data for</secondary><tertiary>id=ix_chapter-04-javascript-asciidoc12</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-04-javascript-asciidoc12</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>Now that we have a functioning application, let&#8217;s allow people to add
+information themselves and help build our database. Just beneath the
+link to the map link, add a button that will allow us to annotate a
+coffee shop with extra information.</simpara>
+<simpara>To make a contribution, users will fork the repository, make a change,
+and then issue a pull request from the fork to the original
+repository. Forking means we create a copy of the original repository
+in our GitHub account. All these steps are
+possible from within our webapp using the GitHub.js library. Of
+course, if someone is going to fork a repository into their account,
+we must ask the user to log in, so we will prompt them for
+their username and password. If you are grimacing at the thought of a
+webapp asking for GitHub credentials, don&#8217;t fret&#x2014;we&#8217;ll find a safe
+way to achieve the same thing shortly.</simpara>
+<simpara>The implementation we will use starts with adding an annotate button
+to our HTML:</simpara>
+<programlisting language="html" linenumbering="unnumbered">&lt;button ng-click="annotate(shop)"&gt;Add factoid&lt;/button&gt;</programlisting>
+<simpara>Let&#8217;s add some tests. Add another file called
+<emphasis>coffeetech.annotate.spec.js</emphasis> with these contents:</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">describe( "GithubCtrl", function() {
+
+    var scope = undefined, gh = undefined,
+    	repo = undefined, prompter = undefined;
+
+    function generateMockPrompt() {
+        prompter = { prompt: function() { return "ABC" } }; <co xml:id="CO13-1"/>
+        spyOn( prompter, "prompt" ).andCallThrough();
+
+    }
+
+    var PR_ID = 12345;
+    function generateMockRepositorySupport() { <co xml:id="CO13-2"/>
+        repo = {
+            fork: function( cb ) {
+                cb( false );
+            },
+            write: function( branch, filename, data, commit_msg, cb ) {
+                cb( false );
+            },
+            createPullRequest: function( pull, cb ) {
+                cb( false, PR_ID );
+            },
+            read: function( branch, filename, cb ) {
+                cb( undefined,
+		    JSON.stringify( filename == "cities.json" ?
+		    		    CITIES : PORTLAND ) );
+            }
+        };
+        spyOn( repo, "fork" ).andCallThrough();
+        spyOn( repo, "write" ).andCallThrough();
+        spyOn( repo, "createPullRequest" ).andCallThrough();
+        spyOn( repo, "read" ).andCallThrough();
+
+        gh = { getRepo: function() {} }; <co xml:id="CO13-3"/>
+        spyOn( gh, "getRepo" ).andCallFake( function() {
+            return repo;
+        } );
+        ghs = { create: function() { return gh; } };
+    }
+
+...</programlisting>
+<simpara>It looks similar to our previous tests where we mock out a bunch of
+items from the GitHub.js library.</simpara>
+<calloutlist>
+<callout arearefs="CO13-1">
+<para>We added a mock prompt. We will be prompting the user for
+username, password, and the annotating data, and we will use the native
+browser prompt mechanism to do this.</para>
+</callout>
+<callout arearefs="CO13-2">
+<para>We added three new methods to our mock GitHub object: <literal>fork</literal>,
+<literal>write</literal>, and <code><span class="keep-together">create</span>PullRequest</code>. We verify that these are called.</para>
+</callout>
+<callout arearefs="CO13-3">
+<para>When we call the <literal>getRepo</literal> function we want to spy on it so we can
+assure it is called, but we also want to return the fake repository we
+provide inside our test, and this syntax does that.</para>
+</callout>
+</calloutlist>
+<simpara>We have some setup code that is called in a before function to load
+the mock objects and establish a controller and scope for testing:</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">...
+
+var $timeout;  // <co xml:id="CO14-1"/>
+beforeEach( inject( function ($controller, $rootScope, $injector ) {
+    generateMockRepositorySupport();  // <co xml:id="CO14-2"/>
+    generateMockPrompt();
+    $timeout = $injector.get( '$timeout' );  // <co xml:id="CO14-3"/>
+    scope = $rootScope.$new();
+    ctrl = $controller( "GithubCtrl",
+       { $scope: scope,
+         Github: ghs,
+         '$timeout': $timeout,
+         '$window': prompter } );
+} ) );
+...</programlisting>
+<calloutlist>
+<callout arearefs="CO14-1">
+<para>According to the documentation for <literal>fork</literal> in the GitHub.js
+library, this method can take a little time to return (as long as it
+takes for GitHub to complete our fork request, which is
+nondeterministic), so we need to set a timeout in our app and query
+for the new repository. If we are using AngularJS, we can ask it for a
+mocked and programmatic timeout interface, which we can control inside
+our tests.</para>
+</callout>
+<callout arearefs="CO14-2">
+<para>We generate our mocked GitHub method calls and spies, and we
+follow that by mocking our prompt calls.</para>
+</callout>
+<callout arearefs="CO14-3">
+<para>As mentioned earlier, we need to get <literal>$timeout</literal>, and we can use the
+injector to retrieve the mocked one AngularJS provides for testing using this call.</para>
+</callout>
+</calloutlist>
+<simpara role="pagebreak-before">Now we can write our tests for the annotate function:</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">...
+describe( "#annotate", function() {  <co xml:id="CO15-1"/>
+    it( "should annotate a shop", function() {
+        scope.city = PORTLAND
+        var shop = { name: "A coffeeshop" }
+        scope.annotate( shop ); <co xml:id="CO15-2"/>
+        expect( scope.shopToAnnotate ).toBeTruthy();<co xml:id="CO15-3"/>
+        expect( prompter.prompt.calls.length ).toEqual( 3 );
+        expect( scope.username ).not.toBeFalsy();
+        expect( scope.annotation ).not.toBeFalsy();
+
+        expect( repo.fork ).toHaveBeenCalled(); <co xml:id="CO15-4"/>
+        expect( scope.waiting.state ).toEqual( "forking" ); <co xml:id="CO15-5"/>
+        $timeout.flush();<co xml:id="CO15-6"/>
+
+        expect( scope.forkedRepo ).toBeTruthy(); <co xml:id="CO15-7"/>
+        expect( repo.read ).toHaveBeenCalled();
+        expect( repo.write ).toHaveBeenCalled();
+        expect( repo.createPullRequest ).toHaveBeenCalled();
+        expect( scope.waiting.state ).toEqual( "annotated" );
+        $timeout.flush();<co xml:id="CO15-8"/>
+
+        expect( scope.waiting ).toBeFalsy();
+    });
+
+});
+...</programlisting>
+<calloutlist>
+<callout arearefs="CO15-1">
+<para>We create a new describe block to organize our tests, calling it
+<literal>#annotate</literal>. We then implement one <literal>it</literal> function, which is the single
+test we are creating: "annotate a shop."</para>
+</callout>
+<callout arearefs="CO15-2">
+<para>After setting up the preconditions that our scope object should
+have a city selected, and creating a shop to annotate, we then call
+our <literal>annotate</literal> method.</para>
+</callout>
+<callout arearefs="CO15-3">
+<para>Once we have called <literal>annotate</literal>, our code should request our
+credentials for the GitHub API, and then ask us for the information
+to use in annotating the shop. If this were happening in the browser,
+we would get three prompts. Our test mocks out the <literal>prompt</literal> object
+here, and we should therefore see three calls made to our mocked prompt object. We also
+validate some state we should see on the scope object like holding a
+username and annotation for usage later.</para>
+</callout>
+<callout arearefs="CO15-4">
+<para>We should then see the first of our GitHub API calls being made:
+GitHub.js should issue a request to <literal>fork</literal> the repository.</para>
+</callout>
+<callout arearefs="CO15-5">
+<para>We should then enter in our waiting state; we will tell the user
+we are waiting and our UI will use the scope.waiting.state to notify
+them of that.</para>
+</callout>
+<callout arearefs="CO15-6">
+<para>Once we have flushed the timeout that simulates completion of the
+fork, we will then see our code storing the result of the forked repo
+into the scope.</para>
+</callout>
+<callout arearefs="CO15-7">
+<para>Next, we can observe the other GitHub API calls that perform the annotation.</para>
+</callout>
+<callout arearefs="CO15-8">
+<para>We flush again to resolve the timeouts, and then finally, after
+everything is done, we should no longer be telling the user they are
+in a waiting state.</para>
+</callout>
+</calloutlist>
+<simpara>If you are still running Karma in the background, you&#8217;ll see the tests
+fail with:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">Chrome 32.0.1700 (Mac OS X 10.9.1) GithubCtrl #annotate should
+annotate a shop FAILED
+         TypeError: Object #&lt;Scope&gt; has no method 'annotate'
+             at null.&lt;anonymous&gt; (/.../coffeetech.spec.js:80:19)</programlisting>
+<simpara>Now, let&#8217;s implement this functionality in our <emphasis>coffeetech.js</emphasis> file.
+Add these lines to the bottom of the file, but before the last closing
+braces. The function <literal>annotate</literal> actually does two things: makes a fork of the
+repository for the user, and then adds annotation information to that
+repository using the GitHub API once the fork has completed:</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">...
+$scope.annotate = function( shop ) { <co xml:id="CO16-1"/>
+    $scope.shopToAnnotate = shop;
+    $scope.username = $window.prompt( "Enter your github username (not email!)" )
+    pass = $window.prompt( "Enter your github password" )
+    $scope.annotation = $window.prompt( "Enter data to add" ); <co xml:id="CO16-2"/>
+    gh = ghs.create( $scope.username, pass );  <co xml:id="CO16-3"/>
+    toFork = gh.getRepo( "xrd", "spa.coffeete.ch" ); <co xml:id="CO16-4"/>
+    toFork.fork( function( err ) {
+        if( !err ) { <co xml:id="CO16-5"/>
+            $scope.notifyWaiting( "forking",
+	      "Forking in progress on GitHub, please wait" );<co xml:id="CO16-6"/>
+            $timeout( $scope.annotateAfterForkCompletes, 10000 );<co xml:id="CO16-7"/>
+            $scope.$apply();
+        }
+    } );
+
+};
+  ...</programlisting>
+<calloutlist>
+<callout arearefs="CO16-1">
+<para>We start by creating our annotation function. As we specified in
+our tests, this function takes a shop object, an object into which
+annotations about the shop are added.</para>
+</callout>
+<callout arearefs="CO16-2">
+<para>We prompt the user three times: username and password on GitHub,
+and the text they want to annotate. If this seems like a really bad
+way to do things, don&#8217;t worry, we&#8217;ll fix it in a moment.</para>
+</callout>
+<callout arearefs="CO16-3">
+<para>We create a new GitHub object with the username and password
+provided. We leave it as an exercise for the reader to contend with
+mistyped or incorrect credentials.</para>
+</callout>
+<callout arearefs="CO16-4">
+<para>The GitHub.js library allows you to create a repository object
+(meaning create a local reference to an existing repository) using the
+<literal>getRepo</literal> function. Once we have this, we can issue a <literal>fork</literal> to the
+repository.</para>
+</callout>
+<callout arearefs="CO16-5">
+<para>If we did not get an error, we still need to contend with the fact
+that forking takes a nondeterministic amount of time. So, we schedule
+a timeout in 10 seconds, which will check to make sure our request
+completed. As this operation is happening inside the browser, we have
+no way of registering for a notification, and as such, must poll
+GitHub to determine whether our fork has completed. In the real world,
+we probably would need to redo this request if we see it fail as this
+could just mean it was still pending on GitHub.</para>
+</callout>
+<callout arearefs="CO16-6">
+<para>We register a message using a key called "forking" which we can
+use inside our HTML template to display to the user that our fork has
+completed. We&#8217;ll build this function out soon; it basically stores
+the value and a string for display, and allows us to clear it when the
+message is no longer valid.</para>
+</callout>
+<callout arearefs="CO16-7">
+<para>Finally, we call the method <literal>annotateAfterForkCompletes</literal>, which adds
+data to our new forked repository once the process is fully complete.</para>
+</callout>
+</calloutlist>
+<simpara>Let&#8217;s now build the code to annotate our repository after the fork has
+completed:</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">...
+
+$scope.annotateAfterForkCompletes = function() {<co xml:id="CO17-1"/>
+    $scope.forkedRepo = gh.getRepo( $scope.username, "spa.coffeete.ch" );
+    $scope.forkedRepo.read( "gh-pages", "cities.json", function(err, data) {
+        if( err ) {
+            $timeout( $scope.annotateAfterForkCompletes, 10000 );
+        }
+        else {
+            $scope.notifyWaiting( "annotating",
+	      "Annotating data on GitHub" ); <co xml:id="CO17-2"/>
+            // Write the new data into our repository
+            $scope.appendQuirkToShop();
+
+            var newData = JSON.stringify( $scope.shops, stripHashKey, 2 ); <co xml:id="CO17-3"/>
+            $scope.forkedRepo.write('gh-pages', $scope.city.name + '.json', <co xml:id="CO17-4"/>
+                                    newData,
+                                    'Added my quirky information',
+                                    function(err) {
+                if( !err ) {
+                    // Annotate our data using a pull request
+                    var pull = { <co xml:id="CO17-5"/>
+                        title: "Adding quirky information to " +
+			  $scope.shopToAnnotate.name,
+                        body: "Created by :" + $scope.username,
+                        base: "gh-pages",
+                        head: $scope.username + ":" + "gh-pages"
+                    };
+                    target = gh.getRepo( "xrd", "spa.coffeete.ch" ); <co xml:id="CO17-6"/>
+                    target.createPullRequest( pull,
+		      function( err, pullRequest ) { <co xml:id="CO17-7"/>
+                        if( !err ) {
+                            $scope.notifyWaiting( "annotated",
+			      "Successfully sent annotation request" );<co xml:id="CO17-8"/>
+                            $timeout(
+			      function() {
+			       $scope.notifyWaiting( undefined )
+			      }, 5000 );
+                            $scope.$apply(); <co xml:id="CO17-9"/>
+                        }
+                    } );
+                }
+                $scope.$apply();
+            });
+        }
+        $scope.$apply();
+    } );
+
+...</programlisting>
+<calloutlist>
+<callout arearefs="CO17-1">
+<para>Once we have verified the fork has completed, we need to get the
+new forked repository. We use the username provided to our code when
+the user logs in to build the repository object. We then read the
+<emphasis>cities.json</emphasis> file from the repository; if we retrieve this file
+successfully (we don&#8217;t see the <literal>err</literal> object evaluating to true) then
+we know we are ready to start editing data.</para>
+</callout>
+<callout arearefs="CO17-2">
+<para>We notify the UI that we are annotating and tell the user they
+will need to wait while the annotation request is in progress.</para>
+</callout>
+<callout arearefs="CO17-3">
+<para><indexterm>
+<primary>JSON.stringify</primary>
+</indexterm><literal>JSON.stringify</literal> converts our annotated shop object into a JSON
+object. If you have used JSON.stringify before, you might not know
+about the other two parameters (beyond just the object you want to
+serialize) you can provide to this function. These
+two extra parameters allow us to filter the object and specify certain
+elements to ignore when serializing and how and if to indent the
+resultant JSON. So, we provide the stripHashKey function to remove the
+<literal>$$hashKey</literal> Angular tracking data, and an indentation count. The
+indentation count makes it much easier to read a pull request, because
+the diff&#8217;ing algorithm can diff line by line rather than as a long
+JSON string, which is how <literal>JSON.stringify</literal> serializes by default.</para>
+</callout>
+<callout arearefs="CO17-4">
+<para>We then write data back to the forked repository using the <literal>write</literal>
+function. If this succeeds, the error value will be undefined inside
+the callback function as the last parameter.</para>
+</callout>
+<callout arearefs="CO17-5">
+<para>If our error was undefined, we are in a position where we can make
+a pull request back to the original repository. To make a pull
+request, we create a pull request object we
+need to provide to the pull request method inside of GitHub.js.</para>
+</callout>
+<callout arearefs="CO17-6">
+<para>We then get a reference to the target of the pull request, the
+original repository.</para>
+</callout>
+<callout arearefs="CO17-7">
+<para>We then issue the pull request against the target. This takes the pull request
+specification object we created earlier, and a callback function that
+has an error code if the request failed, and otherwise, a pull request
+object.</para>
+</callout>
+<callout arearefs="CO17-8">
+<para>Once the request has succeeded, we can notify the UI that the
+annotation process has completed, and then issue a timeout to remove
+that from the UI after 5000 milliseconds, or 5 seconds.</para>
+</callout>
+<callout arearefs="CO17-9">
+<para>Any time we are inside a callback in a third-party library (like
+GitHub.js) we, as mentioned before, need to use <literal>$apply()</literal> to notify
+Angular that our scope object has changed.</para>
+</callout>
+</calloutlist>
+<simpara>We have three convenience methods to implement:</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">...
+
+$scope.appendQuirkToShop = function() { <co xml:id="CO18-1"/>
+    if( undefined == $scope.shopToAnnotate.information ) {
+        $scope.shopToAnnotate.information = [];
+    }
+    $scope.shopToAnnotate.information.push( $scope.annotation );
+};
+
+function stripHashKey( key, value ) { <co xml:id="CO18-2"/>
+    if( key == "$$hashKey" ) {
+        return undefined;
+    }
+    return value;
+}
+
+$scope.notifyWaiting = function( state, msg ) { <co xml:id="CO18-3"/>
+    if( state ) {
+        $scope.waiting = {};
+        $scope.waiting.state = state;
+        $scope.waiting.msg = msg;
+    }
+    else {
+        $scope.waiting = undefined;
+    }
+}
+...</programlisting>
+<calloutlist>
+<callout arearefs="CO18-1">
+<para>The <literal>appendQuirkToShop</literal> function creates an empty array if it is
+not yet defined and then adds the annotation to the list of annotations.
+We don&#8217;t want our code to crash if we try to add an
+annotation to an object for which there is an undefined array reference.</para>
+</callout>
+<callout arearefs="CO18-2">
+<para>We define a transformation function that we used with the
+<literal>JSON.stringify</literal> function. AngularJS adds a tracking attribute
+(<literal>$$hashKey</literal>) to our objects when we use the <literal>ng-repeat</literal> directive, and
+this function filters that out so that our pull request data is clean.</para>
+</callout>
+<callout arearefs="CO18-3">
+<para><literal>notifyWaiting</literal> (obviously) notifies users. We create a waiting
+object, and then update the state (which our app will use to hide or
+display messages) and then a message itself. If we provide an empty
+message, we will clear the object, effectively removing the message from the UI.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-04-javascript-asciidoc12</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-04-javascript-asciidoc12</primary>
+</indexterm></para>
+</callout>
+</calloutlist>
+<simpara>Now we need to expose the status message in our UI by modifying the
+HTML:<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-04-javascript-asciidoc11</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-04-javascript-asciidoc11</primary>
+</indexterm></simpara>
+<programlisting language="javascript" linenumbering="unnumbered">...
+&lt;input class="ctinput" ng-model="search"
+       placeholder="Enter search parameters..."/&gt;
+
+&lt;h3 ng-show="city"&gt;Current city: {{city.name}}&lt;/h3&gt;
+
+&lt;div ng-show="waiting"&gt;
+{{waiting.msg}}
+&lt;/div&gt;
+...</programlisting>
+</section>
+</section>
+<section xml:id="_accepting_pull_requests">
+<title>Accepting Pull Requests</title>
+<simpara><indexterm>
+<primary>coffee shop database app</primary><secondary>accepting pull requests</secondary>
+</indexterm>
+<indexterm>
+<primary>accepting pull requests</primary>
+</indexterm><indexterm>
+<primary>pull requests</primary><secondary>with coffee shop database app</secondary>
+</indexterm>
+<indexterm>
+<primary>with coffee shop database app</primary>
+</indexterm>When someone makes an annotation to a shop, the owner of the original repository gets a pull request notification on GitHub (<xref linkend="adding_information_through_a_pull_request"/>).</simpara>
+<figure xml:id="adding_information_through_a_pull_request">
+<title>Adding information through a pull request</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/btwg_09in05.png"/>
+</imageobject>
+<textobject><phrase>btwg 09in05</phrase></textobject>
+</mediaobject>
+</figure>
+<simpara>Now we can review changes through GitHub&#8217;s integrated online diff tool (<xref linkend="reviewing_annotation_pull_request_diffs_from_within_github"/>).</simpara>
+<figure xml:id="reviewing_annotation_pull_request_diffs_from_within_github">
+<title>Reviewing annotation pull request diffs from within GitHub</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/btwg_09in06.png"/>
+</imageobject>
+<textobject><phrase>btwg 09in06</phrase></textobject>
+</mediaobject>
+</figure>
+<simpara>Here we  see a clear "diff" of the changes our contributor
+made: they added an annotation that tells us "no turtles allowed." We
+might want to consider a different location the next time we have a
+date with Morla. The diff is clear in that the green information is
+easy to read, which is a benefit we get when we use the
+<literal>JSON.stringify</literal> function with the third parameter set to something
+other than undefined. Unfortunately, the first line differs only by the
+extra comma, but this is still a very readable diff.</simpara>
+</section>
+<section xml:id="_toward_a_safe_login_implementation">
+<title>Toward a Safe Login Implementation</title>
+<simpara><indexterm>
+<primary>coffee shop database app</primary><secondary>safe login implementation for</secondary><tertiary>id=ix_chapter-04-javascript-asciidoc13</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-04-javascript-asciidoc13</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>login</primary><secondary>for coffee shop database app</secondary><tertiary>id=ix_chapter-04-javascript-asciidoc14</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-04-javascript-asciidoc14</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>If I saw this app in the wild I would never use it to submit data. The
+app asks for my GitHub username and password. Asking for my username
+and password implicitly asks me to trust the authors of this
+application. Trust in this case means that I trust them to not
+maliciously use my credentials for nefarious purposes, and also asks
+me to trust that they are not doing something stupid that would allow
+an attacker to insert themselves into the middle of the
+authentication process and steal my crendentials. GitHub is a large
+part of my online identity and I would never provide these
+crendentials to a web application.</simpara>
+<simpara><indexterm>
+<primary>OAuth</primary><secondary>for coffee shop database app login</secondary><tertiary>id=ix_chapter-04-javascript-asciidoc15</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-04-javascript-asciidoc15</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>Fortunately, we have an alternative to asking for passwords: OAuth.</simpara>
+<simpara>When we use OAuth, our users enter their credentials directly into
+GitHub. If our users have turned on two-factor authentication, GitHub
+can still authenticate them (while our naive implementation could not
+be modified to accept this type of authentication process). Once we
+have entered our credentials, GitHub decides whether we
+are who we say we are, and then returns us to the application that
+requested access.</simpara>
+<note>
+<simpara>There are many <indexterm>
+<primary>OAuth</primary><secondary>benefits of</secondary>
+</indexterm>
+<indexterm>
+<primary>benefits of</primary>
+</indexterm>benefits to using OAuth. GitHub provides the
+application with what is called an OAuth token that encapsulates
+exactly what services on GitHub we have access to, and
+whether that access is read-only or whether we can add data in a
+read-write manner. This means our requesting service can ask to modify
+only parts of our data within GitHub; this provides a much higher
+level of trust to users as they know the application cannot touch the
+more private parts within GitHub. Specifically, this means we could
+ask for access only to gists and not request access to our
+repositories. One important point about OAuth tokens is that they can
+be revoked. So, once a specific action has been taken, we can destroy
+the token and revoke access. With simple username and password access,
+the only way to revoke access is to change the password, which means
+any place you have saved that password (password managers or other
+applications that log in via username and password) need to update
+their settings as well. With OAuth we can revoke a single token at any
+time (and GitHub makes it easy to do this) without affecting access to
+other services.</simpara>
+</note>
+<simpara>Let&#8217;s modify our application to use OAuth.</simpara>
+<section xml:id="_authentication_requires_a_server">
+<title>Authentication Requires a Server</title>
+<simpara><indexterm>
+<primary>authentication</primary><secondary>for coffee shop database app</secondary><tertiary>id=ix_chapter-04-javascript-asciidoc16</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-04-javascript-asciidoc16</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>Up until now we have been able to publish all our files into GitHub,
+and they are hosted for us by GitHub. Sadly the authentication
+component cannot be hosted on GitHub. Somehow we need to safely
+authenticate our user into GitHub and retrieve an OAuth token. There
+is currently no way to do this strictly
+client side (using only static HTML and JavaScript running in the
+browser). Other authentication providers like Facebook do provide pure
+JavaScript login functionality in their SDKs, but GitHub, citing
+security concerns, has not released anything that does authentication
+purely on the client side as of yet.</simpara>
+<simpara>Somehow we have to involve a server into our authentication process.
+The most obvious choice we have is to run a small authentication
+server, delegate authentication to it, and once authentication is
+completed, jump back in our application hosted on GitHub. We provide
+code (written in NodeJS, JavaScript for the server side) to do
+this in the associated repository for this chapter. But creating even
+a simple  authentication system has a baseline of complexity that
+seems like overkill. If we could instead delegate this authentication
+to a third party, we could reduce a massive amount of code and
+complexity from our system.</simpara>
+</section>
+<section xml:id="_fixing_authentication_with_firebase">
+<title>Fixing Authentication with Firebase</title>
+<simpara><indexterm>
+<primary>Firebase</primary><secondary>fixing authentication with</secondary><tertiary>id=ix_chapter-04-javascript-asciidoc17</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-04-javascript-asciidoc17</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>Instead of writing our own server to manage authentication and talk to
+the GitHub API, we will delegate that authentication to Firebase. Firebase is a
+real-time communication toolset that integrates well with our choice
+of AngularJS. By far the simplest and safest option,
+Firebase offers AngularJS bindings (called "AngularFire") and an
+integrated GitHub authentication component (called "Simple Login").
+Together they resolve the authentication issue for us, and keep all
+our code hosted on GitHub. Delegation of our authentication component is easy with
+Firebase: we just modify our existing GitHub application, provide the credentials
+and GitHub OAuth scope to Firebase, and then our application offloads
+user management to Firebase.</simpara>
+<simpara>First, we need to create a new GitHub application. In the top-right
+corner on GitHub.com, click on the "Account settings" link, and then
+navigate to the "Applications" link toward the bottom. Click the
+"Developer Applications" tab in the right center column and then click the
+"Register new application" button. Make sure "Authorization callback URL" is set to
+<emphasis><link xl:href="https://auth.firebase.com/auth/github/callback">https://auth.firebase.com/auth/github/callback</link></emphasis>. Then save the
+application by clicking the "Register application" button as shown in <xref linkend="a_new_github_application_for_oauth"/>.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-04-javascript-asciidoc17</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-04-javascript-asciidoc17</primary>
+</indexterm></simpara>
+<figure xml:id="a_new_github_application_for_oauth">
+<title>A new GitHub application for OAuth</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/btwg_09in07.png"/>
+</imageobject>
+<textobject><phrase>btwg 09in07</phrase></textobject>
+</mediaobject>
+</figure>
+<simpara>Now, create an account on Firebase. Once you have done this, create
+a new app called "CoffeeTech" inside Firebase. The APP URL needs be unique, so use
+"coffeetech-&lt;USERNAME&gt;", replacing USERNAME with your GitHub username.
+Once you have created the app, click the "View Firebase" button. You&#8217;ll
+then see a settings screen, and click "Simple Login" and then
+"GitHub" as shown in <xref linkend="creating_the_firebase_hosted_login"/>.</simpara>
+<figure xml:id="creating_the_firebase_hosted_login">
+<title>Creating the Firebase hosted login</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/btwg_09in08.png"/>
+</imageobject>
+<textobject><phrase>btwg 09in08</phrase></textobject>
+</mediaobject>
+</figure>
+<simpara>Then, copy your GitHub client ID and secret to the sections inside the
+Firebase Simple Login settings for the GitHub provider. Make sure the
+"enabled" checkbox is checked to enable the provider.</simpara>
+<simpara>We&#8217;ve now established a login application on GitHub, configured it
+to use the Firebase service, and have properly configured Firebase to
+use that GitHub application. We want all
+functionality, especially external services, to be covered by tests,
+so we&#8217;ll write that test coverage next.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-04-javascript-asciidoc16</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-04-javascript-asciidoc16</primary>
+</indexterm></simpara>
+</section>
+<section xml:id="_testing_firebase">
+<title>Testing Firebase</title>
+<simpara><indexterm>
+<primary>Firebase</primary><secondary>testing</secondary><tertiary>id=ix_chapter-04-javascript-asciidoc18</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-04-javascript-asciidoc18</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>testing</primary><secondary>Firebase</secondary><tertiary>id=ix_chapter-04-javascript-asciidoc19</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-04-javascript-asciidoc19</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>Since we load Firebase from its CDN, we first need to mock out the
+<literal>Firebase</literal> constructor using a simple shim. Put the following into a
+file called <emphasis>firebase-mock.js</emphasis>:</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">var Firebase = function (url) {
+}
+
+angular.module( 'firebase', [] );</programlisting>
+<simpara role="pagebreak-before">To test our code, we make the following changes to our
+<emphasis>coffeetech-annotate.spec.js</emphasis>:</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">beforeEach( module( "coffeetech" ) );
+
+var mockFirebase = mockSimpleLogin = undefined;
+function generateMockFirebaseSupport() { <co xml:id="CO19-1"/>
+    mockFirebase = function() {};
+    mockSimpleLogin = function() {
+        return {
+            '$login': function() {
+                return { then: function( cb ) {
+                    cb( { name: "someUser",
+                          accessToken: "abcdefghi" } );
+                } };
+            }
+        }
+    };
+}
+
+var $timeout;
+beforeEach( inject( function ($controller, $rootScope, $injector ) {
+    generateMockRepositorySupport();
+    generateMockPrompt();
+    generateMockFirebaseSupport(); <co xml:id="CO19-2"/>
+    $timeout = $injector.get( '$timeout' );
+    scope = $rootScope.$new();
+    ctrl = $controller( "GithubCtrl",
+       { $scope: scope,
+         Github: ghs,
+         '$timeout': $timeout,
+         '$window': prompter,
+         '$firebase': mockFirebase,
+         '$firebaseSimpleLogin': mockSimpleLogin } ); <co xml:id="CO19-3"/>
+} ) );
+
+
+describe( "#annotate", function() {
+    it( "should annotate a shop", function() {
+        scope.auth = mockSimpleLogin( mockFirebase() ); <co xml:id="CO19-4"/>
+        scope.city = PORTLAND
+        var shop = { name: "A coffeeshop" }
+        scope.annotate( shop );
+        expect( prompter.prompt.calls.length ).toEqual( 1 ); <co xml:id="CO19-5"/>
+        expect( scope.shopToAnnotate ).toBeTruthy();
+        expect( scope.username ).not.toBeFalsy();
+        expect( scope.annotation ).not.toBeFalsy();
+
+        expect( repo.fork ).toHaveBeenCalled();
+        expect( scope.waiting.state ).toEqual( "forking" );
+        $timeout.flush();
+
+        expect( scope.forkedRepo ).toBeTruthy();
+        expect( repo.read ).toHaveBeenCalled();
+        expect( repo.write ).toHaveBeenCalled();
+        expect( repo.createPullRequest ).toHaveBeenCalled();
+        expect( scope.waiting.state ).toEqual( "annotated" );
+        $timeout.flush();
+
+        expect( scope.waiting ).toBeFalsy();</programlisting>
+<calloutlist>
+<callout arearefs="CO19-1">
+<para>We add a <literal>generateMockFirebaseSupport()</literal> function that creates the mock
+firebase and simple login objects.</para>
+</callout>
+<callout arearefs="CO19-2">
+<para>We call this method to initialize the mocks.</para>
+</callout>
+<callout arearefs="CO19-3">
+<para>In our test we use the <literal>$controller</literal> method
+instantiator to inject these mock objects instead of letting AngularJS
+inject the real ones. We should modify our other spec file as well now that
+we are changing the required injections for any controller.</para>
+</callout>
+<callout arearefs="CO19-4">
+<para>We change our <literal>#annotate</literal> test and create the auth object
+(normally created inside the initialization).</para>
+</callout>
+<callout arearefs="CO19-5">
+<para>We prompt only once for the data to annotate (we don&#8217;t need to
+prompt for username and password any longer).<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-04-javascript-asciidoc19</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-04-javascript-asciidoc19</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-04-javascript-asciidoc18</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-04-javascript-asciidoc18</primary>
+</indexterm></para>
+</callout>
+</calloutlist>
+</section>
+<section xml:id="_implementing_firebase_login">
+<title>Implementing Firebase Login</title>
+<simpara><indexterm>
+<primary>Firebase</primary><secondary>implementing login with</secondary><tertiary>id=ix_chapter-04-javascript-asciidoc20</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-04-javascript-asciidoc20</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm><indexterm>
+<primary>login</primary><secondary>with Firebase</secondary><tertiary>id=ix_chapter-04-javascript-asciidoc21</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-04-javascript-asciidoc21</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>Now, add Firebase support to our AngularJS application. Add the
+references to the Firebase support libraries right after AngularJS is loaded:</simpara>
+<programlisting language="html" linenumbering="unnumbered">&lt;script src="angular.js"&gt;&lt;/script&gt;
+&lt;script src='https://cdn.firebase.com/v0/firebase.js'&gt;&lt;/script&gt;
+&lt;script
+  src='https://cdn.firebase.com/libs/angularfire/0.6.0/angularfire.min.js'&gt;
+&lt;/script&gt;
+&lt;script
+  src='https://cdn.firebase.com/js/simple-login/1.2.5/firebase-simple-login.js'&gt;
+&lt;/script&gt;</programlisting>
+<simpara>We need to adjust our <emphasis>coffeetech.js</emphasis> file in a few ways. First,
+import the Firebase into our AngularJS module. Also, our original
+<indexterm>
+<primary>OAuth</primary><secondary>for coffee shop database app login</secondary>
+</indexterm>
+<indexterm>
+<primary>for coffee shop database app login</primary>
+</indexterm>GitHub service expected username and password as parameters, but we are now using a slightly different signature for OAuth tokens:</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">var mod = angular.module( 'coffeetech', [ 'firebase' ] );
+
+mod.factory( 'Github', function() {
+    return {
+        create: function(token) {
+            return new Github( { token: token, auth: 'oauth' } );
+        }
+    };
+});</programlisting>
+<simpara>When we instantiate our controller, we need to inject <literal>Firebase</literal> and
+<literal>FirebaseSimpleLogin</literal> and initialize them inside our <literal>init</literal> method:</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">mod.controller( 'GithubCtrl', [ '$scope', 'Github', 'Geo', '$window', '$timeout',
+    '$firebase', '$firebaseSimpleLogin',
+    function( $scope, ghs, Geo, $window, $timeout,
+        $firebase, $firebaseSimpleLogin ) {
+
+    $scope.init = function() {
+
+        var ref = new Firebase( 'https://coffeetech.firebaseio.com' );
+        $scope.auth = $firebaseSimpleLogin( ref );
+
+        $scope.getCurrentLocation( function( position ) {
+            $scope.latitude = position.coords.latitude;</programlisting>
+<simpara>Then, when we annotate, we need to provide the auth token returned
+from Firebase. But it is gratifying to see that little else needs to
+change in our flow:</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">$scope.annotate = function( shop ) {
+    $scope.shopToAnnotate = shop;
+
+    $scope.auth.$login( 'github', { scope: 'repo' } ).then(
+      function( user ) { <co xml:id="CO20-1"/>
+
+        $scope.me = user;
+        $scope.username = user.name;
+
+        $scope.annotation = $window.prompt( "Enter data to add" ); <co xml:id="CO20-2"/>
+
+        if( $scope.annotation ) {
+            gh = ghs.create( $scope.me.accessToken ); <co xml:id="CO20-3"/>
+            toFork = gh.getRepo( "xrd", "spa.coffeete.ch" );
+            toFork.fork( function( err ) {</programlisting>
+<calloutlist>
+<callout arearefs="CO20-1">
+<para>We call the <literal>$login</literal> method on our auth object created using the
+Firebase SimpleLogin service. It returns a "promise," which is an
+interface that has a <literal>then()</literal> method that will be called if the
+<literal>$login()</literal> succeeds. <literal>then()</literal> calls our callback function, giving us a
+user object.</para>
+</callout>
+<callout arearefs="CO20-2">
+<para>We still need to prompt the user for one piece of information&#x2014;the
+data to annotate. You can imagine other ways to get this information,
+using modal HTML5 dialogs, but this will work for us for right now. At
+least we are only prompting once instead of three times!</para>
+</callout>
+<callout arearefs="CO20-3">
+<para>Once we are ready to fork we need to create our user object using
+the token.</para>
+</callout>
+</calloutlist>
+<simpara>After we make these changes, we can click the "Add factoid" button and
+we&#8217;ll get a dialog like <xref linkend="the_final_step_in_the_permission_flow"/> indicating we are logging in to GitHub
+(via the Firebase SimpleLogin).</simpara>
+<figure xml:id="the_final_step_in_the_permission_flow">
+<title>The final step in the permission flow for GitHub access using Firebase</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/btwg_09in09.png"/>
+</imageobject>
+<textobject><phrase>btwg 09in09</phrase></textobject>
+</mediaobject>
+</figure>
+<simpara>After you authorize the application, the execution flow is identical to
+the prior authentication flow (using username and password). As an optimization
+we could check for previous logins before calling <literal>$login()</literal> again, but
+we don&#8217;t do that here, meaning the login dialog momentarily pops up
+each time we click the button.</simpara>
+<simpara>Once users have logged in, they will be redirected to the application,
+and we&#8217;ll notify them that they have submitted a pull request with their
+contribution. Since their contribution is associated with their GitHub
+account, they will receive standard pull request notifications when
+their contribution is accepted<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-04-javascript-asciidoc21</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-04-javascript-asciidoc21</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-04-javascript-asciidoc20</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-04-javascript-asciidoc20</primary>
+</indexterm>, so we don&#8217;t need to implement that
+ourselves<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-04-javascript-asciidoc15</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-04-javascript-asciidoc15</primary>
+</indexterm>.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-04-javascript-asciidoc14</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-04-javascript-asciidoc14</primary>
+</indexterm><indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-04-javascript-asciidoc13</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-04-javascript-asciidoc13</primary>
+</indexterm></simpara>
+</section>
+</section>
+<section xml:id="_summary">
+<title>Summary</title>
+<simpara>We&#8217;ve built an application in JavaScript that requires no server and provides users
+with a searchable coffee shop database that accepts contributions in a
+very safe and secure way using the Pull Request API. We were able to completely ignore all the
+administrative features of a data entry system, delegating all these
+to GitHub. Our single-page app permits us to focus on one thing:
+making a powerful and useful application<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-04-javascript-asciidoc1</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-04-javascript-asciidoc1</primary>
+</indexterm>.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-04-javascript-asciidoc0</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-04-javascript-asciidoc0</primary>
+</indexterm></simpara>
+</section>
+</section>
+</article>

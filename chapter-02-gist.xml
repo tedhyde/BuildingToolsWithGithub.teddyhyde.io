@@ -1,0 +1,531 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?asciidoc-toc?>
+<?asciidoc-numbered?>
+<article xmlns="http://docbook.org/ns/docbook" xmlns:xl="http://www.w3.org/1999/xlink" version="5.0" xml:lang="en">
+<info>
+<title>Gists and the Gist API</title>
+<date>2018-11-09</date>
+</info>
+<section xml:id="chapter2">
+<title>Gists and the Gist API</title>
+<simpara><indexterm>
+<primary>gists</primary><secondary>id=ix_chapter-02-gist-asciidoc0</secondary><tertiary>range=startofrange</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-02-gist-asciidoc0</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>GitHub revolutionized software development by responding to a deep
+desire to share information. But calling it just "sharing" does a disservice to
+the tools GitHub provides: these tools remove barriers to
+communication and streamline workflows. These tools also arose at
+exactly the moment when the information technology revolution forced
+companies to adopt more open technologies that assisted an emerging remote
+workforce.</simpara>
+<simpara>Gists service part of this need: they permit intimate code
+sharing and reuse, refactoring, and experimentation in a way not served by the
+heavyweight tools predating it. In this chapter we will explore using
+gists to share code, and then build an application hosted as a
+gist that uses the Gist API.</simpara>
+<section xml:id="_easy_code_sharing">
+<title>Easy Code Sharing</title>
+<simpara><indexterm>
+<primary>gists</primary><secondary>creating</secondary>
+</indexterm>
+<indexterm>
+<primary>creating</primary>
+</indexterm>Gists are straightforward to create. You copy a snippet
+of code into the large text box in the center, optionally enter in a
+description or filename, and then choose between a public or private
+gist. Once your gist has been created you are presented with a URL to
+share. Gists autodetect the language in most cases and syntax
+highlight according to the language when displayed as in <xref linkend="documenting_json_using_a_gist"/>.</simpara>
+<figure xml:id="documenting_json_using_a_gist">
+<title>Documenting JSON using a gist</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/btwg_02in01.png"/>
+</imageobject>
+<textobject><phrase>btwg 02in01</phrase></textobject>
+</mediaobject>
+</figure>
+<simpara>There are other services that do this: pastebin was the first, and
+there are many others that offer variances on code sharing. But gists
+by GitHub are not simply a pasting service. Gists are first-class
+repositories, forkable, editable, and expansive. We&#8217;ll go over the basics
+of what gists are, and how to create them, and then show how they
+allow you to share code that is also a live application.</simpara>
+</section>
+<section xml:id="_gists_are_repositories">
+<title>Gists Are Repositories</title>
+<simpara><indexterm>
+<primary>gists</primary><secondary>as repositories</secondary>
+</indexterm>
+<indexterm>
+<primary>as repositories</primary>
+</indexterm><indexterm>
+<primary>repositories</primary><secondary>gists as</secondary>
+</indexterm>
+<indexterm>
+<primary>gists as</primary>
+</indexterm>Every gist
+created is a tiny repository. You can update gists and see
+the history using<indexterm>
+<primary>git log</primary>
+</indexterm> <literal>git log</literal>. You can download gists, hack on the
+repository, and<indexterm>
+<primary>git push</primary>
+</indexterm> <literal>git push</literal> them back into the repository on
+<emphasis>gist.github.com</emphasis> (which will republish them onto the publicly
+facing web page). And, you can "fork" gists, just like
+any other repository.</simpara>
+<simpara>You are allowed to branch within gist repositories; however, branches
+are not displayed inside of <emphasis>gist.github.com/</emphasis>. But if you need the
+benefits of branching when using gists you can branch normally
+inside a repository and the branch information is retained on the
+upstream repository after you push it up.</simpara>
+<simpara>You can have an unlimited number of public and <indexterm>
+<primary>secret gists</primary>
+</indexterm>secret gists. Secret gists can, in many cases, replace private repositories, and these secret gists don&#8217;t count against the limited amount of private repositories you have with paid GitHub accounts. Or, you can make a<indexterm>
+<primary>public gists</primary>
+</indexterm> gist public, and
+share that URL to mailing lists or anywhere you need public feedback.</simpara>
+<note>
+<simpara>As there are two types of gists (public and secret), it is important
+to understand the differences between them. Public gists are
+searchable. Secret gists are not searchable, but they are accessible
+to anyone who knows the URL. Don&#8217;t post any code to a gist you
+need to keep secret as once you put it there, it is only as safe as
+the URL is secret.</simpara>
+</note>
+<simpara>Most people share gists through the URL, but you can embed gists
+inside of other contexts (like blogs) and get a simple and pretty
+snippet of code.</simpara>
+<section xml:id="_embedding_gists_inside_html">
+<title>Embedding Gists Inside HTML</title>
+<simpara><indexterm>
+<primary>gists</primary><secondary>in HTML</secondary>
+</indexterm>
+<indexterm>
+<primary>in HTML</primary>
+</indexterm><indexterm>
+<primary>HTML</primary><secondary>gists in</secondary>
+</indexterm>
+<indexterm>
+<primary>gists in</primary>
+</indexterm>To embed inside of an HTML page look for the "Embed this gist" box to
+the left of a gist. Copy the code listed there (which will look
+something like <literal>&lt;script src="https://gist.github.com/xrd/8923697.js"&gt;&lt;/script&gt;</literal>) and paste it
+into your HTML.</simpara>
+<simpara>If you wish to include only a particular file from the gist (if it
+contains multiple files), then add <literal>?file=hi.rb</literal> to the end of the
+URL specified in the src attribute.</simpara>
+</section>
+<section xml:id="_embedding_inside_jekyll_blogs">
+<title>Embedding Inside Jekyll Blogs</title>
+<simpara><indexterm>
+<primary>gists</primary><secondary>in Jekyll blogs</secondary>
+</indexterm>
+<indexterm>
+<primary>in Jekyll blogs</primary>
+</indexterm><indexterm>
+<primary>Jekyll blogs</primary><secondary>gists in</secondary>
+</indexterm>
+<indexterm>
+<primary>gists in</primary>
+</indexterm>Jekyll blogs (explained in <xref linkend="Jekyll"/>) can easily host
+gists using a special syntax. The shortcut <literal>{% gist 8138797 %}</literal> will
+embed a private gist, which would be found at
+<emphasis><link xl:href="http://gist.github.com/8138797">http://gist.github.com/8138797</link></emphasis>.  If you want to use a
+specific file within the gist, add a filename to the gist code like
+<literal>{% gist 8138797 hi.rb %}</literal>. Secret gists can also be embedded. If you
+use a secret gist, prefix the username of the account holder in the
+gist like so: <literal>{% gist xrd/8138797 hi.rb %}</literal>.</simpara>
+<simpara>Now let&#8217;s look at creating gists from outside the GitHub.com site,
+using the command-line.</simpara>
+</section>
+</section>
+<section xml:id="_gist_from_the_command_line">
+<title>Gist from the Command Line</title>
+<simpara><indexterm>
+<primary>command line</primary><secondary>gists from</secondary>
+</indexterm>
+<indexterm>
+<primary>gists from</primary>
+</indexterm><indexterm>
+<primary>gists</primary><secondary>from command line</secondary>
+</indexterm>
+<indexterm>
+<primary>from command line</primary>
+</indexterm><literal>gem install gist</literal> <indexterm>
+<primary>gem install gist command</primary>
+</indexterm>will install a command line tool that helps create gists. You can use it simply by typing the command, and then
+entering the data you want to post as a gist:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ gist
+(type a gist. &lt;ctrl-c&gt; to cancel, &lt;ctrl-d&gt; when done)
+{ "foo" : "bar" }
+https://gist.github.com/9106765</programlisting>
+<simpara>The gist command will return the link to the gist just created. Gists
+are created anonymously by default. You can log in using the <literal>--login</literal>
+switch. Once you do this, your gists will be linked to
+your account:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ gist --login
+Obtaining OAuth2 access_token from github.
+GitHub username: xrd
+GitHub password:
+2-factor auth code: 787878
+
+Success! https://github.com/settings/applications</programlisting>
+<simpara>You can pipe text to the gist command to use the contents of that
+file:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ echo '{ "foo" : "bar" }' | gist
+https://gist.github.com/9106799</programlisting>
+<simpara>You can also <literal>cat</literal> a file to gist:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ cat MyJavaFile.java | gist
+https://gist.github.com/9345609</programlisting>
+<simpara>Gists are often used to show interesting or troublesome code, and there
+are times when you don&#8217;t want to display the entirety of a file. In
+this case the command-line<indexterm>
+<primary>grep tool</primary>
+</indexterm> <literal>grep</literal> tool can be useful; <literal>grep</literal> searches
+for a specific piece of code and with the right switches can include
+several lines of context around that code inside a gist. This command
+looks for the function <literal>myFunction</literal> inside the <emphasis>MyJavaFile.java</emphasis> file
+and then prints the next 20 lines of context and stores it as a gist:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ grep -A 20 myFunction MyJavaFile.java | gist
+https://gist.github.com/9453069</programlisting>
+<simpara>Adding <indexterm>
+<primary>&#8211;o switch</primary>
+</indexterm>the <literal>-o</literal> switch automatically opens the gist inside your
+default web browser. You can also copy the gist URL to the clipboard
+using <indexterm>
+<primary>&#8211;c switch</primary>
+</indexterm>the <literal>-c</literal> switch. Or, you can copy the contents of your clipboard
+into a gist using<indexterm>
+<primary>&#8211;P switch</primary>
+</indexterm> the <literal>-P</literal> switch.</simpara>
+<simpara>There are many other fun features of the gist command. To learn more
+run the gist command with<indexterm>
+<primary>&#8211;&#8211;help switch</primary>
+</indexterm> the <literal>--help</literal> switch.</simpara>
+<simpara>As gists are themselves repositories, you can use them for dual
+purposes: for hosting code samples, and for code samples that are themselves
+fully working and packaged applications inside a gist repository.</simpara>
+</section>
+<section xml:id="_gists_as_fully_functioning_apps">
+<title>Gists as Fully Functioning Apps</title>
+<simpara><indexterm>
+<primary>gists</primary><secondary>as fully functioning apps</secondary>
+</indexterm>
+<indexterm>
+<primary>as fully functioning apps</primary>
+</indexterm>Let&#8217;s build a simple Sinatra application to showcase how code hosted
+as a gist can also be a living application. <indexterm>
+<primary>Sinatra</primary>
+</indexterm>Sinatra is a Ruby library
+for creating dead-simple web servers. A Sinatra program can be as
+simple as this:</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">require 'sinatra'
+
+get '/hi' do
+  "Hello World!"
+end</programlisting>
+<simpara>Create a gist for this by visiting <a class="orm:hideurl" href="https://gist.github.com/"><em>gist.github.com</em></a>. Enter in the text exactly as shown and then choose
+public gist.</simpara>
+<simpara>You now have a share-friendly gist of code anyone can use to review.
+More importantly, this is a repository with executable code. To clone
+it, look for the Clone URL to the right of the gist itself. You will
+likely see a Git protocol URL and an HTTPS URL. If you are cloning
+the URL and intend only to read the gist, you can use the HTTPS
+URL. You technically can push changes once you have cloned a
+repository using the HTTPS URL but not if you have two-factor
+authentication enabled. In most cases it is easier and more flexible
+to use the Git protocol URL.</simpara>
+<simpara>Let&#8217;s clone it now:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ git clone git@gist.github.com:8138797.git</programlisting>
+<simpara>Once you have cloned the repository, go inside it. You&#8217;ll see a list
+of files, a list that right now includes only one file:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ cd 8138797
+$ ls
+hi.rb</programlisting>
+<simpara>This code is exectuable: to run it enter <literal>ruby hi.rb</literal>.</simpara>
+<simpara>If you have not used Sinatra with Ruby before, this will cause an
+error. This program requires a library called "sinatra" and
+you have not yet installed it. We could write a read me file, or add
+documentation into this file itself. Another
+way to guarantee the user has the proper files installed is to<indexterm>
+<primary>Gemfile</primary>
+</indexterm> use a
+<emphasis>Gemfile</emphasis>, which is a file that tells
+which libraries are installed and from where. That sounds like the
+best way:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ printf "source 'https://rubygems.org'\ngem 'sinatra'" &gt; Gemfile</programlisting>
+<simpara>The <literal>bundle</literal> command (from the bundler gem) will install Sinatra and
+the associated dependencies:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ bundle
+Using rack (1.5.2)
+Using rack-protection (1.5.1)
+Using tilt (1.4.1)
+Using sinatra (1.4.4)
+Using bundler (1.3.5)
+Your bundle is complete!
+Use `bundle show [gemname]` to see where a bundled gem is installed.</programlisting>
+<simpara>Why did we do things this way? Because now we can add the Gemfile to
+our repository locally, and then publish into our gist for sharing on
+the Web. Our repository now not only has the code, but a well-known
+manifest file that explains the necessary components when running the
+code.</simpara>
+</section>
+<section xml:id="_gists_that_render_gists">
+<title>Gists that Render Gists</title>
+<simpara><indexterm>
+<primary>gists</primary><secondary>for rendering other gists</secondary><tertiary>id=ix_chapter-02-gist-asciidoc1</tertiary>
+</indexterm>
+<indexterm>
+<primary>id=ix_chapter-02-gist-asciidoc1</primary><secondary>range=startofrange</secondary>
+</indexterm>
+<indexterm>
+<primary>range=startofrange</primary>
+</indexterm>Let&#8217;s add to our application and use the<indexterm>
+<primary>Octokit</primary>
+</indexterm><indexterm>
+<primary>Octokit Ruby</primary>
+</indexterm> Octokit Ruby gem to pull all
+public gists for any user we specify. The Octokit library is the
+the official Ruby library for accessing the GitHub API. Why would we want to make a gist
+that displays other gists? Self-referential meta code is all the rage, the
+modern-day response to René Magritte&#8217;s famous work: "Ceci n&#8217;est pas une
+pipe."<footnote><simpara><link xl:href="http://bit.ly/1Ot2qOd">Explained best by Ben Zimmer</link></simpara></footnote></simpara>
+<simpara>Add a view <emphasis>index.erb</emphasis> at the root of our directory:</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">&lt;html&gt;
+&lt;body&gt;
+
+User has &lt;%= count %&gt; public gists
+
+&lt;/body&gt;
+&lt;/html&gt;</programlisting>
+<simpara>Add the Octokit gem to our Gemfile:</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">gem "octokit"</programlisting>
+<simpara>Run <literal>bundle</literal> to install Octokit. Then, modify our <emphasis>hi.rb</emphasis> app to look
+like this:</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">require 'sinatra'
+require 'octokit'
+
+set :views, "."
+
+get '/:username' do |username|
+  user = Octokit.user username
+  count = user.public_gists
+  erb :index, locals: { :count =&gt; count }
+end</programlisting>
+<simpara>Our filesystem should look like this, with three files:</simpara>
+<programlisting language="bash" linenumbering="unnumbered">$ ls -1
+Gemfile
+hi.rb
+index.erb</programlisting>
+<simpara>Restart Sinatra by running Ctrl-C and then <literal>ruby hi.rb</literal>. If you visit <emphasis><link xl:href="http://localhost:4567/xrd">http://localhost:4567/xrd</link></emphasis> in
+your browser, you will see the count of public gists for user <literal>xrd</literal> (<xref linkend="displaying_the_gist_count"/>);
+modify the username in the URL to specify any GitHub username and you will see
+their last five gists displayed.</simpara>
+<figure xml:id="displaying_the_gist_count">
+<title>Displaying the gist count</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/btwg_02in02.png"/>
+</imageobject>
+<textobject><phrase>btwg 02in02</phrase></textobject>
+</mediaobject>
+</figure>
+<section xml:id="_going_deeper_into_the_gist_api">
+<title>Going Deeper into the Gist API</title>
+<simpara><indexterm>
+<primary>gists</primary><secondary>and hypermedia</secondary>
+</indexterm>
+<indexterm>
+<primary>and hypermedia</primary>
+</indexterm><indexterm>
+<primary>Hypermedia API</primary><secondary>gist and</secondary>
+</indexterm>
+<indexterm>
+<primary>gist and</primary>
+</indexterm>The GitHub API uses hypermedia instead of
+basic resource-driven APIs. If you use a client like Octokit, the
+hypermedia details are hidden behind an elegant Ruby client. But
+there is a benefit to understanding how hypermedia works when you need
+to retrieve deeper information from the GitHub API.</simpara>
+<simpara><indexterm>
+<primary>gists</primary><secondary>and RESTful APIs</secondary>
+</indexterm>
+<indexterm>
+<primary>and RESTful APIs</primary>
+</indexterm><indexterm>
+<primary>RESTful APIs</primary>
+</indexterm>Most RESTful APIs come with<indexterm>
+<primary>sitemaps</primary>
+</indexterm> a "sitemap," generally an API reference
+document that tells a user which endpoints to use. You view
+the resources available from that API and then apply some HTTP verb to
+do something to them. Hypermedia thinks of an API differently.
+Hypermedia APIs describe themselves inside their responses <indexterm>
+<primary>affordances</primary>
+</indexterm>using
+"affordances." What this means is that the API might respond like this:</simpara>
+<programlisting language="json" linenumbering="unnumbered">{
+    "_links": {
+        "self": {
+            "href": "http://shop.oreilly.com/product/0636920030300.do"
+        }
+    }
+    "id": "xrd",
+    "name": "Chris Dawson"
+}</programlisting>
+<simpara>In this payload, you can see that there is an id ("xrd") and a name
+("Chris Dawson"). This particular payload was forked from the HAL explanation at the
+<link xl:href="http://bit.ly/1SGLDw3">HAL
+Primer document</link>, and you can find a more detailed explanation of these concepts
+there.</simpara>
+<simpara>The important thing to note about hypermedia APIs is that payloads contain
+metadata about data itself and metadata about the possible options of
+operating on the data. RESTful APIs typically provide a mapping
+outside of the payload. You have to join the API sitemap with the data
+in an ad hoc way when using RESTful APIs; with hypermedia APIs your
+client can react to the payload itself correctly and intelligently
+without knowing anything about a sitemap stored in human-readable
+documentation.</simpara>
+<simpara>This loose coupling makes APIs and their clients flexible. In theory,
+a hypermedia API works intuitively with a hypermedia-aware client. If
+you change the API, the client, as it understands hypermedia, can
+react and still work as expected. Using a RESTful API means that
+clients must be updated (a newer version of the client must be
+installed) or the client code must be upgraded. Hypermedia APIs can
+alter their backend, and then the client, as long as it is
+hypermedia-aware, can automatically and dynamically determine
+the right way to access information from the response itself. In other
+words, with a hypermedia client the API backend can change and your
+client code should not need to.</simpara>
+<simpara>This is explained in great detail in the book <a class="orm:hideurl" href="http://shop.oreilly.com/product/0636920020530.do"><em>Building
+Hypermedia APIs with HTML5 and Node</em> (O'Reilly)</a>.</simpara>
+</section>
+<section xml:id="_using_hypermedia_data_from_octokit">
+<title>Using Hypermedia Data from Octokit</title>
+<simpara><indexterm>
+<primary>gists</primary><secondary>using hypermedia data from Octokit</secondary>
+</indexterm>
+<indexterm>
+<primary>using hypermedia data from Octokit</primary>
+</indexterm><indexterm>
+<primary>hypermedia data, Octokit</primary>
+</indexterm><indexterm>
+<primary>Octokit</primary><secondary>using hypermedia data from</secondary>
+</indexterm>
+<indexterm>
+<primary>using hypermedia data from</primary>
+</indexterm>Now that you know a little about hypermedia, let&#8217;s navigate it using Octokit:</simpara>
+<itemizedlist>
+<listitem>
+<simpara>Start at a resource, with code like <literal>user = Octokit.user "xrd"</literal>. This
+begins the initialization of the client.</simpara>
+</listitem>
+<listitem>
+<simpara><literal>user</literal> now is an object filled with the actual data of the resource.
+In this case, you could call a method like <literal>user.followers</literal> to see a
+meager follower count.</simpara>
+</listitem>
+<listitem>
+<simpara><literal>user</literal> also has hypermedia references. You can see these by calling
+<literal>user.rels</literal>. This retrieves the relationships described in the
+hypermedia links.</simpara>
+</listitem>
+<listitem>
+<simpara>Relationships (found by calling <literal>user.rels</literal>) include avatar, self,
+followers, etc.</simpara>
+</listitem>
+<listitem>
+<simpara>Use a relationship by calling the <literal>get.data</literal> method to retrieve and
+access the data from the GitHub API (<literal>followers =
+user.rels[:followers].get.data</literal>).</simpara>
+</listitem>
+<listitem>
+<simpara>Calling <literal>.get.data</literal> populates an array of the followers (paged if it
+exceeds 100 items).</simpara>
+</listitem>
+</itemizedlist>
+<simpara>Let&#8217;s extend our Sinatra app to retrieve actual data about the user&#8217;s
+gists by using hypermedia references:</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">require 'sinatra'
+require 'octokit'
+
+set :views, "."
+
+helpers do
+  def h(text)
+    Rack::Utils.escape_html(text)
+  end
+end
+
+get '/:username' do |username|
+  gists = Octokit.gists username, :per_page =&gt; 5
+  erb :index, locals: { :gists =&gt; gists, username: username }
+end</programlisting>
+<simpara>The <emphasis>index.erb</emphasis> file contains code to iterate over each gist and pull
+the content. You can see that our response object is an array of
+gists, and each has an attribute called <literal>fields</literal>. This <literal>fields</literal> attribute
+specifies the filenames available in each gist. If you reference that
+filename against the files, the response includes a hypermedia <literal>ref</literal>
+attribute. Retrieve the <literal>raw</literal> content using the Octokit method <literal>.get.data</literal>:</simpara>
+<programlisting language="html" linenumbering="unnumbered">&lt;html&gt;
+&lt;body&gt;
+
+&lt;h2&gt;User &lt;%= username %&gt;'s last five gists&lt;/h2&gt;
+
+&lt;% gists.each do |g| %&gt;
+&lt;% g[:files].fields.each do |f| %&gt;
+&lt;b&gt;&lt;%= f %&gt;&lt;/b&gt;:
+
+&lt;%= h g[:files][f.to_sym].rels[:raw].get.data %&gt;
+
+&lt;br/&gt;
+&lt;br/&gt;
+
+&lt;% end %&gt;
+&lt;% end %&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;</programlisting>
+<simpara>Now we see the gists and the contents, as in <xref linkend="last_five_gists_with_details"/>.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-02-gist-asciidoc1</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-02-gist-asciidoc1</primary>
+</indexterm></simpara>
+<figure xml:id="last_five_gists_with_details">
+<title>Last five gists, with details</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/btwg_02in03.png"/>
+</imageobject>
+<textobject><phrase>btwg 02in03</phrase></textobject>
+</mediaobject>
+</figure>
+</section>
+</section>
+<section xml:id="_summary">
+<title>Summary</title>
+<simpara>In this chapter we looked at gists and learned how they can be used
+to share code snippets. We built a simple application and stored it as
+a gist. This application retrieves data from the GitHub API using our
+first higher-level language client library (the Octokit library for
+Ruby). We also went deeper into how hypermedia works and how a client
+library implements using hypermedia metadata.<indexterm>
+<primary>range=endofrange</primary><secondary>startref=ix_chapter-02-gist-asciidoc0</secondary>
+</indexterm>
+<indexterm>
+<primary>startref=ix_chapter-02-gist-asciidoc0</primary>
+</indexterm></simpara>
+<simpara>In the next chapter we will look at Gollum, the GitHub wiki. This
+chapter provides an introduction to the Rugged Ruby library for accessing Git
+repositories and the Ruby library for accessing GitHub.</simpara>
+</section>
+</section>
+</article>
